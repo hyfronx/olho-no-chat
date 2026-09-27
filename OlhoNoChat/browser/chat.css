@@ -65,6 +65,55 @@ body.tema-padrao #chat_box .chat_line {
     font-weight: bold;
 }
 
+/* Links in the messages: clickable only while the app shows the borders (body.onc-links-on) */
+.onc-link {
+    color: #8FC8FF;
+    text-decoration: underline;
+    pointer-events: none;
+}
+
+body.onc-links-on .onc-link {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* "Modo rolagem": a thin scroll bar, the banner at the top and the "↓ Novas mensagens" button */
+#chat_box::-webkit-scrollbar { width: 6px; }
+#chat_box::-webkit-scrollbar-track { background: transparent; }
+#chat_box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .35); border-radius: 3px; }
+
+.onc-pill {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: none;
+    background: #141414;
+    color: #fff;
+    border: 2px solid #FF8A65;
+    border-radius: 16px;
+    padding: 6px 14px;
+    font: bold 17px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+#onc-scroll-banner {
+    top: 6px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    white-space: pre-line;
+    text-align: center;
+    border-radius: 8px;
+}
+
+#onc-new-messages {
+    bottom: 10px;
+}
+
 /* Connection status: a dot at the top, yellow and pulsing while connecting, green when connected
    (shown for a moment, then it fades out), red while the connection is lost */
 #onc-status {

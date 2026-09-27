@@ -10,6 +10,7 @@
     const RETRY_MIN_MS = 1000;
     const RETRY_MAX_MS = 30000;
     const MAX_LINES = 100;
+    const MAX_LINES_SCROLLED_BACK = 1000; // while scrolled back to read, see "Scrolling"
 
     const params = new URLSearchParams(location.search);
     const channel = (params.get('canal') || '').toLowerCase();
@@ -19,7 +20,12 @@
 
     const box = document.getElementById('chat_box');
 
-    let settings = { fade: 0, hideBots: true };
+    // From the app (KapChat.GetMessageSettingsJson)
+    let settings = {
+        fade: 0, hideBots: true, playSound: false,
+        highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
+        vips: [], blockList: []
+    };
     let started = false;
     let socket = null;
     let lastData = 0;
@@ -190,14 +196,35 @@
         }
 
         const tags = message.tags;
-        addLine({
+        showLine({
             id: tags.id,
             login,
             name: tags['display-name'] || login,
             color: userColor(login, tags.color),
             action,
             parts: splitTwitchEmotes(text, tags.emotes)
-        });
+        }, tags.badges || '');
+    }
+
+    // The "Filtros" of the app: blocked users, "only the listed users" (plus all VIPs / Mods, from the
+    // badges tag "vip/1,subscriber/12") and their highlight. Also decides if the new-message sound rings.
+    function showLine(line, badges) {
+        if (settings.blockList.includes(line.login)) return;
+
+        const isListed = settings.vips.includes(line.login);
+        let byBadge = '';
+        if (settings.filterAllowAllVIPs && /(?:^|,)vip\//.test(badges)) byBadge = 'VIP';
+        if (settings.filterAllowAllMods && /(?:^|,)moderator\//.test(badges)) byBadge = 'Mod'; // Mod wins over VIP
+        const allowed = isListed || byBadge !== '';
+
+        if (settings.allowedUsersOnly && !allowed) return;
+        line.highlight = settings.highlightUsers && allowed ? 'highlight' + byBadge : '';
+
+        // The app decides if it rings (not while the sound is playing, "Quando tocar")
+        if (settings.playSound && ((!settings.highlightUsers && !settings.allowedUsersOnly) || allowed))
+            postToApp('onc:play-sound');
+
+        addLine(line);
     }
 
     // The "emotes" tag ("25:0-4,12-16/1902:6-10") gives each emote's place counted in characters
@@ -264,6 +291,7 @@
     function addLine(line) {
         const div = document.createElement('div');
         div.className = 'chat_line';
+        if (line.highlight) div.classList.add(line.highlight);
         if (line.id) div.dataset.id = line.id;
         div.dataset.nick = line.login;
         div.dataset.timestamp = Date.now();
@@ -293,6 +321,7 @@
             img.alt = img.title = part.name;
             message.append(img);
         });
+        linkify(message);
 
         div.append(time, nick);
         if (!line.action) {
@@ -307,9 +336,79 @@
         scheduleLayout();
     }
 
+    // Web addresses in a message become links (opened in the user's browser by the app, and only
+    // while the borders are visible: the app sets "onc-links-on", see MainWindow.Links.cs)
+    const LINK = /\b(?:https?:\/\/|www\.)[^\s<>"]+[^\s<>".,:;!?)\]'}]/gi;
+
+    function linkify(root) {
+        // Quick check on the whole text first (no \b here: an emote between two words joins their text)
+        if (!/https?:\/\/|www\./i.test(root.textContent)) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const texts = [];
+        while (walker.nextNode()) texts.push(walker.currentNode);
+        texts.forEach(node => {
+            const text = node.nodeValue;
+            const parts = document.createDocumentFragment();
+            let last = 0;
+            for (const match of text.matchAll(LINK)) {
+                parts.append(text.slice(last, match.index));
+                const a = document.createElement('a');
+                a.className = 'onc-link';
+                a.href = /^www\./i.test(match[0]) ? 'https://' + match[0] : match[0];
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = match[0];
+                parts.append(a);
+                last = match.index + match[0].length;
+            }
+            if (last === 0) return;
+            parts.append(text.slice(last));
+            node.replaceWith(parts);
+        });
+    }
+
     function removeLines(selector) {
         box.querySelectorAll(selector).forEach(line => line.remove());
     }
+
+    // --- Scrolling -----------------------------------------------------------------------------------
+    // The newest message stays in view ("pinned"). In "modo rolagem" (the window takes clicks) the chat can be
+    // scrolled back: new messages then don't pull it down, and old lines are kept longer while being read.
+
+    let pinned = true;
+    const isAtBottom = () => box.scrollHeight - box.scrollTop - box.clientHeight < 4;
+    const scrollToBottom = () => { box.scrollTop = box.scrollHeight; };
+
+    const scrollBanner = document.createElement('div');
+    scrollBanner.id = 'onc-scroll-banner';
+    scrollBanner.className = 'onc-pill';
+    scrollBanner.addEventListener('click', () => postToApp('onc:exit-scroll-mode'));
+    const newMessages = document.createElement('div');
+    newMessages.id = 'onc-new-messages';
+    newMessages.className = 'onc-pill';
+    newMessages.textContent = '↓ Novas mensagens';
+    newMessages.addEventListener('click', pin);
+    document.body.append(scrollBanner, newMessages);
+
+    function pin() {
+        pinned = true;
+        newMessages.style.display = 'none';
+        scrollToBottom();
+    }
+
+    // Only the user unpins the chat (the wheel, or dragging the scroll bar): lines taken out at the top also
+    // move the scroll position, and that must not stop the chat from following the new messages.
+    let dragging = false;
+    box.addEventListener('wheel', (e) => {
+        if (e.deltaY < 0 && box.scrollTop > 0) pinned = false;
+    }, { passive: true });
+    box.addEventListener('pointerdown', () => { dragging = true; });
+    window.addEventListener('pointerup', () => { dragging = false; });
+
+    box.addEventListener('scroll', () => {
+        if (isAtBottom()) pin();
+        else if (dragging) pinned = false;
+    });
 
     // Old lines are taken out and the newest one scrolled into view once per frame, even in a busy chat
     let layoutPending = false;
@@ -318,15 +417,26 @@
         layoutPending = true;
         requestAnimationFrame(() => {
             layoutPending = false;
-            let extra = box.children.length - MAX_LINES;
+            let extra = box.children.length - (pinned ? MAX_LINES : MAX_LINES_SCROLLED_BACK);
             while (extra-- > 0) box.firstElementChild.remove();
-            box.scrollTop = box.scrollHeight;
+            if (pinned) scrollToBottom();
+            else newMessages.style.display = 'block';
         });
     }
 
     // Emotes load after their line is added and make it taller
-    box.addEventListener('load', () => { box.scrollTop = box.scrollHeight; }, true);
-    window.addEventListener('resize', () => { box.scrollTop = box.scrollHeight; });
+    box.addEventListener('load', () => { if (pinned) scrollToBottom(); }, true);
+    window.addEventListener('resize', () => { if (pinned) scrollToBottom(); });
+
+    // Called by the app (MainWindow.UpdateChatScrollMode), also before this script ran (oncScrollModeWanted)
+    window.oncSetScrollMode = function (mode) {
+        box.style.overflowY = mode.enabled ? 'auto' : 'hidden';
+        scrollBanner.textContent = 'Modo rolagem: use a rodinha do mouse\n' +
+            (mode.hotkey ? 'Clique aqui ou aperte ' + mode.hotkey + ' para sair' : 'Clique aqui para sair');
+        scrollBanner.style.display = mode.enabled && mode.banner ? 'block' : 'none';
+        if (!mode.enabled) pin();
+    };
+    if (window.oncScrollModeWanted) window.oncSetScrollMode(window.oncScrollModeWanted);
 
     // "Apagar mensagens antigas": a line older than settings.fade seconds fades out
     setInterval(() => {
@@ -358,7 +468,7 @@
         // A line from the app in the user's color, like a /me message (channel point redemptions)
         addAction(name, color, text) {
             const login = name.toLowerCase();
-            addLine({ login, name: name || login, color: userColor(login, color), action: true, parts: [text] });
+            showLine({ login, name, color: userColor(login, color), action: true, parts: [text] }, '');
         },
 
         // For the app's watchdog: "open:<ms since Twitch last sent something>" or the state
