@@ -74,7 +74,7 @@ namespace OlhoNoChat.Chats
 
                 // Our time (SetupJavascript); Twitch's own one would show a second time
                 css += App.Settings.GeneralSettings.ShowMessageTime
-                    ? $"\n.chat-line__message .onc-time {{ {KapChat.MessageTimeCss} }}\n.chat-line__timestamp {{ display: none !important; }}"
+                    ? $"\n.chat-line__message .onc-time {{ {PadraoChat.MessageTimeCss} }}\n.chat-line__timestamp {{ display: none !important; }}"
                     : "\n.onc-time { display: none !important; }";
             }
             else
@@ -86,26 +86,26 @@ namespace OlhoNoChat.Chats
             return css;
         }
 
-        // The "Chat oficial da Twitch" follows the "Padrão" chat: same font, size and spacing (KapChat's
+        // The "Chat oficial da Twitch" follows the "Padrão" chat: same font, size and spacing (PadraoChat's
         // constants) and the "Texto das mensagens" options of the Aparência tab. With the FrankerFaceZ
         // extension or without it, each message is a ".chat-line__message".
         private static string MessageLookCss()
         {
             var settings = App.Settings.GeneralSettings;
-            // The theme's font has 1 px between letters; a chosen font keeps its own spacing (as in KapChat)
+            // The theme's font has 1 px between letters; a chosen font keeps its own spacing (as in the "Padrão" chat)
             bool chosenFont = settings.ChatFontFamily is "Segoe UI" or "Arial" or "Verdana";
-            string font = chosenFont ? $"'{settings.ChatFontFamily}', sans-serif" : KapChat.MessageFontFamily;
+            string font = chosenFont ? $"'{settings.ChatFontFamily}', sans-serif" : PadraoChat.MessageFontFamily;
             string letterSpacing = chosenFont ? "normal" : "1px";
 
             var css = new StringBuilder($$"""
                 .chat-line__message {
                     font-family: {{font}} !important;
-                    font-size: {{KapChat.MessageFontSizePx}}px !important;
+                    font-size: {{PadraoChat.MessageFontSizePx}}px !important;
                     font-weight: 700 !important;
                     letter-spacing: {{letterSpacing}} !important;
-                    line-height: {{KapChat.LineHeightPx}}px !important;
-                    padding-top: {{KapChat.MessageGapPx}}px !important;
-                    padding-bottom: {{KapChat.MessageGapPx}}px !important;
+                    line-height: {{PadraoChat.LineHeightPx}}px !important;
+                    padding-top: {{PadraoChat.MessageGapPx}}px !important;
+                    padding-bottom: {{PadraoChat.MessageGapPx}}px !important;
                 }
                 .chat-line__message .text-fragment, .chat-line__message .mention-fragment, .chat-line__message .message,
                 .chat-line__message .chat-author__display-name, .chat-line__message [data-a-target="chat-line-message-body"] {

@@ -37,8 +37,8 @@
                 </Grid>
             </Border>
 
-            <!-- Padrão (KapChat) -->
-            <StackPanel Name="kapChatGrid">
+            <!-- Padrão -->
+            <StackPanel Name="padraoGrid">
                 <TextBlock Text="Canal" Style="{StaticResource SettingsSectionTitle}" />
                 <Border Style="{StaticResource SettingsCard}">
                     <Grid>

@@ -13,8 +13,8 @@
             <TextBlock Text="Aparência" Style="{StaticResource SettingsPageTitle}" />
             <TextBlock Text="Como as mensagens aparecem por cima do jogo." Style="{StaticResource SettingsPageSubtitle}" />
 
-            <!-- Padrão (KapChat) -->
-            <StackPanel Name="kapChatAppearance">
+            <!-- Padrão -->
+            <StackPanel Name="padraoAppearance">
                 <TextBlock Text="Tema" Style="{StaticResource SettingsSectionTitle}" />
                 <Border Style="{StaticResource SettingsCard}">
                     <StackPanel>

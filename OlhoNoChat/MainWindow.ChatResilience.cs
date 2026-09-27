@@ -10,8 +10,7 @@ using System.Windows.Threading;
 /// <summary>
 /// Keeps the chat working when the embedded browser gets into a bad state:
 /// - the disk cache is cleared before each navigation, since a corrupted cache entry
-///   (e.g. twemoji.min.js failing with ERR_CONTENT_DECODING_FAILED) breaks the page's scripts;
-/// - a no-op twemoji fallback is defined, so a failed CDN load doesn't stop KapChat from connecting;
+///   (e.g. a script failing with ERR_CONTENT_DECODING_FAILED) breaks the page;
 /// - the "Padrão" page connects again by itself when the connection to Twitch drops; the watchdog only
 ///   reloads it when its script isn't running or its connection stays silent anyway;
 /// - a crashed browser or chat page process is recovered without asking (no dialog over the game).
@@ -34,20 +33,6 @@ public partial class MainWindow
     // An unresponsive page is reported every few seconds, also when the computer is only busy (e.g. a game loading)
     private static readonly TimeSpan ChatUnresponsiveLimit = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan ChatUnresponsiveEpisodeGap = TimeSpan.FromSeconds(60);
-
-    // Runs before any page script. If the real twemoji loads, its global `var twemoji`
-    // simply overwrites this object; if it fails to load, KapChat still works (without emoji images).
-    private const string TwemojiFallbackScript = """
-        (function () {
-            if (/(^|\.)twitch\.tv$/i.test(location.hostname)) return;
-            if (typeof window.twemoji !== 'undefined') return;
-            window.twemoji = { oncFallback: true, parse: function (what) { return what; } };
-            window.addEventListener('load', function () {
-                if (window.twemoji && window.twemoji.oncFallback)
-                    console.warn('[ONC] twemoji failed to load, using fallback (emojis will not be rendered as images).');
-            });
-        })();
-        """;
 
     // The state of the "Padrão" page's connection: "open:<ms since Twitch last sent something>", "disconnected"
     // (the page is connecting again) or "missing" (the page's script isn't running)
@@ -73,18 +58,6 @@ public partial class MainWindow
     private DispatcherTimer _chatPageReloadTimer;
     private DateTime? _chatUnresponsiveSince;
     private DateTime _chatUnresponsiveLastAt = DateTime.MinValue;
-
-    private async Task AddTwemojiFallbackAsync(CoreWebView2 coreWebView2)
-    {
-        try
-        {
-            await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TwemojiFallbackScript);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to register the twemoji fallback script.");
-        }
-    }
 
     private async Task ClearWebViewDiskCacheAsync()
     {
@@ -150,7 +123,7 @@ public partial class MainWindow
 
     private async Task CheckChatHealthAsync()
     {
-        if (_currentChat?.ChatType != ChatTypes.KapChat || this.webView?.CoreWebView2 == null)
+        if (_currentChat?.ChatType != ChatTypes.Padrao || this.webView?.CoreWebView2 == null)
             return;
 
         DateTime now = DateTime.UtcNow;

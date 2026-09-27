@@ -3,7 +3,7 @@ namespace OlhoNoChat
 {
     public enum ChatTypes
     {
-        KapChat = 0,
+        Padrao = 0,
         TwitchPopout = 1,
         CustomURL = 2
     }

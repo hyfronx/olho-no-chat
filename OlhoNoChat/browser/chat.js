@@ -20,7 +20,7 @@
 
     const box = document.getElementById('chat_box');
 
-    // From the app (KapChat.GetMessageSettingsJson)
+    // From the app (PadraoChat.GetMessageSettingsJson)
     let settings = {
         fade: 0, hideBots: true, playSound: false,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,

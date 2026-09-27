@@ -47,7 +47,7 @@ public class AppSettings
         // jCyan was removed: a saved chat type that no longer exists (3 = jCyan) becomes "Padrão"
         if (!Enum.IsDefined(typeof(ChatTypes), GeneralSettings.ChatType))
         {
-            GeneralSettings.ChatType = (int)ChatTypes.KapChat;
+            GeneralSettings.ChatType = (int)ChatTypes.Padrao;
             this.Tracker.Persist(this);
         }
 
@@ -213,7 +213,7 @@ public class GeneralSettings
     public bool BetterTtv_AdvEmoteMenu { get; set; } = true;
     public bool FrankerFaceZ { get; set; } = true;
     public bool CheckForUpdates { get; set; } = true;
-    // Message text look (KapChat). Empty / "theme" keep what the chat theme defines.
+    // Message text look ("Padrão" chat, also the official one). Empty / "theme" keep what the chat theme defines.
     public string ChatMessageColor { get; set; } = string.Empty; // "#RRGGBB"
     public string ChatTextOutline { get; set; } = "none";        // theme (black outline of the theme) | soft | none
     public string ChatFontFamily { get; set; } = "theme";        // theme | Segoe UI | Arial | Verdana

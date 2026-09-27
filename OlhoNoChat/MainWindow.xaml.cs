@@ -304,7 +304,6 @@ public partial class MainWindow : Window
         webView.CoreWebView2.SetVirtualHostNameToFolderMapping(LocalHtmlHelper.ChatPageHost, LocalHtmlHelper.BrowserFolder,
             CoreWebView2HostResourceAccessKind.DenyCors);
 
-        await AddTwemojiFallbackAsync(webView.CoreWebView2);
         ApplyLightweightWebViewSettings(webView.CoreWebView2);
         SetupChatLinks(webView.CoreWebView2);
 
@@ -392,11 +391,11 @@ public partial class MainWindow : Window
 
     private readonly Thickness scrollModeBorderThickness = new Thickness(2);
 
-    // Lets the KapChat page scroll while the window takes clicks, and shows the "modo rolagem" hint
+    // Lets the "Padrão" chat page scroll while the window takes clicks, and shows the "modo rolagem" hint
     // only when the borders are hidden (otherwise the window is simply in setup mode).
     private void UpdateChatScrollMode()
     {
-        if (_currentChat?.ChatType != ChatTypes.KapChat || this.webView?.CoreWebView2 == null)
+        if (_currentChat?.ChatType != ChatTypes.Padrao || this.webView?.CoreWebView2 == null)
             return;
 
         bool enabled = this.webView.Focusable;
@@ -738,7 +737,7 @@ public partial class MainWindow : Window
     {
         var settings = App.Settings.GeneralSettings;
         string file = string.Empty;
-        if (settings.ChatType == (int)ChatTypes.KapChat && !settings.ChatNotificationSound.Equals("none", StringComparison.OrdinalIgnoreCase))
+        if (settings.ChatType == (int)ChatTypes.Padrao && !settings.ChatNotificationSound.Equals("none", StringComparison.OrdinalIgnoreCase))
         {
             string path = Path.Combine(SoundFolder.Resolve(settings.SoundClipsFolder), settings.ChatNotificationSound);
             if (File.Exists(path))

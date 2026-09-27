@@ -7,7 +7,7 @@ namespace OlhoNoChat.Utils;
 
 /// <summary>
 /// The new-message sound of the "Padrão" chat. The page asks for it on every message that may ring
-/// (onc:play-sound, see KapChat.SetupJavascript); Play decides if it really rings.
+/// (onc:play-sound, see browser/chat.js); Play decides if it really rings.
 /// </summary>
 public class ChatSoundPlayer
 {

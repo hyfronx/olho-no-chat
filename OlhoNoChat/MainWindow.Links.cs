@@ -4,7 +4,7 @@ using Microsoft.Web.WebView2.Core;
 using OlhoNoChat.Utils;
 
 /// <summary>
-/// Links in the chat messages ("Padrão": turned into links by KapChat.SetupJavascript; "Chat oficial da
+/// Links in the chat messages ("Padrão": turned into links by browser/chat.js; "Chat oficial da
 /// Twitch": Twitch's own) open in the user's browser, and only while the borders are visible: without
 /// the borders the chat stays read-only, as always. Twitch's login page keeps opening inside the app
 /// (the "Da própria Twitch" typing box needs a login there).
@@ -41,7 +41,7 @@ public partial class MainWindow
     // The "Padrão" chat shows its links as clickable only while the borders are visible
     private void UpdateChatLinks()
     {
-        if (_currentChat?.ChatType == ChatTypes.KapChat && this.webView?.CoreWebView2 != null)
+        if (_currentChat?.ChatType == ChatTypes.Padrao && this.webView?.CoreWebView2 != null)
         {
             _ = this.webView.CoreWebView2.ExecuteScriptAsync(
                 $"document.body && document.body.classList.toggle('onc-links-on', {(_hiddenBorders ? "false" : "true")});");

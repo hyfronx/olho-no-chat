@@ -73,7 +73,7 @@ public partial class ChatSettingsPage : UserControl
                 App.Settings.GeneralSettings.BetterTtv_AdvEmoteMenu = this.cbBetterTtv_AdvMenu.IsOn;
                 App.Settings.GeneralSettings.FrankerFaceZ = this.cbFfz.IsOn;
             }
-            else if (chatType == ChatTypes.KapChat)
+            else if (chatType == ChatTypes.Padrao)
             {
                 App.Settings.GeneralSettings.CustomURL = string.Empty;
                 App.Settings.GeneralSettings.Username = ReadChannel(this.tbUsername);
@@ -93,7 +93,7 @@ public partial class ChatSettingsPage : UserControl
     {
         var (box, error) = chatType switch
         {
-            ChatTypes.KapChat => (this.tbUsername, this.tbUsernameError),
+            ChatTypes.Padrao => (this.tbUsername, this.tbUsernameError),
             ChatTypes.TwitchPopout => (this.tbTwitchPopoutUsername, this.tbTwitchPopoutUsernameError),
             _ => (null, null)
         };
@@ -129,7 +129,7 @@ public partial class ChatSettingsPage : UserControl
     // Only the options of the chosen chat type are shown
     private void ShowPanelFor(ChatTypes chatType)
     {
-        this.kapChatGrid.Visibility = chatType == ChatTypes.KapChat ? Visibility.Visible : Visibility.Collapsed;
+        this.padraoGrid.Visibility = chatType == ChatTypes.Padrao ? Visibility.Visible : Visibility.Collapsed;
         this.twitchPopoutChat.Visibility = chatType == ChatTypes.TwitchPopout ? Visibility.Visible : Visibility.Collapsed;
         this.customURLGrid.Visibility = chatType == ChatTypes.CustomURL ? Visibility.Visible : Visibility.Collapsed;
     }

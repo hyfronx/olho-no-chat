@@ -44,7 +44,7 @@ public partial class AppearanceSettingsPage : UserControl
             {
                 this.tbCSS2.Text = App.Settings.GeneralSettings.CustomCSS;
             }
-            else if (chatType == ChatTypes.KapChat)
+            else if (chatType == ChatTypes.Padrao)
             {
                 if (string.IsNullOrEmpty(App.Settings.GeneralSettings.CustomCSS))
                     this.tbCSS.Text = CustomCSS_Defaults.NoneTheme_CustomCSS;
@@ -83,7 +83,7 @@ public partial class AppearanceSettingsPage : UserControl
                     App.Settings.GeneralSettings.TwitchPopoutCSS = this.tbPopoutCSS.Text;
                 }
             }
-            else if (chatType == ChatTypes.KapChat)
+            else if (chatType == ChatTypes.Padrao)
             {
                 SaveMessageTextOptions();
                 App.Settings.GeneralSettings.ThemeIndex = this.comboTheme.SelectedIndex;
@@ -121,8 +121,8 @@ public partial class AppearanceSettingsPage : UserControl
     // Only the options of the chosen chat type are shown
     private void ShowPanelFor(ChatTypes chatType)
     {
-        this.kapChatAppearance.Visibility = chatType == ChatTypes.KapChat ? Visibility.Visible : Visibility.Collapsed;
-        this.messageTextAppearance.Visibility = chatType is ChatTypes.KapChat or ChatTypes.TwitchPopout ? Visibility.Visible : Visibility.Collapsed;
+        this.padraoAppearance.Visibility = chatType == ChatTypes.Padrao ? Visibility.Visible : Visibility.Collapsed;
+        this.messageTextAppearance.Visibility = chatType is ChatTypes.Padrao or ChatTypes.TwitchPopout ? Visibility.Visible : Visibility.Collapsed;
         this.twitchPopoutAppearance.Visibility = chatType == ChatTypes.TwitchPopout ? Visibility.Visible : Visibility.Collapsed;
         this.customURLAppearance.Visibility = chatType == ChatTypes.CustomURL ? Visibility.Visible : Visibility.Collapsed;
     }

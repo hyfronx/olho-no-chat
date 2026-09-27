@@ -20,7 +20,7 @@ public partial class MainWindow
 
         return (ChatTypes)s.ChatType switch
         {
-            ChatTypes.KapChat => string.Join("|", s.Username, s.ThemeIndex),
+            ChatTypes.Padrao => string.Join("|", s.Username, s.ThemeIndex),
             ChatTypes.TwitchPopout => string.Join("|", s.Username, s.BetterTtv, s.BetterTtv_7tv, s.BetterTtv_AdvEmoteMenu,
                                                   s.FrankerFaceZ, s.UseDefaultTwitchPopoutCSS, s.TwitchPopoutCSS),
             ChatTypes.CustomURL => string.Join("|", s.CustomURL, s.CustomCSS),
@@ -43,7 +43,7 @@ public partial class MainWindow
         }
 
         // The other chat types have nothing to update live: all their options are in the reload key.
-        if (_currentChat?.ChatType != ChatTypes.KapChat)
+        if (_currentChat?.ChatType != ChatTypes.Padrao)
             return true;
 
         if (_chatNavigationPending || this.webView?.CoreWebView2 == null)
@@ -63,7 +63,7 @@ public partial class MainWindow
                 }
                 style.textContent = css;
                 return true;
-            })({{Chats.KapChat.GetMessageSettingsJson()}}, {{JsonSerializer.Serialize(_currentChat.SetupCustomCSS() ?? string.Empty)}});
+            })({{Chats.PadraoChat.GetMessageSettingsJson()}}, {{JsonSerializer.Serialize(_currentChat.SetupCustomCSS() ?? string.Empty)}});
             """;
 
         try

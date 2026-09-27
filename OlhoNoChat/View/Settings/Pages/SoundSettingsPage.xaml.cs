@@ -46,13 +46,13 @@ public partial class SoundSettingsPage : UserControl
 
         // The other chat types have no new-message sound, so their saved choice is left alone
         var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
-        if (chatType == ChatTypes.KapChat)
+        if (chatType == ChatTypes.Padrao)
             App.Settings.GeneralSettings.ChatNotificationSound = this.comboChatSound.SelectedValue.ToString();
     }
 
     public void ChatTypeChanged(ChatTypes chatType)
     {
-        bool hasSound = chatType == ChatTypes.KapChat;
+        bool hasSound = chatType == ChatTypes.Padrao;
         chatSoundCard.Visibility = hasSound ? Visibility.Visible : Visibility.Collapsed;
         chatSoundUnavailable.Visibility = hasSound ? Visibility.Collapsed : Visibility.Visible;
     }

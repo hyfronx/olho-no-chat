@@ -23,7 +23,7 @@ public partial class MainWindow
     private bool _checkingChannel = false;
 
     // "Padrão" and "Chat oficial da Twitch" show a channel's chat (and can write in it)
-    private static bool IsChannelChatType(int chatType) => chatType is (int)ChatTypes.KapChat or (int)ChatTypes.TwitchPopout;
+    private static bool IsChannelChatType(int chatType) => chatType is (int)ChatTypes.Padrao or (int)ChatTypes.TwitchPopout;
 
     private static bool ChatTypeUsesChannel => IsChannelChatType(App.Settings.GeneralSettings.ChatType);
 
@@ -218,14 +218,13 @@ public partial class MainWindow
         }
         else
         {
-            _currentChat = new Chats.KapChat();
+            _currentChat = new Chats.PadraoChat();
             SetChatAddress(channel);
         }
     }
 
     // --- Connection dot ------------------------------------------------------------------------------
-    // "Padrão": the page reports KapChat's connection (onc:chat-state:..., see KapChat.SetupJavascript),
-    // which replaces its old "Conectando / Conectado / Conectado ao canal" lines.
+    // "Padrão": the page reports its connection to Twitch (onc:chat-state:..., see browser/chat.js).
     // "Chat oficial da Twitch": the page itself connects, so the dot follows the page loading.
 
     private const string ChatStateMessagePrefix = "onc:chat-state:";
@@ -247,7 +246,7 @@ public partial class MainWindow
     // A chat page starts loading (see OnChatNavigationStarting): only the channel chats have a dot
     private void OnChatPageLoading()
     {
-        SetChatConnection(_currentChat?.ChatType is ChatTypes.KapChat or ChatTypes.TwitchPopout
+        SetChatConnection(_currentChat?.ChatType is ChatTypes.Padrao or ChatTypes.TwitchPopout
             ? ChatConnection.Connecting
             : ChatConnection.None);
     }
@@ -265,7 +264,7 @@ public partial class MainWindow
         if (!message.StartsWith(ChatStateMessagePrefix, StringComparison.Ordinal))
             return false;
 
-        if (_currentChat?.ChatType == ChatTypes.KapChat)
+        if (_currentChat?.ChatType == ChatTypes.Padrao)
         {
             SetChatConnection(message.Substring(ChatStateMessagePrefix.Length) switch
             {

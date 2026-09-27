@@ -3,9 +3,9 @@ using Color = System.Windows.Media.Color;
 
 namespace OlhoNoChat.Chats
 {
-    public class KapChat : Chat
+    public class PadraoChat : Chat
     {
-        public KapChat() : base(ChatTypes.KapChat)
+        public PadraoChat() : base(ChatTypes.Padrao)
         {
         }
 
@@ -122,8 +122,8 @@ namespace OlhoNoChat.Chats
             return finalCss + GetMessageTextCss();
         }
 
-        // Text options from the Chat settings page. The theme stylesheet is loaded by the page after
-        // this CSS is injected, so every rule needs !important to win.
+        // Text options from the Chat settings page. The theme rules of browser/chat.css are more specific,
+        // so every rule needs !important to win.
         private static string GetMessageTextCss()
         {
             var settings = App.Settings.GeneralSettings;
@@ -131,7 +131,7 @@ namespace OlhoNoChat.Chats
             const string lines = "#chat_box .chat_line, #chat_box .chat_line .nick, #chat_box .chat_line .message";
 
             // Only the message text: user names keep their Twitch color, and /me messages
-            // (colored inline by KapChat) keep the user's color too.
+            // (colored inline by browser/chat.js) keep the user's color too.
             if (System.Text.RegularExpressions.Regex.IsMatch(settings.ChatMessageColor ?? "", "^#[0-9A-Fa-f]{6}$"))
                 css.Append($"\n#chat_box .chat_line .message:not([style*=\"color\"]) {{ color: {settings.ChatMessageColor} !important; }}");
 
@@ -143,7 +143,7 @@ namespace OlhoNoChat.Chats
             if (settings.ChatFontFamily is "Segoe UI" or "Arial" or "Verdana")
                 css.Append($"\n#chat_box, {lines} {{ font-family: '{settings.ChatFontFamily}', sans-serif !important; letter-spacing: normal !important; }}");
 
-            // KapChat writes the time on every line and hides it
+            // The page writes the time on every line and hides it (browser/chat.css)
             if (settings.ShowMessageTime)
                 css.Append($"\n#chat_box .chat_line .time_stamp {{ {MessageTimeCss} }}");
 
