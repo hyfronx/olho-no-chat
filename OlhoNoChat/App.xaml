@@ -1,0 +1,15 @@
+﻿<Application x:Class="OlhoNoChat.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- App orange as the accent: switches, focused boxes, selections, main buttons -->
+                <ui:ThemeResources AccentColor="#E85D30" />
+                <ui:XamlControlsResources />
+                <ResourceDictionary Source="Styles/Settings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

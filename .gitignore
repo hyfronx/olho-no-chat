@@ -1,0 +1,18 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+publish/
+releases/
+
+# Local copies of each installer
+instaladores/
+
+# Personal notes (not part of the app)
+COMO-LANCAR-VERSAO.md
+
+# Editors
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo

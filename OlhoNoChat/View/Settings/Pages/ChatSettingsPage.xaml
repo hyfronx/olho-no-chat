@@ -1,0 +1,188 @@
+<UserControl x:Class="OlhoNoChat.View.Settings.ChatSettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             ui:ThemeManager.RequestedTheme="Dark"
+             mc:Ignorable="d"
+             d:DesignHeight="560" d:DesignWidth="600">
+
+    <ScrollViewer Style="{StaticResource SettingsPageScroll}">
+        <StackPanel Name="chatGrid" Style="{StaticResource SettingsPagePanel}">
+            <TextBlock Text="Chat" Style="{StaticResource SettingsPageTitle}" />
+            <TextBlock Text="Qual canal mostrar e quais mensagens aparecem." Style="{StaticResource SettingsPageSubtitle}" />
+
+            <!-- Tipo de chat: the panels below show only the options of the chosen type.
+                 No section title above it, so the top margin keeps the usual gap. -->
+            <Border Style="{StaticResource SettingsCard}" Margin="0,14,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:FontIcon Glyph="&#xE8A9;" Style="{StaticResource SettingsCardIcon}" />
+                    <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                        <TextBlock Text="Tipo de chat" Style="{StaticResource SettingsLabel}" />
+                        <TextBlock Text="Como o chat aparece. Se estiver em dúvida, use o Padrão." Style="{StaticResource SettingsHint}" />
+                    </StackPanel>
+                    <ComboBox Name="comboChatType" Grid.Column="2" Style="{StaticResource SettingsComboBox}"
+                              AutomationProperties.Name="Tipo de chat"
+                              SelectionChanged="comboChatType_SelectionChanged">
+                        <ComboBoxItem Content="Padrão (recomendado)" />
+                        <ComboBoxItem Content="Chat oficial da Twitch" />
+                        <ComboBoxItem Content="Endereço personalizado" />
+                    </ComboBox>
+                </Grid>
+            </Border>
+
+            <!-- Padrão (KapChat) -->
+            <StackPanel Name="kapChatGrid">
+                <TextBlock Text="Canal" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:FontIcon Glyph="&#xE7F4;" Style="{StaticResource SettingsCardIcon}" />
+                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                            <TextBlock Text="Canal da Twitch" Style="{StaticResource SettingsLabel}" />
+                            <TextBlock Text="Se o seu canal é twitch.tv/seucanal, digite seucanal (ou cole o link). Também dá para trocar na faixa de cima do chat." Style="{StaticResource SettingsHint}" />
+                            <TextBlock Name="tbUsernameError" Style="{StaticResource SettingsHint}" Foreground="#FFB9A0" Visibility="Collapsed" />
+                        </StackPanel>
+                        <TextBox Name="tbUsername" Grid.Column="2" Width="230" VerticalAlignment="Center" TextWrapping="NoWrap"
+                                 AutomationProperties.Name="Canal da Twitch" ui:ControlHelper.PlaceholderText="seucanal"
+                                 TextChanged="ChannelBox_TextChanged" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="Mensagens" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Glyph="&#xE916;" Style="{StaticResource SettingsCardIcon}" />
+                            <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                                <TextBlock Text="Apagar mensagens antigas" Style="{StaticResource SettingsLabel}" />
+                                <TextBlock Text="As mensagens somem do chat depois de um tempo. Não precisa ligar para o app ficar leve: o chat já guarda só as últimas 100." Style="{StaticResource SettingsHint}" />
+                            </StackPanel>
+                            <ui:ToggleSwitch Name="cbFade" Grid.Column="2" Style="{StaticResource SettingsToggle}"
+                                             AutomationProperties.Name="Apagar mensagens antigas"
+                                             Toggled="cbFade_Toggled" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <StackPanel Name="fadeTimeRow" Orientation="Horizontal" Margin="36,0,0,0" IsEnabled="False"
+                                    Style="{StaticResource SettingsDependentRow}">
+                            <TextBlock Text="Apagar depois de" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBox Name="tbFadeTime" Width="80" TextWrapping="NoWrap" AutomationProperties.Name="Segundos até apagar" />
+                            <TextBlock Text="segundos" VerticalAlignment="Center" Margin="10,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="Filtros" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:FontIcon Glyph="&#xE99A;" Style="{StaticResource SettingsCardIcon}" />
+                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                            <TextBlock Text="Esconder bots e comandos" Style="{StaticResource SettingsLabel}" />
+                            <TextBlock Style="{StaticResource SettingsHint}"
+                                       Text="Esconde usuários com nome terminado em &quot;bot&quot; (Nightbot, Moobot...) e mensagens que começam com &quot;!&quot;." />
+                        </StackPanel>
+                        <ui:ToggleSwitch Name="cbHideBots" Grid.Column="2" Style="{StaticResource SettingsToggle}"
+                                         AutomationProperties.Name="Esconder bots e comandos" />
+                    </Grid>
+                </Border>
+                <Button Name="btOpenChatFilterSettings" Style="{StaticResource SettingsCardButton}" Click="btOpenChatFilterSettings_Click"
+                        AutomationProperties.Name="Filtrar ou destacar usuários">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:FontIcon Glyph="&#xE71C;" Style="{StaticResource SettingsCardIcon}" />
+                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                            <TextBlock Text="Filtrar ou destacar usuários" Style="{StaticResource SettingsLabel}" />
+                            <TextBlock Text="Mostrar só algumas pessoas, bloquear alguém ou destacar as mensagens de quem você escolher." Style="{StaticResource SettingsHint}" />
+                        </StackPanel>
+                        <ui:FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    </Grid>
+                </Button>
+            </StackPanel>
+
+            <!-- Chat oficial da Twitch (popout) -->
+            <StackPanel Name="twitchPopoutChat" Visibility="Collapsed">
+                <TextBlock Text="Canal" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:FontIcon Glyph="&#xE7F4;" Style="{StaticResource SettingsCardIcon}" />
+                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                            <TextBlock Text="Canal da Twitch" Style="{StaticResource SettingsLabel}" />
+                            <TextBlock Text="Se o seu canal é twitch.tv/seucanal, digite seucanal (ou cole o link). Também dá para trocar na faixa de cima do chat." Style="{StaticResource SettingsHint}" />
+                            <TextBlock Name="tbTwitchPopoutUsernameError" Style="{StaticResource SettingsHint}" Foreground="#FFB9A0" Visibility="Collapsed" />
+                        </StackPanel>
+                        <TextBox Name="tbTwitchPopoutUsername" Grid.Column="2" Width="230" VerticalAlignment="Center" TextWrapping="NoWrap"
+                                 AutomationProperties.Name="Canal da Twitch" ui:ControlHelper.PlaceholderText="seucanal"
+                                 TextChanged="ChannelBox_TextChanged" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="Extensões de emotes" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="BetterTTV" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch Name="cbBetterTtv" Style="{StaticResource SettingsToggle}" AutomationProperties.Name="BetterTTV" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <Grid>
+                            <TextBlock Text="Menu de emotes avançado do BetterTTV" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" Margin="0,0,140,0" />
+                            <ui:ToggleSwitch Name="cbBetterTtv_AdvMenu" Style="{StaticResource SettingsToggle}" AutomationProperties.Name="Menu de emotes avançado do BetterTTV" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <Grid>
+                            <TextBlock Text="Emotes do 7TV" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch Name="cbBetterTtv_7tv" Style="{StaticResource SettingsToggle}" AutomationProperties.Name="Emotes do 7TV" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <Grid>
+                            <TextBlock Text="FrankerFaceZ" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch Name="cbFfz" Style="{StaticResource SettingsToggle}" AutomationProperties.Name="FrankerFaceZ" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Endereço personalizado -->
+            <StackPanel Name="customURLGrid" Visibility="Collapsed">
+                <TextBlock Text="Página do chat" Style="{StaticResource SettingsSectionTitle}" />
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <TextBlock Text="Endereço da página (URL)" Style="{StaticResource SettingsLabel}" />
+                        <TextBlock Text="Qualquer página de chat, como as geradas pelo StreamElements ou Streamlabs." Style="{StaticResource SettingsHint}" />
+                        <TextBox Name="tbURL" Margin="0,10,0,0" TextWrapping="NoWrap" AutomationProperties.Name="Endereço da página"
+                                 ui:ControlHelper.PlaceholderText="https://..." />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
