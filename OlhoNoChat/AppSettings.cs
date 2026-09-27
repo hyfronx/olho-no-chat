@@ -50,6 +50,14 @@ public class AppSettings
             GeneralSettings.ChatType = (int)ChatTypes.KapChat;
             this.Tracker.Persist(this);
         }
+
+        // The "Alert" sounds that came with the app were replaced by new ones after 1.2.0: a saved one becomes the new default
+        // (only in the app's own folder; a chosen folder may have its own copies)
+        if (GeneralSettings.SoundClipsFolder == "Default" && GeneralSettings.ChatNotificationSound.StartsWith("Alert "))
+        {
+            GeneralSettings.ChatNotificationSound = GeneralSettings.DefaultChatNotificationSound;
+            this.Tracker.Persist(this);
+        }
     }
 
     public AppSettings()
@@ -159,8 +167,9 @@ public class GeneralSettings
     public bool FadeChat { get; set; } = false;
     public string FadeTime { get; set; } = "120"; // seconds before old messages disappear (when FadeChat is on)
     public bool BlockBotActivity { get; set; } = true;
-    // File name in the sounds folder, or "None"; first install: "Alerta 2 (baixo)"
-    public string ChatNotificationSound { get; set; } = "Alert 2 (Low).wav";
+    // File name in the sounds folder, or "None"; first install: "Job done"
+    public const string DefaultChatNotificationSound = "job-done.wav";
+    public string ChatNotificationSound { get; set; } = DefaultChatNotificationSound;
     // 0 = sound on every new message; otherwise at most once every this many seconds (the first message always rings)
     public int ChatSoundQuietSeconds { get; set; } = 0;
     // Index in the Tema list of the Aparência tab: 0 = "Nenhum", 1 = "Padrão" (body.tema-padrao in browser/chat.css)

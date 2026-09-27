@@ -128,13 +128,11 @@ public partial class SoundSettingsPage : UserControl
         comboChatSound.SelectedIndex = item == null ? 0 : comboChatSound.Items.IndexOf(item);
     }
 
-    // "Alert 2 (Low).wav" -> "Alerta 2 (baixo)"
+    // "job-done.wav" -> "Job done"
     private static string GetSoundDisplayName(string fileName)
     {
-        string name = Path.GetFileNameWithoutExtension(fileName);
-        if (name.StartsWith("Alert "))
-            name = "Alerta " + name.Substring("Alert ".Length);
-        return name.Replace("(Low)", "(baixo)");
+        string name = Path.GetFileNameWithoutExtension(fileName).Replace('-', ' ').Replace('_', ' ');
+        return name.Length == 0 ? name : char.ToUpper(name[0]) + name.Substring(1);
     }
 
     // Plays the chosen sound on the chosen output, at the volume on the slider (not saved yet)
