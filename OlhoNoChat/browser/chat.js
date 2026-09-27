@@ -11,6 +11,7 @@
     const RETRY_MAX_MS = 30000;
     const MAX_LINES = 100;
     const MAX_LINES_SCROLLED_BACK = 1000; // while scrolled back to read, see "Scrolling"
+    const LINE_BATCH_MS = 200;
 
     const params = new URLSearchParams(location.search);
     const channel = (params.get('canal') || '').toLowerCase();
@@ -135,7 +136,10 @@
             case 'CLEARCHAT':
                 // A timeout or ban takes that user's messages out; without a user, /clear empties the chat
                 if (message.params[1]) removeLines(`.chat_line[data-nick="${CSS.escape(message.params[1].toLowerCase())}"]`);
-                else box.replaceChildren();
+                else {
+                    box.replaceChildren();
+                    newLines.replaceChildren();
+                }
                 break;
             case 'CLEARMSG':
                 if (message.tags['target-msg-id']) removeLines(`.chat_line[data-id="${CSS.escape(message.tags['target-msg-id'])}"]`);
@@ -261,6 +265,7 @@
 
     function refreshBadges() {
         box.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
+        newLines.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
     }
 
     // The "Filtros" of the app: blocked users, "only the listed users" (plus all VIPs / Mods, from the
@@ -508,7 +513,7 @@
         }
         div.append(' ', message);
 
-        box.appendChild(div);
+        newLines.appendChild(div);
         scheduleLayout();
     }
 
@@ -568,6 +573,7 @@
 
     function removeLines(selector) {
         box.querySelectorAll(selector).forEach(line => line.remove());
+        newLines.querySelectorAll(selector).forEach(line => line.remove());
     }
 
     // --- Scrolling -----------------------------------------------------------------------------------
@@ -609,18 +615,22 @@
         else if (dragging) pinned = false;
     });
 
-    // Old lines are taken out and the newest one scrolled into view once per frame, even in a busy chat
+    // New lines go on screen together every LINE_BATCH_MS (then old lines are taken out and the newest one
+    // scrolled into view): in a busy chat the page is drawn a few times a second, not once per message,
+    // which keeps the GPU work beside the game low.
+    const newLines = document.createDocumentFragment();
     let layoutPending = false;
     function scheduleLayout() {
         if (layoutPending) return;
         layoutPending = true;
-        requestAnimationFrame(() => {
+        setTimeout(() => {
             layoutPending = false;
+            box.append(newLines);
             let extra = box.children.length - (pinned ? MAX_LINES : MAX_LINES_SCROLLED_BACK);
             while (extra-- > 0) box.firstElementChild.remove();
             if (pinned) scrollToBottom();
             else newMessages.style.display = 'block';
-        });
+        }, LINE_BATCH_MS);
     }
 
     // Emotes load after their line is added and make it taller
