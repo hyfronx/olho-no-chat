@@ -5,7 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Threading;
 
 /// <summary>
-/// "Sempre no topo" (the "Topo" switch of the side toolbar, its hotkey and the tray menu). On, the chat
+/// "Sempre no topo" (the pin switch of the title bar, its hotkey and the tray menu). On, the chat
 /// stays above games that make their own window "always on top" when they get focus (e.g. Hunt: Showdown):
 /// both windows are then top-most and the last one activated wins. Whenever another app takes the focus,
 /// and every second while a top-most window of another app has the focus, the chat is moved back to the
@@ -82,7 +82,7 @@ public partial class MainWindow
     }
 
     // Activate() alone doesn't bring the chat in front of a top-most game window: it has to stop
-    // being top-most for a moment. A normal window ("Topo" off) just gets activated.
+    // being top-most for a moment. A normal window (switched off) just gets activated.
     private void ActivateChatWindow()
     {
         this.Topmost = false;

@@ -228,7 +228,7 @@ public class GeneralSettings
     public string SoundClipsFolder { get; set; } = "Default";
     public Hotkey ToggleBordersHotkey { get; set; } = new Hotkey(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);
     public Hotkey ToggleInteractableHotkey { get; set; } = new Hotkey(Key.F7, ModifierKeys.Control | ModifierKeys.Alt);
-    // "Topo" of the side toolbar: the chat stays in front of the game and every other window.
+    // "Sempre no topo" (pin of the title bar): the chat stays in front of the game and every other window.
     // Off: a normal window. BringToTopHotkey (named after the "Trazer para a frente" it used to be) switches it too.
     public bool AlwaysOnTop { get; set; } = true;
     public Hotkey BringToTopHotkey { get; set; } = new Hotkey(Key.F8, ModifierKeys.Control | ModifierKeys.Alt);

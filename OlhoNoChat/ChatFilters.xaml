@@ -12,7 +12,7 @@
         Background="{StaticResource SettingsAccentBrush}"
         Height="700" Width="840" MinHeight="460" MinWidth="660"
         Topmost="True" WindowStartupLocation="CenterOwner"
-        Closing="Window_Closing" PreviewKeyDown="Window_PreviewKeyDown"
+        Loaded="Window_Loaded" Closing="Window_Closing" PreviewKeyDown="Window_PreviewKeyDown"
         FocusManager.FocusedElement="{Binding ElementName=lvFilters}">
     <Window.Resources>
         <!-- Rounder controls than the ModernWpf default, only in this window -->
@@ -77,12 +77,18 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Title bar (the close button is drawn on top of it by ModernWpf) -->
+        <!-- Title bar, with its own close button (see Helpers/AppWindowFrame.cs) -->
         <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
             <ui:FontIcon Glyph="&#xE71C;" FontSize="16" Foreground="White" VerticalAlignment="Center" />
             <TextBlock Text="Filtros do chat" FontSize="15" FontWeight="SemiBold" Foreground="White"
                        VerticalAlignment="Center" Margin="12,0,0,1" />
         </StackPanel>
+
+        <Button x:Name="btnWindowClose" Grid.ColumnSpan="2" Style="{StaticResource TitleCloseButton}"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"
+                ToolTip="Fechar (Esc)" AutomationProperties.Name="Fechar a janela" Click="CloseButton_Click">
+            <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8BB;" FontSize="11" />
+        </Button>
 
         <!-- Navigation -->
         <ListView Name="lvFilters" Grid.Row="1"

@@ -65,8 +65,8 @@ public partial class ConnectionSettingsPage : UserControl
             : "Com a caixa aberta pelo atalho no jogo: ligado, ela fecha ao enviar e o jogo volta para a frente. Desligado, ela continua aberta para a próxima mensagem.";
 
         lblChatBoxHint.Text = comboChatBox.SelectedIndex == 1
-            ? "A caixa da Twitch, com a lista de emotes, respostas e comandos (só no Chat oficial da Twitch; no Padrão fica a do Olho no Chat). Abra com Escrever, na barra laranja. Para enviar, entre na sua conta da Twitch dentro da janela do chat (uma vez): abra a caixa, clique em \"Chat\", embaixo, e depois em \"Faça login\"." + inGame
-            : "A caixa \"Escrever no chat…\" embaixo do chat: abra com Escrever, na barra laranja. Envia com a conta conectada acima." + inGame;
+            ? "A caixa da Twitch, com a lista de emotes, respostas e comandos (só no Chat oficial da Twitch; no Padrão fica a do Olho no Chat). Abra com o balão de conversa, na barra laranja. Para enviar, entre na sua conta da Twitch dentro da janela do chat (uma vez): abra a caixa, clique em \"Chat\", embaixo, e depois em \"Faça login\"." + inGame
+            : "A caixa \"Escrever no chat…\" embaixo do chat: abra com o balão de conversa, na barra laranja. Envia com a conta conectada acima." + inGame;
     }
 
     private void comboChatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

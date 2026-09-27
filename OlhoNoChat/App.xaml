@@ -9,6 +9,7 @@
                 <ui:ThemeResources AccentColor="#E85D30" />
                 <ui:XamlControlsResources />
                 <ResourceDictionary Source="Styles/Settings.xaml" />
+                <ResourceDictionary Source="Styles/TitleBar.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

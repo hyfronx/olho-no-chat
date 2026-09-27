@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using OlhoNoChat.Helpers;
 using OlhoNoChat.View.Settings;
 using ContentDialog = ModernWpf.Controls.ContentDialog;
 using ContentDialogButton = ModernWpf.Controls.ContentDialogButton;
@@ -101,19 +102,10 @@ public partial class SettingsWindow : Window
         Save();
     }
 
-    // Returns false (nothing saved) when an option is not usable, e.g. an invalid channel name
-    private bool Save()
+    private void Save()
     {
-        int chatType = _chatSettingsPage.SelectedChatType;
-        if (Enum.IsDefined(typeof(ChatTypes), chatType)
-            && !_chatSettingsPage.ValidateValues((ChatTypes)chatType))
-        {
-            ShowChatPage();
-            return false;
-        }
-
         // The pages save according to the chosen chat type
-        App.Settings.GeneralSettings.ChatType = chatType;
+        App.Settings.GeneralSettings.ChatType = _chatSettingsPage.SelectedChatType;
 
         _generalSettingsPage.SaveValues();
         _soundSettingsPage.SaveValues();
@@ -126,7 +118,6 @@ public partial class SettingsWindow : Window
 
         SettingsSaved?.Invoke();
         ShowSaveButtonDone();
-        return true;
     }
 
     // "Restaurar tudo para o padrão" (Geral > Avançado): asks first, then restores the saved options
@@ -267,10 +258,7 @@ public partial class SettingsWindow : Window
         }
 
         if (result == ContentDialogResult.Primary)
-        {
-            if (!Save())
-                return; // the problem is shown on the Chat tab
-        }
+            Save();
         else if (result != ContentDialogResult.Secondary)
             return; // "Voltar": keep editing
 
@@ -297,13 +285,10 @@ public partial class SettingsWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        AppWindowFrame.Apply(this); // own close button, no gray line around
+
         // Remember what the pages show once they have loaded the saved values
         Dispatcher.BeginInvoke(new Action(() => _savedState = CurrentState()), DispatcherPriority.ContextIdle);
-    }
-
-    private void ShowChatPage()
-    {
-        lvSettings.SelectedItem = lvSettings.Items.OfType<ListViewItem>().First(i => (string)i.Tag == "chat");
     }
 
     private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)

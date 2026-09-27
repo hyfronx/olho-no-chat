@@ -150,7 +150,7 @@
                         </Grid.ColumnDefinitions>
                         <ui:FontIcon Glyph="&#xE946;" Style="{StaticResource SettingsCardIcon}" />
                         <TextBlock Grid.Column="1" Style="{StaticResource SettingsHint}" Margin="0" FontSize="13" Foreground="#E6D6CF"
-                                   Text="As mudanças aparecem no chat quando você clicar em Salvar. O tamanho do texto e o fundo do chat ficam na barra laranja ao lado do chat (com as bordas visíveis)." />
+                                   Text="As mudanças aparecem no chat quando você clicar em Salvar. O tamanho do texto e o fundo do chat ficam na barra laranja em cima do chat (com as bordas visíveis)." />
                     </Grid>
                 </Border>
             </StackPanel>

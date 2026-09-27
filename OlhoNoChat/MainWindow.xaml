@@ -12,76 +12,36 @@
         Background="Transparent"
         BorderBrush="Transparent"
         BorderThickness="0"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="CanResize"
         Topmost="True"
         Icon="/icons/olho_no_chat.ico"
-        Title="" Height="530" Width="360" Closed="Window_Closed" Loaded="Window_Loaded">
+        Title="" Height="530" Width="360" MinWidth="334" Closed="Window_Closed" Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="AppTitleBarStyle" TargetType="ui:TitleBarControl">
             <Setter Property="ui:ThemeManager.RequestedTheme" Value="Dark" />
         </Style>
         <SolidColorBrush x:Key="AppBarBrush" Color="#E85D30" />
-        <Style x:Key="QuickCaption" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,4,0,1" />
-        </Style>
-        <Style x:Key="QuickButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="26" />
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="MinHeight" Value="0" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,1" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#40000000" />
-            <Setter Property="BorderThickness" Value="0" />
-        </Style>
-        <!-- "Fundo" buttons show the result: a dark square, and the checkerboard image editors use for see-through -->
-        <Style x:Key="BackgroundSwatch" TargetType="Border">
-            <Setter Property="Width" Value="16" />
-            <Setter Property="Height" Value="16" />
-            <Setter Property="CornerRadius" Value="3" />
-            <Setter Property="BorderBrush" Value="White" />
-            <Setter Property="BorderThickness" Value="1.5" />
-        </Style>
-        <DrawingBrush x:Key="SeeThroughBrush" TileMode="Tile" Viewport="0,0,6,6" ViewportUnits="Absolute">
-            <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="#99FFFFFF" Geometry="M0,0 H3 V3 H0 Z M3,3 H6 V6 H3 Z" />
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
-        <Style x:Key="QuickIconButton" TargetType="Button" BasedOn="{StaticResource QuickButton}">
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Margin" Value="0,1.5" />
-            <Setter Property="FontWeight" Value="Normal" />
-        </Style>
-        <!-- On/off button ("Topo"): dark like the others while off, lit (white, orange pin) while on -->
-        <Style x:Key="QuickToggleButton" TargetType="ToggleButton">
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Margin" Value="0,1.5" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#40000000" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <!-- Channel strip and message box (dark bars inside the orange frame) -->
+        <SolidColorBrush x:Key="BarBackgroundBrush" Color="#F2141414" />
+        <SolidColorBrush x:Key="BarLineBrush" Color="#33FFFFFF" />
+        <SolidColorBrush x:Key="BarHintBrush" Color="#A6A6A6" />
+        <SolidColorBrush x:Key="BarAccentBrush" Color="#FF8A65" />
+        <SolidColorBrush x:Key="BarErrorBrush" Color="#FFB9A0" />
+
+        <!-- On/off buttons ("Sempre no topo", "Escrever no chat"): lit (white, orange icon) while on -->
+        <Style x:Key="TitleToggleButton" TargetType="ToggleButton" BasedOn="{StaticResource TitleIconButton}">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Back" Background="{TemplateBinding Background}" CornerRadius="8">
+                        <Border x:Name="Back" Background="{TemplateBinding Background}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Back" Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
+                                <Setter TargetName="Back" Property="Background" Value="#2E000000" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Back" Property="Background" Value="{DynamicResource ButtonBackgroundPressed}" />
+                                <Setter TargetName="Back" Property="Background" Value="#47000000" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Back" Property="Background" Value="White" />
@@ -106,76 +66,22 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Side toolbar in a short window: the buttons scroll, with an arrow at each end that has more buttons -->
-        <MenuScrollingVisibilityConverter x:Key="ScrollArrowVisibility" />
-        <Style x:Key="QuickScrollArrow" TargetType="RepeatButton">
-            <Setter Property="Height" Value="18" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Delay" Value="400" />
-            <Setter Property="Interval" Value="120" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RepeatButton">
-                        <Border Background="{StaticResource AppBarBrush}">
-                            <Border x:Name="Shade" Background="#33000000">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Shade" Property="Background" Value="#59000000" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Shade" Property="Background" Value="#80000000" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <Style x:Key="TitleSeparator" TargetType="Rectangle">
+            <Setter Property="Width" Value="1" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="4,0" />
+            <Setter Property="Fill" Value="#66FFFFFF" />
         </Style>
-        <Style x:Key="QuickToolbarScroll" TargetType="ScrollViewer">
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="PanningMode" Value="VerticalOnly" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ScrollViewer">
-                        <Grid>
-                            <ScrollContentPresenter CanContentScroll="False" />
-                            <RepeatButton Style="{StaticResource QuickScrollArrow}" VerticalAlignment="Top" Tag="-1"
-                                          ToolTip="Mais botões acima" AutomationProperties.Name="Rolar a barra para cima" Click="QuickToolbarArrow_Click">
-                                <RepeatButton.Visibility>
-                                    <MultiBinding Converter="{StaticResource ScrollArrowVisibility}" ConverterParameter="0">
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ComputedVerticalScrollBarVisibility" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="VerticalOffset" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ExtentHeight" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ViewportHeight" />
-                                    </MultiBinding>
-                                </RepeatButton.Visibility>
-                                <ui:FontIcon Glyph="&#xE70E;" FontSize="10" />
-                            </RepeatButton>
-                            <RepeatButton Style="{StaticResource QuickScrollArrow}" VerticalAlignment="Bottom" Tag="1"
-                                          ToolTip="Mais botões abaixo" AutomationProperties.Name="Rolar a barra para baixo" Click="QuickToolbarArrow_Click">
-                                <RepeatButton.Visibility>
-                                    <MultiBinding Converter="{StaticResource ScrollArrowVisibility}" ConverterParameter="100">
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ComputedVerticalScrollBarVisibility" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="VerticalOffset" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ExtentHeight" />
-                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="ViewportHeight" />
-                                    </MultiBinding>
-                                </RepeatButton.Visibility>
-                                <ui:FontIcon Glyph="&#xE70D;" FontSize="10" />
-                            </RepeatButton>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Pin while "Topo" is on, crossed-out pin while off -->
+        <!-- "Fundo": a half-filled circle, drawn (the icon fonts don't share one) -->
+        <ControlTemplate x:Key="BackgroundIcon" TargetType="ContentControl">
+            <Grid Width="16" Height="16">
+                <Ellipse Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4" />
+                <Path Data="M8,0 A8,8 0 0 0 8,16 Z" Fill="{TemplateBinding Foreground}" />
+            </Grid>
+        </ControlTemplate>
+        <!-- Pin while "Sempre no topo" is on, crossed-out pin while off -->
         <Style x:Key="AlwaysOnTopIcon" TargetType="ui:FontIcon">
+            <Setter Property="FontFamily" Value="{StaticResource TitleIconFont}" />
             <Setter Property="Glyph" Value="&#xE77A;" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
@@ -183,26 +89,85 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="QuickValue" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="MinHeight" Value="0" />
-            <Setter Property="Height" Value="18" />
-            <Setter Property="Padding" Value="2,0" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="ToolTip" Value="Clique para voltar ao padrão" />
-        </Style>
 
-        <!-- Channel strip and message box (dark bars inside the orange frame) -->
-        <SolidColorBrush x:Key="BarBackgroundBrush" Color="#F2141414" />
-        <SolidColorBrush x:Key="BarLineBrush" Color="#33FFFFFF" />
-        <SolidColorBrush x:Key="BarHintBrush" Color="#A6A6A6" />
-        <SolidColorBrush x:Key="BarAccentBrush" Color="#FF8A65" />
-        <SolidColorBrush x:Key="BarErrorBrush" Color="#FFB9A0" />
+        <!-- Slider of the text size and background panels: thin track, filled in orange up to a round thumb -->
+        <Style x:Key="QuickSliderTrack" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Grid Background="Transparent">
+                            <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="QuickSliderThumb" TargetType="Thumb">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Background="Transparent">
+                            <Ellipse Fill="#454545" Stroke="#33FFFFFF" StrokeThickness="1" />
+                            <Ellipse x:Name="Dot" Width="12" Height="12" Fill="{StaticResource BarAccentBrush}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Dot" Property="Width" Value="14" />
+                                <Setter TargetName="Dot" Property="Height" Value="14" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="Dot" Property="Width" Value="10" />
+                                <Setter TargetName="Dot" Property="Height" Value="10" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="QuickSlider" TargetType="Slider">
+            <Setter Property="Height" Value="26" />
+            <Setter Property="IsMoveToPointEnabled" Value="True" />
+            <Setter Property="IsSnapToTickEnabled" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource QuickSliderTrack}" Background="{StaticResource BarAccentBrush}" Command="Slider.DecreaseLarge" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource QuickSliderTrack}" Background="#4DFFFFFF" Command="Slider.IncreaseLarge" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource QuickSliderThumb}" />
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Panel under a title bar button (a popup is its own window, so it can be shown over the chat page) -->
+        <Style x:Key="QuickPanel" TargetType="Border">
+            <Setter Property="Width" Value="240" />
+            <Setter Property="Padding" Value="14,10,14,8" />
+            <Setter Property="Background" Value="#FF1C1C1C" />
+            <Setter Property="BorderBrush" Value="#4DFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+            <Setter Property="TextElement.FontSize" Value="13" />
+            <Setter Property="ui:ThemeManager.RequestedTheme" Value="Dark" />
+        </Style>
+        <Style x:Key="QuickPanelHint" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#A6A6A6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
 
         <!-- Flat button: a whole row, an icon or a link inside the dark bars -->
         <Style x:Key="BarFlatButton" TargetType="Button">
@@ -246,6 +211,15 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- "Voltar ao padrão" in the text size and background panels -->
+        <Style x:Key="QuickResetButton" TargetType="Button" BasedOn="{StaticResource BarFlatButton}">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Margin" Value="6,0,-4,0" />
+            <Setter Property="Foreground" Value="{StaticResource BarHintBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
         <!-- One emote of the list: clicking puts its name in the message box (the focus stays there) -->
         <Style x:Key="EmoteButton" TargetType="Button" BasedOn="{StaticResource BarFlatButton}">
             <Setter Property="Width" Value="38" />
@@ -259,17 +233,13 @@
         <!-- Rounded corners; the frame line is orange only in scroll mode with the borders hidden (see MainWindow.Frame.cs) -->
         <Border x:Name="WindowFrame" CornerRadius="10" BorderThickness="0" BorderBrush="Transparent">
         <Grid Name="mainWindowGrid">
-            <!-- Title bar, channel strip, chat, message box (the resize grip sits in the side toolbar's corner) -->
+            <!-- Title bar, channel strip, chat, message box -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
 
             <tb:TaskbarIcon
                 Name="taskbarControl"
@@ -292,30 +262,126 @@
                 </tb:TaskbarIcon.ContextMenu>
             </tb:TaskbarIcon>
 
-            <Grid x:Name="AppTitleBar"
-                  Grid.ColumnSpan="2"
+            <!-- Title bar with the quick settings (see MainWindow.QuickActions.cs), only while the borders are shown.
+                 Its own close button replaces the window's (see Window_Loaded). -->
+            <Grid x:Name="AppTitleBar" Height="32"
                   Background="{StaticResource AppBarBrush}"
                   ui:ThemeManager.RequestedTheme="Dark">
+                <Button x:Name="btnClose" Style="{StaticResource TitleCloseButton}" HorizontalAlignment="Right" Margin="0,0,3,0"
+                        ToolTip="Fechar o Olho no Chat" AutomationProperties.Name="Fechar" Click="btnClose_Click">
+                    <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8BB;" FontSize="11" />
+                </Button>
+                <StackPanel Orientation="Horizontal" Margin="3,0,40,0" VerticalAlignment="Center">
+                    <!-- Eye with a slash (Segoe Fluent "Hide") -->
+                    <Button x:Name="btnHide" Style="{StaticResource TitleIconButton}" AutomationProperties.Name="Ocultar bordas"
+                            Click="btnHide_Click">
+                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xED1A;" />
+                    </Button>
 
-                <ui:SimpleStackPanel Orientation="Horizontal">
-                    <ui:TitleBarButton
-                        x:Name="btnHide"
-                        Width="Auto"
-                        Click="btnHide_Click">
-                        <StackPanel Orientation="Horizontal" Margin="10,0">
-                            <!-- Eye with a slash (Segoe MDL2 / Fluent "Hide") -->
-                            <ui:FontIcon Glyph="&#xED1A;" FontSize="15" Foreground="White" VerticalAlignment="Center" />
-                            <TextBlock Text="Ocultar bordas" FontFamily="Segoe UI" Margin="6,0,0,0" FontSize="12" Foreground="White" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ui:TitleBarButton>
-                </ui:SimpleStackPanel>
+                    <Rectangle Style="{StaticResource TitleSeparator}" />
+
+                    <!-- Open a panel with a slider; the mouse wheel over them changes the value right away -->
+                    <Button x:Name="btnTextSize" Style="{StaticResource TitleIconButton}" AutomationProperties.Name="Tamanho do texto"
+                            PreviewMouseLeftButtonDown="QuickPanelButton_PreviewMouseLeftButtonDown" Click="QuickPanelButton_Click"
+                            PreviewMouseWheel="TextSize_PreviewMouseWheel" MouseLeave="QuickPanelButton_MouseLeave">
+                        <Button.ToolTip>
+                            <ToolTip x:Name="tipTextSize" />
+                        </Button.ToolTip>
+                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8D2;" />
+                    </Button>
+                    <Button x:Name="btnBackground" Style="{StaticResource TitleIconButton}" AutomationProperties.Name="Fundo"
+                            PreviewMouseLeftButtonDown="QuickPanelButton_PreviewMouseLeftButtonDown" Click="QuickPanelButton_Click"
+                            PreviewMouseWheel="Background_PreviewMouseWheel" MouseLeave="QuickPanelButton_MouseLeave">
+                        <Button.ToolTip>
+                            <ToolTip x:Name="tipBackground" />
+                        </Button.ToolTip>
+                        <ContentControl Template="{StaticResource BackgroundIcon}" />
+                    </Button>
+
+                    <Rectangle Style="{StaticResource TitleSeparator}" />
+
+                    <!-- "Sempre no topo" switch (MainWindow.KeepOnTop.cs): lit with a pin while on -->
+                    <ToggleButton x:Name="btnQuickTop" Style="{StaticResource TitleToggleButton}" AutomationProperties.Name="Sempre no topo"
+                                  Checked="btnQuickTop_Toggled" Unchecked="btnQuickTop_Toggled">
+                        <ui:FontIcon Style="{StaticResource AlwaysOnTopIcon}" />
+                    </ToggleButton>
+                    <Button x:Name="btnQuickScroll" Style="{StaticResource TitleIconButton}" AutomationProperties.Name="Modo rolagem"
+                            Click="QuickScrollMode_Click">
+                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE962;" />
+                    </Button>
+                    <Rectangle Style="{StaticResource TitleSeparator}" />
+
+                    <!-- Opens/closes the "Escrever no chat…" box (MainWindow.ChatInput.cs): lit while it is open -->
+                    <ToggleButton x:Name="btnQuickWrite" Style="{StaticResource TitleToggleButton}" AutomationProperties.Name="Escrever"
+                                  Checked="btnQuickWrite_Toggled" Unchecked="btnQuickWrite_Toggled">
+                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8BD;" />
+                    </ToggleButton>
+                    <!-- Hidden with "Escrever" (chat types without a channel): one line is enough there -->
+                    <Rectangle Style="{StaticResource TitleSeparator}" Visibility="{Binding Visibility, ElementName=btnQuickWrite}" />
+
+                    <!-- Opens Configurações (left or right click) -->
+                    <Button x:Name="btnSettings" Style="{StaticResource TitleIconButton}" ToolTip="Configurações"
+                            AutomationProperties.Name="Configurações"
+                            MouseRightButtonUp="btnSettings_Click" Click="btnSettings_Click">
+                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE713;" />
+                    </Button>
+                </StackPanel>
             </Grid>
+
+            <Popup x:Name="TextSizePanel" PlacementTarget="{Binding ElementName=btnTextSize}" Placement="Bottom" VerticalOffset="4"
+                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                <Border Style="{StaticResource QuickPanel}" PreviewKeyDown="QuickPanel_PreviewKeyDown">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,4">
+                            <Button x:Name="btnTextSizeReset" DockPanel.Dock="Right" Style="{StaticResource QuickResetButton}"
+                                    AutomationProperties.Name="Voltar ao padrão" Click="TextSizeReset_Click">
+                                <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE7A7;" FontSize="12" />
+                            </Button>
+                            <TextBlock x:Name="tbTextSizeValue" DockPanel.Dock="Right" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource BarAccentBrush}" />
+                            <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8D2;" FontSize="15" Margin="0,0,8,0" />
+                            <TextBlock Text="Tamanho do texto" />
+                        </DockPanel>
+                        <Slider x:Name="sliderTextSize" Style="{StaticResource QuickSlider}" AutomationProperties.Name="Tamanho do texto"
+                                Minimum="0.5" Maximum="2.5" TickFrequency="0.05" SmallChange="0.1" LargeChange="0.1"
+                                ValueChanged="sliderTextSize_ValueChanged" PreviewMouseWheel="TextSize_PreviewMouseWheel" />
+                        <Grid>
+                            <TextBlock Text="menor" Style="{StaticResource QuickPanelHint}" HorizontalAlignment="Left" />
+                            <TextBlock Text="maior" Style="{StaticResource QuickPanelHint}" HorizontalAlignment="Right" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <Popup x:Name="BackgroundPanel" PlacementTarget="{Binding ElementName=btnBackground}" Placement="Bottom" VerticalOffset="4"
+                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                <Border Style="{StaticResource QuickPanel}" PreviewKeyDown="QuickPanel_PreviewKeyDown">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,4">
+                            <Button x:Name="btnBackgroundReset" DockPanel.Dock="Right" Style="{StaticResource QuickResetButton}"
+                                    AutomationProperties.Name="Voltar ao padrão" Click="BackgroundReset_Click">
+                                <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE7A7;" FontSize="12" />
+                            </Button>
+                            <TextBlock x:Name="tbBackgroundValue" DockPanel.Dock="Right" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource BarAccentBrush}" />
+                            <ContentControl Template="{StaticResource BackgroundIcon}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Fundo do chat" />
+                        </DockPanel>
+                        <!-- In percent; saved as 0-255 (OpacityLevel) -->
+                        <Slider x:Name="sliderBackground" Style="{StaticResource QuickSlider}" AutomationProperties.Name="Fundo do chat"
+                                Minimum="0" Maximum="100" TickFrequency="5" SmallChange="5" LargeChange="5"
+                                ValueChanged="sliderBackground_ValueChanged" PreviewMouseWheel="Background_PreviewMouseWheel" />
+                        <Grid>
+                            <TextBlock Text="transparente" Style="{StaticResource QuickPanelHint}" HorizontalAlignment="Left" />
+                            <TextBlock Text="escuro" Style="{StaticResource QuickPanelHint}" HorizontalAlignment="Right" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Popup>
 
             <Border Grid.Row="2" Name="overlay" Background="black" Opacity="0.01" Panel.ZIndex="1"/>
 
             <!-- Channel of the chat, under the title bar (see MainWindow.ChannelBar.cs). In its own row like
                  the message box: the chat page (WebView2) is always drawn on top of anything placed over it. -->
-            <Border x:Name="ChannelBar" Grid.Row="1" Grid.Column="0" Visibility="Collapsed" Panel.ZIndex="2"
+            <Border x:Name="ChannelBar" Grid.Row="1" Visibility="Collapsed" Panel.ZIndex="2"
                     Background="{StaticResource BarBackgroundBrush}" BorderBrush="{StaticResource BarLineBrush}" BorderThickness="0,0,0,1">
                 <Grid>
                     <!-- Closed: only the channel; a click opens the name box -->
@@ -337,7 +403,7 @@
                                            Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                             </DockPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <ui:FontIcon Glyph="&#xE70F;" FontSize="11" Foreground="{StaticResource BarAccentBrush}" VerticalAlignment="Center" />
+                                <ui:FontIcon Glyph="&#xE8AB;" FontSize="12" Foreground="{StaticResource BarAccentBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource BarAccentBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Grid>
@@ -378,7 +444,7 @@
 
             <!-- "Escrever no chat…" (Twitch account connected, see MainWindow.ChatInput.cs). In its own row:
                  the chat page (WebView2) is always drawn on top of anything placed over it. -->
-            <Border x:Name="MessageBar" Grid.Row="3" Grid.Column="0" Visibility="Collapsed" Panel.ZIndex="2"
+            <Border x:Name="MessageBar" Grid.Row="3" Visibility="Collapsed" Panel.ZIndex="2"
                     Background="{StaticResource BarBackgroundBrush}" BorderBrush="{StaticResource BarLineBrush}" BorderThickness="0,1,0,0" Padding="6">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -495,74 +561,22 @@
                 </Border>
             </Popup>
 
-            <!-- Quick settings, only while the borders are shown -->
-            <Border x:Name="QuickToolbar" Grid.Row="1" Grid.RowSpan="3" Grid.Column="1" Width="46" Background="{StaticResource AppBarBrush}" Panel.ZIndex="2">
-                <!-- The gear always shows, right under the other buttons: in a short window the buttons above
-                     it scroll (arrows and mouse wheel). The bottom margin keeps the resize grip's corner free. -->
-                <Grid VerticalAlignment="Top" Margin="0,0,0,14">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ScrollViewer x:Name="QuickToolbarScroll" Style="{StaticResource QuickToolbarScroll}">
-                        <StackPanel>
-                            <TextBlock Text="Texto" Style="{StaticResource QuickCaption}" />
-                            <Button Style="{StaticResource QuickButton}" ToolTip="Aumentar o texto" AutomationProperties.Name="Aumentar o texto" Click="MenuItem_ZoomIn"><ui:FontIcon Glyph="&#xE8E8;" FontSize="16" /></Button>
-                            <Button Style="{StaticResource QuickButton}" ToolTip="Diminuir o texto" AutomationProperties.Name="Diminuir o texto" Click="MenuItem_ZoomOut"><ui:FontIcon Glyph="&#xE8E7;" FontSize="16" /></Button>
-                            <Button x:Name="btnTextSizeValue" Content="100%" Style="{StaticResource QuickValue}" Click="MenuItem_ZoomReset" />
+            <!-- Grip of the bottom-right corner (see MainWindow.ResizeCorner.cs) -->
+            <Path x:Name="ResizeCornerGrip" Grid.Row="1" Grid.RowSpan="3" Width="12" Height="12" Margin="0,0,2,2"
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" IsHitTestVisible="False"
+                  Fill="#8CFFFFFF" Visibility="Collapsed">
+                <Path.Data>
+                    <GeometryGroup>
+                        <EllipseGeometry Center="9,3" RadiusX="1.1" RadiusY="1.1" />
+                        <EllipseGeometry Center="9,9" RadiusX="1.1" RadiusY="1.1" />
+                        <EllipseGeometry Center="3,9" RadiusX="1.1" RadiusY="1.1" />
+                        <EllipseGeometry Center="6,6" RadiusX="1.1" RadiusY="1.1" />
+                    </GeometryGroup>
+                </Path.Data>
+            </Path>
 
-                            <Rectangle Height="1" Fill="#66FFFFFF" Margin="6,4,6,0" />
-
-                            <TextBlock Text="Fundo" Style="{StaticResource QuickCaption}" />
-                            <Button Style="{StaticResource QuickButton}" ToolTip="Fundo mais escuro" AutomationProperties.Name="Fundo mais escuro" Click="MenuItem_IncOpacity"><Border Style="{StaticResource BackgroundSwatch}" Background="Black" /></Button>
-                            <Button Style="{StaticResource QuickButton}" ToolTip="Fundo mais transparente" AutomationProperties.Name="Fundo mais transparente" Click="MenuItem_DecOpacity"><Border Style="{StaticResource BackgroundSwatch}" Background="{StaticResource SeeThroughBrush}" /></Button>
-                            <Button x:Name="btnBackgroundValue" Content="0%" Style="{StaticResource QuickValue}" Click="MenuItem_ResetOpacity" />
-
-                            <Rectangle Height="1" Fill="#66FFFFFF" Margin="6,4,6,3" />
-
-                            <!-- "Sempre no topo" switch (MainWindow.KeepOnTop.cs): lit with a pin while on -->
-                            <ToggleButton x:Name="btnQuickTop" Style="{StaticResource QuickToggleButton}" AutomationProperties.Name="Sempre no topo"
-                                          Checked="btnQuickTop_Toggled" Unchecked="btnQuickTop_Toggled">
-                                <StackPanel>
-                                    <ui:FontIcon FontSize="16" Style="{StaticResource AlwaysOnTopIcon}" />
-                                    <TextBlock Text="Topo" FontSize="10" HorizontalAlignment="Center" Margin="0,2,0,0" />
-                                </StackPanel>
-                            </ToggleButton>
-                            <Button x:Name="btnQuickScroll" Style="{StaticResource QuickIconButton}" Click="QuickScrollMode_Click">
-                                <StackPanel>
-                                    <ui:FontIcon Glyph="&#xE962;" FontSize="16" />
-                                    <TextBlock Text="Rolar" FontSize="10" HorizontalAlignment="Center" Margin="0,2,0,0" />
-                                </StackPanel>
-                            </Button>
-                            <!-- Opens/closes the "Escrever no chat…" box (MainWindow.ChatInput.cs): lit while it is open -->
-                            <ToggleButton x:Name="btnQuickWrite" Style="{StaticResource QuickToggleButton}" AutomationProperties.Name="Escrever"
-                                          Checked="btnQuickWrite_Toggled" Unchecked="btnQuickWrite_Toggled">
-                                <StackPanel>
-                                    <ui:FontIcon Glyph="&#xEC42;" FontSize="16" />
-                                    <TextBlock Text="Escrever" FontSize="10" HorizontalAlignment="Center" Margin="0,2,0,0" />
-                                </StackPanel>
-                            </ToggleButton>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <StackPanel Grid.Row="1">
-                        <Rectangle Height="1" Fill="#66FFFFFF" Margin="6,3,6,3" />
-
-                        <!-- Opens Configurações (left or right click) -->
-                        <Button x:Name="btnSettings" Style="{StaticResource QuickIconButton}" ToolTip="Configurações"
-                                AutomationProperties.Name="Configurações"
-                                MouseRightButtonUp="btnSettings_Click" Click="btnSettings_Click">
-                            <StackPanel>
-                                <ui:FontIcon Glyph="&#xE713;" FontSize="16" />
-                                <TextBlock Text="Config." FontSize="10" HorizontalAlignment="Center" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Shown when WebView2 is missing: covers everything under the title bar, side toolbar included -->
-            <Grid x:Name="PlaceholderOverlay" Grid.Row="1" Grid.RowSpan="3" Grid.ColumnSpan="2" Panel.ZIndex="3" Background="#80000000" Visibility="Collapsed">
+            <!-- Shown when WebView2 is missing: covers everything under the title bar -->
+            <Grid x:Name="PlaceholderOverlay" Grid.Row="1" Grid.RowSpan="3" Panel.ZIndex="3" Background="#80000000" Visibility="Collapsed">
                 <Border HorizontalAlignment="Center" 
                         VerticalAlignment="Center"
                         Background="#FF2D2D30"

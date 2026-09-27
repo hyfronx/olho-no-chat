@@ -26,18 +26,17 @@
 </style>
 </head>
 <body>
-    <div class="step" id="first-step">
-        <svg class="arrow" id="arrow-up" viewBox="0 0 34 44"><path class="outline" d="M28 40 C 12 34, 6 22, 6 6 M6 6 L 1 14 M6 6 L 13 12"/><path d="M28 40 C 12 34, 6 22, 6 6 M6 6 L 1 14 M6 6 L 13 12"/></svg>
-        <svg class="arrow" id="arrow-right" viewBox="0 0 34 44"><path class="outline" d="M3 22 H 29 M29 22 L 21 14 M29 22 L 21 30"/><path d="M3 22 H 29 M29 22 L 21 14 M29 22 L 21 30"/></svg>
+    <div class="step">
+        <svg class="arrow" viewBox="0 0 34 44"><path class="outline" d="M28 40 C 12 34, 6 22, 6 6 M6 6 L 1 14 M6 6 L 13 12"/><path d="M28 40 C 12 34, 6 22, 6 6 M6 6 L 1 14 M6 6 L 13 12"/></svg>
         <div>
             <h1>Bem-vindo ao Olho no Chat!</h1>
             <span id="where-channel">Digite o nome do seu canal da Twitch aqui em cima e clique em <b>Entrar no chat</b>.</span>
-            <span id="where-settings">Clique na engrenagem <span class="key">&#9881;</span> (<b>Config.</b>) na barra laranja à direita para abrir as <b>Configurações</b> e escolha o chat que quer ver.</span>
+            <span id="where-settings">Clique na engrenagem <span class="key">&#9881;</span> na barra laranja aqui em cima para abrir as <b>Configurações</b> e escolha o chat que quer ver.</span>
         </div>
     </div>
     <div class="step">
         <div style="width:42px"></div>
-        <div>O botão <b>Ocultar bordas</b> deixa só o chat por cima do jogo.</div>
+        <div>O botão do olho riscado (<b>Ocultar bordas</b>), no canto de cima, deixa só o chat por cima do jogo.</div>
     </div>
     <div class="step">
         <div style="width:42px"></div>
@@ -45,11 +44,9 @@
     </div>
 <script>
     // "?canal": the channel strip is right above this page (see MainWindow.ChannelBar.cs);
-    // otherwise the arrow points to the gear of the side toolbar
+    // otherwise the arrow points to the gear of the title bar
     var inStrip = location.search.indexOf('canal') >= 0;
     document.getElementById(inStrip ? 'where-settings' : 'where-channel').style.display = 'none';
-    document.getElementById(inStrip ? 'arrow-right' : 'arrow-up').style.display = 'none';
-    if (!inStrip) document.getElementById('first-step').style.flexDirection = 'row-reverse';
 </script>
 </body>
 </html>

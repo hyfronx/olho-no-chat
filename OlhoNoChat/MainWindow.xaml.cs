@@ -28,7 +28,7 @@ using OlhoNoChat.Utils;
 using OlhoNoChat.View;
 
 /// <summary>
-/// The chat window: the chat page (WebView2) over the game, with its borders, side toolbar and tray menu.
+/// The chat window: the chat page (WebView2) over the game, with its borders, quick settings in the title bar and tray menu.
 /// The other parts are in the MainWindow.*.cs files.
 /// </summary>
 public partial class MainWindow : Window
@@ -50,11 +50,11 @@ public partial class MainWindow : Window
 
     private readonly ChatSoundPlayer _chatSound = new();
     private Chat _currentChat = new WelcomeChat();
-    private Button _closeButton;
 
     public MainWindow(IServiceProvider serviceProvider, ILogger<MainWindow> logger, TwitchAccount twitchAccount)
     {
         InitializeComponent();
+        SetupQuickPanels();
 
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -73,6 +73,7 @@ public partial class MainWindow : Window
         StartChatWatchdog();
         StartKeepOnTopGuard();
         StartDialogAttention();
+        StartResizeCorner();
         StartChatInput();
         mainWindowGrid.SizeChanged += (s, e) => UpdateContentClip();
     }
@@ -293,6 +294,7 @@ public partial class MainWindow : Window
         if (recreated)
             Grid.SetRowSpan(webView, Grid.GetRowSpan(this.overlay));
         this.mainWindowGrid.Children.Add(webView);
+        webView.SizeChanged += (s, e) => UpdateResizeCorner();
         UpdateChatResizeEdge();
 
         // Initialize and subscribe to events.
@@ -407,27 +409,24 @@ public partial class MainWindow : Window
             $"window.oncScrollModeWanted = {mode}; if (window.oncSetScrollMode) window.oncSetScrollMode(window.oncScrollModeWanted);");
     }
 
-    // With the borders shown, the bottom edge of the window resizes it: the chat page (its own window,
-    // which takes the mouse) stays a few pixels above it, over its dark background
-    private static readonly Thickness ResizeEdgeMargin = new Thickness(0, 0, 0, 6);
+    // With the borders shown, the side and bottom edges of the window resize it: the chat page (its own
+    // window, which takes the mouse) stays a few pixels away from them, over its dark background
+    private static readonly Thickness ResizeEdgeMargin = new Thickness(6, 0, 6, 6);
 
     private void UpdateChatResizeEdge()
     {
         this.webView?.SetValue(MarginProperty, _hiddenBorders ? this.noBorderThickness : ResizeEdgeMargin);
+        UpdateResizeCorner();
     }
 
     private void drawBorders()
     {
         this.ShowInTaskbar = true;
 
-        // Close button of the title bar (minimize/maximize are always hidden, see Window_Loaded)
-        SetCloseButtonVisibility(true);
-
         this.AppTitleBar.Visibility = Visibility.Visible;
-        this.QuickToolbar.Visibility = Visibility.Visible;
         SetChatRowSpan(1);
         SetWindowFrame(Brushes.Transparent, this.noBorderThickness);
-        this.ResizeMode = ResizeMode.CanResizeWithGrip;
+        this.ResizeMode = ResizeMode.CanResize;
 
         _hiddenBorders = false;
         _scrollModeFromToolbar = false;
@@ -458,11 +457,8 @@ public partial class MainWindow : Window
         // Prevent interaction with the browser
         ApplyInteractable(false);
 
-        // Close button of the title bar (minimize/maximize are always hidden, see Window_Loaded)
-        SetCloseButtonVisibility(false);
-
         this.AppTitleBar.Visibility = Visibility.Collapsed;
-        this.QuickToolbar.Visibility = Visibility.Collapsed;
+        CloseQuickPanels();
         // The chat and its dark background cover the message box row too
         // (unless the message box is open with the hotkey, see MainWindow.ChatInput.cs)
         SetChatRowSpan(_composing ? 1 : 2);
@@ -548,50 +544,16 @@ public partial class MainWindow : Window
         hideBorders();
     }
 
-    private void MenuItem_ZoomIn(object sender, RoutedEventArgs e)
-    {
-        if (!hasWebView2Runtime) return;
-        SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel + 0.1);
-
-        // Save right away: otherwise the change is lost if the app does not close normally
-        App.Settings.Persist();
-    }
-
-    private void MenuItem_ZoomOut(object sender, RoutedEventArgs e)
-    {
-        if (!hasWebView2Runtime) return;
-        SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel - 0.1);
-
-        // Save right away: otherwise the change is lost if the app does not close normally
-        App.Settings.Persist();
-    }
-
-    private void MenuItem_ZoomReset(object sender, RoutedEventArgs e)
-    {
-        if (!hasWebView2Runtime) return;
-        SetZoomFactor(GeneralSettings.DefaultZoomLevel);
-
-        // Save right away: otherwise the change is lost if the app does not close normally
-        App.Settings.Persist();
-    }
-
-    // The "Texto" value gives letters of the same size in the "Padrão" and "Chat oficial da Twitch"
+    // The text size gives letters of the same size in the "Padrão" and "Chat oficial da Twitch"
     // chats: the official one uses the font and size of the "Padrão" (CustomURLChat.MessageLookCss).
-    // Kept between 10% and 400%.
+    // Kept within the range of its slider.
     private void SetZoomFactor(double zoom)
     {
-        zoom = Math.Round(Math.Clamp(zoom, 0.1, 4), 2);
+        zoom = Math.Round(Math.Clamp(zoom, this.sliderTextSize.Minimum, this.sliderTextSize.Maximum), 2);
 
         this.webView.ZoomFactor = zoom;
         App.Settings.GeneralSettings.ZoomLevel = zoom;
-        UpdateQuickToolbarValues();
-    }
-
-    // Current values shown under the +/- buttons of the side toolbar
-    private void UpdateQuickToolbarValues()
-    {
-        this.btnTextSizeValue.Content = $"{Math.Round(App.Settings.GeneralSettings.ZoomLevel * 100)}%";
-        this.btnBackgroundValue.Content = $"{Math.Round(App.Settings.GeneralSettings.OpacityLevel / 255.0 * 100)}%";
+        UpdateQuickValues();
     }
 
     private async void webView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
@@ -827,7 +789,7 @@ public partial class MainWindow : Window
         // The taskbar button hides only with the borders (see hideBorders)
         this.ShowInTaskbar = !_hiddenBorders || !App.Settings.GeneralSettings.HideTaskbarIcon;
 
-        // Text size, background and "Topo" of the side toolbar (changed here only by "Restaurar tudo para o padrão")
+        // Text size, background and "Sempre no topo" of the title bar (changed here only by "Restaurar tudo para o padrão")
         SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel);
         ApplyBackgroundOpacity();
         ApplyAlwaysOnTop();
@@ -850,25 +812,7 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            var titleBarControl = this.FindChildByType<DependencyObject>("ModernWpf.Controls.Primitives.TitleBarControl");
-            if (titleBarControl != null)
-            {
-                _closeButton = titleBarControl.FindChild<Button>("CloseButton");
-
-                // Only the close button makes sense for an overlay
-                foreach (string name in new[] { "MinimizeButton", "PART_MaximizeRestoreButton" })
-                {
-                    if (titleBarControl.FindChild<Button>(name) is Button button)
-                        button.Visibility = Visibility.Collapsed;
-                }
-            }
-        }
-        catch
-        {
-            // Only the title bar buttons: the window works the same if ModernWpf's template changes
-        }
+        AppWindowFrame.Apply(this); // own close button, no gray line around
 
         // Every time the app opens (it used to be once a day)
         if (App.Settings.GeneralSettings.CheckForUpdates)
@@ -877,15 +821,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SetCloseButtonVisibility(bool isVisible)
+    private void btnClose_Click(object sender, RoutedEventArgs e)
     {
-        if (_closeButton != null)
-        {
-            if (isVisible)
-                _closeButton.Visibility = Visibility.Visible;
-            else
-                _closeButton.Visibility = Visibility.Collapsed;
-        }
+        Close();
     }
 
     private async Task CheckForUpdateAsync(bool notifyIfNoUpdate = false, Window owner = null)
@@ -1033,7 +971,7 @@ public partial class MainWindow : Window
             opacity = 0.01;
 
         this.overlay.Opacity = opacity;
-        UpdateQuickToolbarValues();
+        UpdateQuickValues();
     }
 
     private void SetOpacityLevel(int level)
@@ -1042,24 +980,7 @@ public partial class MainWindow : Window
 
         App.Settings.GeneralSettings.OpacityLevel = (byte)Math.Clamp(level, 0, 255);
         ApplyBackgroundOpacity();
-
-        // Save right away: otherwise the change is lost if the app does not close normally
-        App.Settings.Persist();
-    }
-
-    private void MenuItem_IncOpacity(object sender, RoutedEventArgs e)
-    {
-        SetOpacityLevel(App.Settings.GeneralSettings.OpacityLevel + 15);
-    }
-
-    private void MenuItem_DecOpacity(object sender, RoutedEventArgs e)
-    {
-        SetOpacityLevel(App.Settings.GeneralSettings.OpacityLevel - 15);
-    }
-
-    private void MenuItem_ResetOpacity(object sender, RoutedEventArgs e)
-    {
-        SetOpacityLevel(GeneralSettings.DefaultOpacityLevel);
+        SchedulePersist();
     }
 
     // Called from the EventSub thread: the chat and the page are only touched on the UI thread
@@ -1082,7 +1003,7 @@ public partial class MainWindow : Window
         ToggleAlwaysOnTop();
     }
 
-    // "Topo" of the side toolbar (also switched by UI Automation, which raises no Click)
+    // "Sempre no topo" of the title bar (also switched by UI Automation, which raises no Click)
     private void btnQuickTop_Toggled(object sender, RoutedEventArgs e)
     {
         if (btnQuickTop.IsChecked != AlwaysOnTop)

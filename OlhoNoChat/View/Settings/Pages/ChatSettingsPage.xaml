@@ -11,7 +11,7 @@
     <ScrollViewer Style="{StaticResource SettingsPageScroll}">
         <StackPanel Name="chatGrid" Style="{StaticResource SettingsPagePanel}">
             <TextBlock Text="Chat" Style="{StaticResource SettingsPageTitle}" />
-            <TextBlock Text="Qual canal mostrar e quais mensagens aparecem." Style="{StaticResource SettingsPageSubtitle}" />
+            <TextBlock Text="Tipo de chat e quais mensagens aparecem. O canal se troca na faixa em cima do chat." Style="{StaticResource SettingsPageSubtitle}" />
 
             <!-- Tipo de chat: the panels below show only the options of the chosen type.
                  No section title above it, so the top margin keeps the usual gap. -->
@@ -39,26 +39,6 @@
 
             <!-- Padrão -->
             <StackPanel Name="padraoGrid">
-                <TextBlock Text="Canal" Style="{StaticResource SettingsSectionTitle}" />
-                <Border Style="{StaticResource SettingsCard}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:FontIcon Glyph="&#xE7F4;" Style="{StaticResource SettingsCardIcon}" />
-                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
-                            <TextBlock Text="Canal da Twitch" Style="{StaticResource SettingsLabel}" />
-                            <TextBlock Text="Se o seu canal é twitch.tv/seucanal, digite seucanal (ou cole o link). Também dá para trocar na faixa de cima do chat." Style="{StaticResource SettingsHint}" />
-                            <TextBlock Name="tbUsernameError" Style="{StaticResource SettingsHint}" Foreground="#FFB9A0" Visibility="Collapsed" />
-                        </StackPanel>
-                        <TextBox Name="tbUsername" Grid.Column="2" Width="230" VerticalAlignment="Center" TextWrapping="NoWrap"
-                                 AutomationProperties.Name="Canal da Twitch" ui:ControlHelper.PlaceholderText="seucanal"
-                                 TextChanged="ChannelBox_TextChanged" />
-                    </Grid>
-                </Border>
-
                 <TextBlock Text="Mensagens" Style="{StaticResource SettingsSectionTitle}" />
                 <Border Style="{StaticResource SettingsCard}">
                     <StackPanel>
@@ -125,26 +105,6 @@
 
             <!-- Chat oficial da Twitch (popout) -->
             <StackPanel Name="twitchPopoutChat" Visibility="Collapsed">
-                <TextBlock Text="Canal" Style="{StaticResource SettingsSectionTitle}" />
-                <Border Style="{StaticResource SettingsCard}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:FontIcon Glyph="&#xE7F4;" Style="{StaticResource SettingsCardIcon}" />
-                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
-                            <TextBlock Text="Canal da Twitch" Style="{StaticResource SettingsLabel}" />
-                            <TextBlock Text="Se o seu canal é twitch.tv/seucanal, digite seucanal (ou cole o link). Também dá para trocar na faixa de cima do chat." Style="{StaticResource SettingsHint}" />
-                            <TextBlock Name="tbTwitchPopoutUsernameError" Style="{StaticResource SettingsHint}" Foreground="#FFB9A0" Visibility="Collapsed" />
-                        </StackPanel>
-                        <TextBox Name="tbTwitchPopoutUsername" Grid.Column="2" Width="230" VerticalAlignment="Center" TextWrapping="NoWrap"
-                                 AutomationProperties.Name="Canal da Twitch" ui:ControlHelper.PlaceholderText="seucanal"
-                                 TextChanged="ChannelBox_TextChanged" />
-                    </Grid>
-                </Border>
-
                 <TextBlock Text="Extensões de emotes" Style="{StaticResource SettingsSectionTitle}" />
                 <Border Style="{StaticResource SettingsCard}">
                     <StackPanel>

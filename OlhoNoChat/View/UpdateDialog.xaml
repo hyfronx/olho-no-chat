@@ -11,59 +11,67 @@
         WindowStyle="ToolWindow"
         WindowStartupLocation="CenterScreen"
         Topmost="True"
-        Background="#121212" Width="400" Height="255">
-    <Border Padding="20">
-        <StackPanel>
-            <TextBlock Text="Tem uma versão nova do Olho no Chat!" 
-                       Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
-                       FontSize="18" 
-                       FontWeight="Bold" 
-                       Margin="0,0,0,10" />
+        Background="#121212" Width="400" Height="255" Loaded="Window_Loaded">
+    <Grid>
+        <Border Padding="20">
+            <StackPanel>
+                <TextBlock Text="Tem uma versão nova do Olho no Chat!" 
+                           Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
+                           FontSize="18" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,10" />
 
-            <Grid Margin="0,5,0,15">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <Grid Margin="0,5,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <TextBlock 
-                    Grid.Row="0" 
-                    Grid.Column="0" 
-                    Text="Versão atual:" 
-                    Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
-                    FontWeight="SemiBold" 
-                    Margin="0,0,10,0" />
-                <TextBlock 
-                    Grid.Row="0" 
-                    Grid.Column="1" 
-                    x:Name="CurrentVersionText" 
-                    Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}" />
+                    <TextBlock 
+                        Grid.Row="0" 
+                        Grid.Column="0" 
+                        Text="Versão atual:" 
+                        Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
+                        FontWeight="SemiBold" 
+                        Margin="0,0,10,0" />
+                    <TextBlock 
+                        Grid.Row="0" 
+                        Grid.Column="1" 
+                        x:Name="CurrentVersionText" 
+                        Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}" />
 
-                <TextBlock 
-                    Grid.Row="1" 
-                    Grid.Column="0" 
-                    Text="Versão nova:" 
-                    Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
-                    FontWeight="SemiBold" 
-                    Margin="0,5,10,0" />
-                <TextBlock 
-                    Grid.Row="1" 
-                    Grid.Column="1" 
-                    x:Name="NewVersionText" 
-                    Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
-                    Margin="0,5,0,0" />
-            </Grid>
+                    <TextBlock 
+                        Grid.Row="1" 
+                        Grid.Column="0" 
+                        Text="Versão nova:" 
+                        Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
+                        FontWeight="SemiBold" 
+                        Margin="0,5,10,0" />
+                    <TextBlock 
+                        Grid.Row="1" 
+                        Grid.Column="1" 
+                        x:Name="NewVersionText" 
+                        Foreground="{ui:ThemeResource SystemControlPageTextBaseMediumBrush}"
+                        Margin="0,5,0,0" />
+                </Grid>
 
-            <CheckBox x:Name="DisableUpdateCheckBox" Content="Não procurar atualizações automaticamente" Margin="0,20,0,0" />
+                <CheckBox x:Name="DisableUpdateCheckBox" Content="Não procurar atualizações automaticamente" Margin="0,20,0,0" />
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Atualizar agora" x:Name="YesButton" IsDefault="True" FontWeight="Bold" MinWidth="100" Margin="0,0,10,0" Click="YesButton_Click" />
-                <Button Content="Depois" x:Name="NoButton" IsCancel="True" MinWidth="100" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Content="Atualizar agora" x:Name="YesButton" IsDefault="True" FontWeight="Bold" MinWidth="100" Margin="0,0,10,0" Click="YesButton_Click" />
+                    <Button Content="Depois" x:Name="NoButton" IsCancel="True" MinWidth="100" />
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
-    </Border>
+        </Border>
+
+        <!-- Own close button (see Helpers/AppWindowFrame.cs) -->
+        <Button Style="{StaticResource TitleCloseButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
+                ToolTip="Fechar (Esc)" AutomationProperties.Name="Fechar a janela" Click="CloseButton_Click">
+            <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8BB;" FontSize="11" />
+        </Button>
+    </Grid>
 </Window>

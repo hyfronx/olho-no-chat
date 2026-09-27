@@ -229,6 +229,11 @@ namespace OlhoNoChat
             System.Windows.Automation.AutomationProperties.SetName(OKButton, "Salvar");
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Helpers.AppWindowFrame.Apply(this); // own close button, no gray line around
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();

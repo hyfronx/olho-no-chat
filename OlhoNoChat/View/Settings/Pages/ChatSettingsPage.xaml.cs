@@ -1,11 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using OlhoNoChat.Twitch;
 
 namespace OlhoNoChat.View.Settings;
 
 /// <summary>
-/// "Chat" tab: chat type, channel, old messages and filters. Theme and text options are on the
+/// "Chat" tab: chat type, old messages and filters (the channel is changed in the strip above the chat). Theme and text options are on the
 /// "Aparência" tab (AppearanceSettingsPage) and the new-message sound on "Som" (SoundSettingsPage).
 /// </summary>
 public partial class ChatSettingsPage : UserControl
@@ -30,8 +29,6 @@ public partial class ChatSettingsPage : UserControl
 
     public void SetupValues()
     {
-        this.tbUsername.Text = App.Settings.GeneralSettings.Username;
-        this.tbTwitchPopoutUsername.Text = App.Settings.GeneralSettings.Username;
         this.cbHideBots.IsOn = App.Settings.GeneralSettings.BlockBotActivity;
         this.cbFade.IsOn = App.Settings.GeneralSettings.FadeChat;
         this.tbFadeTime.Text = App.Settings.GeneralSettings.FadeTime;
@@ -65,9 +62,6 @@ public partial class ChatSettingsPage : UserControl
             }
             else if (chatType == ChatTypes.TwitchPopout)
             {
-                // Empty: no channel (the chat shows the welcome page)
-                App.Settings.GeneralSettings.Username = ReadChannel(this.tbTwitchPopoutUsername);
-
                 App.Settings.GeneralSettings.BetterTtv = this.cbBetterTtv.IsOn;
                 App.Settings.GeneralSettings.BetterTtv_7tv = this.cbBetterTtv_7tv.IsOn;
                 App.Settings.GeneralSettings.BetterTtv_AdvEmoteMenu = this.cbBetterTtv_AdvMenu.IsOn;
@@ -76,54 +70,12 @@ public partial class ChatSettingsPage : UserControl
             else if (chatType == ChatTypes.Padrao)
             {
                 App.Settings.GeneralSettings.CustomURL = string.Empty;
-                App.Settings.GeneralSettings.Username = ReadChannel(this.tbUsername);
                 // RedemptionsEnabled is saved by the Twitch tab (ConnectionSettingsPage)
                 App.Settings.GeneralSettings.BlockBotActivity = this.cbHideBots.IsOn;
                 App.Settings.GeneralSettings.FadeChat = this.cbFade.IsOn;
                 App.Settings.GeneralSettings.FadeTime = this.tbFadeTime.Text;
             }
         }
-    }
-
-    /// <summary>
-    /// Checks the channel of the chosen chat type before saving ("nome", "@nome" or the link are fine).
-    /// Returns false, and shows why under the box, when it is not a possible Twitch channel name.
-    /// </summary>
-    public bool ValidateValues(ChatTypes chatType)
-    {
-        var (box, error) = chatType switch
-        {
-            ChatTypes.Padrao => (this.tbUsername, this.tbUsernameError),
-            ChatTypes.TwitchPopout => (this.tbTwitchPopoutUsername, this.tbTwitchPopoutUsernameError),
-            _ => (null, null)
-        };
-        if (box == null)
-            return true;
-
-        string name = TwitchNames.Extract(box.Text);
-        bool valid = name.Length == 0 || TwitchNames.IsValid(name);
-        error.Text = valid ? string.Empty : TwitchNames.InvalidNameHint;
-        error.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
-        if (!valid)
-            box.Focus();
-        return valid;
-    }
-
-    // The channel name as it is saved (lower case, without "@" or the link around it); the box shows it too
-    private static string ReadChannel(TextBox box)
-    {
-        string name = TwitchNames.Extract(box.Text).ToLowerInvariant();
-        box.Text = name;
-        return name;
-    }
-
-    private void ChannelBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        // Also called while the page is still being created (the boxes get their first text)
-        if (this.tbUsernameError != null)
-            this.tbUsernameError.Visibility = Visibility.Collapsed;
-        if (this.tbTwitchPopoutUsernameError != null)
-            this.tbTwitchPopoutUsernameError.Visibility = Visibility.Collapsed;
     }
 
     // Only the options of the chosen chat type are shown

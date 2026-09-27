@@ -13,7 +13,7 @@ using OlhoNoChat.Twitch;
 /// Channel strip under the title bar, to change the channel without opening Configurações.
 /// Shown only with the borders visible and for the chat types that show a Twitch channel ("Padrão" and
 /// "Chat oficial da Twitch"). With no channel it stays open with the name box; with a channel it shows
-/// just the name, and a click opens it. It is the same setting as Configurações > Chat, saved right away.
+/// just the name, and a click opens it. It is the only place to change the channel; saved right away.
 /// Changing the channel loads the chat page again (only when the channel really changed);
 /// "Sair do canal" goes back to the welcome page.
 /// </summary>
@@ -188,7 +188,7 @@ public partial class MainWindow
         SetChannel(string.Empty);
     }
 
-    // Saves the channel (the same setting as Configurações > Chat) and loads its chat, or the welcome page
+    // Saves the channel and loads its chat, or the welcome page
     private void SetChannel(string channel)
     {
         _logger.LogInformation("Channel changed on the channel strip.");

@@ -17,7 +17,7 @@ using OlhoNoChat.Twitch;
 ///   tab (through the Twitch API, see TwitchAccount);
 /// - only in the "Chat oficial da Twitch": Twitch's own box inside the page (emotes, replies, commands),
 ///   which needs a login to twitch.tv inside the chat window.
-/// The box starts closed. "Escrever" on the side toolbar opens it (borders visible); the hotkey opens it
+/// The box starts closed. "Escrever" (chat bubble of the title bar) opens it (borders visible); the hotkey opens it
 /// on top of the chat in the game too. Enter sends and the box stays open (option "Fechar a caixa depois
 /// de enviar" in the Twitch tab: in the game it closes and the game comes back); "Escrever" again, the
 /// hotkey again, Esc or its "×" close it, and in the game a click on the game too.
@@ -119,7 +119,7 @@ public partial class MainWindow
             ? $"No jogo, aperte {hotkey} para abrir ou fechar a caixa de escrever."
             : "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.";
 
-        string button = _hiddenBorders ? string.Empty : "Clique em Escrever, na barra laranja, para abrir a caixa. ";
+        string button = _hiddenBorders ? string.Empty : "Clique no balão de conversa, na barra laranja, para abrir a caixa. ";
         return _twitchAccount.IsConnected || UseTwitchChatBox
             ? "Neste chat você pode escrever. " + button + inGame
             : "Neste chat você pode escrever depois de conectar sua conta em Configurações > Twitch. " + inGame;
@@ -148,6 +148,7 @@ public partial class MainWindow
 
         bool show = ChatInputAvailable && ChatBoxOpen;
         MessageBar.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        UpdateResizeCorner(); // the box holds the corner while it is open
         if (!show)
             EmotePopup.IsOpen = false;
 
@@ -163,7 +164,7 @@ public partial class MainWindow
         btnQuickWrite.ToolTip = WithHotkey(ChatBoxOpen ? "Fechar a caixa de escrever no chat." : "Escrever no chat: abre a caixa embaixo do chat.", hotkey);
     }
 
-    // "Escrever" of the side toolbar (also switched by UI Automation, which raises no Click)
+    // "Escrever" of the title bar (also switched by UI Automation, which raises no Click)
     private void btnQuickWrite_Toggled(object sender, RoutedEventArgs e)
     {
         if (btnQuickWrite.IsChecked == ChatBoxOpen)
