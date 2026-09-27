@@ -12,15 +12,16 @@ using System.Windows.Threading;
 /// - the disk cache is cleared before each navigation, since a corrupted cache entry
 ///   (e.g. twemoji.min.js failing with ERR_CONTENT_DECODING_FAILED) breaks the page's scripts;
 /// - a no-op twemoji fallback is defined, so a failed CDN load doesn't stop KapChat from connecting;
-/// - a watchdog reloads KapChat when the Twitch IRC connection never opens, drops, or goes silent;
+/// - the "Padrão" page connects again by itself when the connection to Twitch drops; the watchdog only
+///   reloads it when its script isn't running or its connection stays silent anyway;
 /// - a crashed browser or chat page process is recovered without asking (no dialog over the game).
 /// </summary>
 public partial class MainWindow
 {
     private static readonly TimeSpan ChatWatchdogInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ChatStartupGracePeriod = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan ChatDisconnectedLimit = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan ChatSilenceLimit = TimeSpan.FromSeconds(100);
+    // The page itself replaces a connection silent for 75 s (browser/chat.js)
+    private static readonly TimeSpan ChatSilenceLimit = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan ChatNavigationTimeout = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan ChatRecoveryMinGap = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan ChatRecoveryBackoffGap = TimeSpan.FromMinutes(5);
@@ -48,22 +49,12 @@ public partial class MainWindow
         })();
         """;
 
-    // Reports the KapChat IRC socket state and sends a PING so a healthy connection always has recent traffic.
+    // The state of the "Padrão" page's connection: "open:<ms since Twitch last sent something>", "disconnected"
+    // (the page is connecting again) or "missing" (the page's script isn't running)
     private const string ChatConnectionProbeScript = """
         (function () {
             try {
-                var chat = (typeof Chat !== 'undefined') ? Chat : null;
-                var socket = chat && chat.vars && chat.vars.socket;
-                if (!socket) return 'missing';
-                if (!socket.oncWatchdogHooked) {
-                    socket.oncWatchdogHooked = true;
-                    window.oncLastIrcActivity = Date.now();
-                    socket.addEventListener('message', function () { window.oncLastIrcActivity = Date.now(); });
-                    socket.addEventListener('open', function () { window.oncLastIrcActivity = Date.now(); });
-                }
-                if (socket.readyState !== 1) return 'disconnected';
-                socket.send('PING :onc-watchdog\r\n');
-                return 'open:' + (Date.now() - window.oncLastIrcActivity);
+                return window.oncChat ? window.oncChat.health() : 'missing';
             } catch (e) {
                 return 'error:' + e.message;
             }
@@ -75,7 +66,6 @@ public partial class MainWindow
     private bool _chatNavigationPending = false;
     private DateTime _chatNavigationStartedAt = DateTime.MinValue;
     private DateTime _chatPageLoadedAt = DateTime.MinValue;
-    private DateTime? _chatDisconnectedSince;
     private DateTime _lastChatRecoveryAt = DateTime.MinValue;
     private int _consecutiveChatRecoveries = 0;
     private readonly Queue<DateTime> _webViewRebuilds = new();
@@ -125,7 +115,6 @@ public partial class MainWindow
     {
         _chatNavigationPending = false;
         _chatPageLoadedAt = DateTime.UtcNow;
-        _chatDisconnectedSince = null;
         _chatUnresponsiveSince = null;
     }
 
@@ -172,8 +161,6 @@ public partial class MainWindow
 
         if (state.StartsWith("open:"))
         {
-            _chatDisconnectedSince = null;
-
             if (double.TryParse(state.AsSpan(5), out double silentMs) && silentMs > ChatSilenceLimit.TotalMilliseconds)
             {
                 RecoverChat($"no data from Twitch for {silentMs / 1000:0}s");
@@ -182,16 +169,10 @@ public partial class MainWindow
 
             _consecutiveChatRecoveries = 0;
         }
-        else if (state == "disconnected")
+        else if (state != "disconnected" && now - _chatPageLoadedAt > ChatStartupGracePeriod)
         {
-            _chatDisconnectedSince ??= now;
-            if (now - _chatDisconnectedSince.Value > ChatDisconnectedLimit)
-                RecoverChat($"disconnected from Twitch for {(now - _chatDisconnectedSince.Value).TotalSeconds:0}s");
-        }
-        else if (now - _chatPageLoadedAt > ChatStartupGracePeriod)
-        {
-            // "missing" or "error": the page never created its socket (e.g. a script failed to load).
-            RecoverChat($"chat never connected ({state})");
+            // "missing" or "error": the page's script isn't running (a lost connection is the page's job)
+            RecoverChat($"chat page not running ({state})");
         }
     }
 

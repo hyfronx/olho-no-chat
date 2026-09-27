@@ -28,12 +28,6 @@ public partial class MainWindow
         };
     }
 
-    // KapChat "fade" address parameter: seconds before old messages disappear, or "false"
-    private static string GetKapChatFadeParam()
-    {
-        return App.Settings.GeneralSettings.FadeChat ? App.Settings.GeneralSettings.FadeTime : "false";
-    }
-
     /// <summary>
     /// Applies the saved settings to the open chat page, keeping its messages.
     /// Returns false when that isn't possible (page still loading or not working), so the caller
@@ -55,37 +49,21 @@ public partial class MainWindow
         if (_chatNavigationPending || this.webView?.CoreWebView2 == null)
             return false;
 
-        var settings = App.Settings.GeneralSettings;
-        string pageSettings = JsonSerializer.Serialize(new
-        {
-            fade = GetKapChatFadeParam(),
-            botActivity = (!settings.BlockBotActivity).ToString(),
-            css = _currentChat.SetupCustomCSS() ?? string.Empty
-        });
-
-        // KapChat reads "fade" and "bot_activity" from the page address on every message, and the
-        // fade time from Chat.vars; the filters are read from window.oncChatSettings (see KapChat.cs).
+        // The filters, sound and "Apagar mensagens antigas" are read by the page on every message (see browser/chat.js)
         string script = $$"""
-            (function (page, messages) {
-                if (typeof Chat === 'undefined' || !Chat.vars || !window.oncChatSettings) return false;
+            (function (messages, css) {
+                if (!window.oncChat) return false;
+                window.oncChat.apply(messages);
 
-                var params = new URLSearchParams(location.search);
-                params.set('fade', page.fade);
-                params.set('bot_activity', page.botActivity);
-                history.replaceState(history.state, '', location.pathname + '?' + params.toString() + location.hash);
-                Chat.vars.maxDisplayTime = page.fade === 'true' ? 30 : parseInt(page.fade);
-
-                Object.assign(window.oncChatSettings, messages);
-
-                var css = document.getElementById('{{CustomCssElementId}}');
-                if (!css) {
-                    css = document.createElement('style');
-                    css.id = '{{CustomCssElementId}}';
-                    document.head.appendChild(css);
+                var style = document.getElementById('{{CustomCssElementId}}');
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = '{{CustomCssElementId}}';
+                    document.head.appendChild(style);
                 }
-                css.textContent = page.css;
+                style.textContent = css;
                 return true;
-            })({{pageSettings}}, {{Chats.KapChat.GetMessageSettingsJson()}});
+            })({{Chats.KapChat.GetMessageSettingsJson()}}, {{JsonSerializer.Serialize(_currentChat.SetupCustomCSS() ?? string.Empty)}});
             """;
 
         try

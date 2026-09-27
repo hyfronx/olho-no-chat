@@ -163,7 +163,7 @@ public class GeneralSettings
     public string ChatNotificationSound { get; set; } = "Alert 2 (Low).wav";
     // 0 = sound on every new message; otherwise at most once every this many seconds (the first message always rings)
     public int ChatSoundQuietSeconds { get; set; } = 0;
-    // Index in KapChat.Themes (Chats/KapChat.cs) and in the Tema list of the Aparência tab: 0 = "Nenhum", 1 = "Padrão" (bttv_blackchat)
+    // Index in the Tema list of the Aparência tab: 0 = "Nenhum", 1 = "Padrão" (body.tema-padrao in browser/chat.css)
     public const int DefaultThemeIndex = 1;
     public int ThemeIndex { get; set; } = DefaultThemeIndex;
     public string CustomCSS { get; set; } = string.Empty;

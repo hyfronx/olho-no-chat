@@ -301,6 +301,8 @@ public partial class MainWindow : Window
         webView.NavigationCompleted += webView_NavigationCompleted;
         webView.WebMessageReceived += webView_WebMessageReceived;
         webView.CoreWebView2.ProcessFailed += webView_CoreWebView2ProcessFailed;
+        webView.CoreWebView2.SetVirtualHostNameToFolderMapping(LocalHtmlHelper.ChatPageHost, LocalHtmlHelper.BrowserFolder,
+            CoreWebView2HostResourceAccessKind.DenyCors);
 
         await AddTwemojiFallbackAsync(webView.CoreWebView2);
         ApplyLightweightWebViewSettings(webView.CoreWebView2);
@@ -518,23 +520,11 @@ public partial class MainWindow : Window
         }
     }
 
-    // The "Padrão" chat page of a channel (a name, see SavedChannel)
+    // The "Padrão" chat page of a channel (a name, see SavedChannel): the app's own page (browser\chat.html)
     private void SetChatAddress(string channel)
     {
-        string fade = GetKapChatFadeParam();
-
-        string theme = string.Empty;
-        if ((App.Settings.GeneralSettings.ThemeIndex >= 0) && (App.Settings.GeneralSettings.ThemeIndex < KapChat.Themes.Length))
-            theme = KapChat.Themes[App.Settings.GeneralSettings.ThemeIndex];
-
-        string url = @"https://nightdev.com/hosted/obschat/?";
-        url += @"theme=" + theme;
-        url += @"&channel=" + channel;
-        url += @"&fade=" + fade;
-        url += @"&bot_activity=" + (!App.Settings.GeneralSettings.BlockBotActivity).ToString();
-        url += @"&prevent_clipping=false";
-
-        NavigateToUrl(url);
+        bool darkTheme = App.Settings.GeneralSettings.ThemeIndex != 0;
+        NavigateToUrl(LocalHtmlHelper.GetChatPageUrl(channel, darkTheme));
     }
 
     private void ExitApplication()

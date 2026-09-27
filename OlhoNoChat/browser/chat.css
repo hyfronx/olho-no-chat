@@ -1,0 +1,110 @@
+/* The "Padrão" chat page (chat.js). The class names are the ones the chat CSS options and the users' own
+   CSS (theme "Nenhum") were written for: #chat_box, .chat_line, .time_stamp, .badges, .nick, .colon, .message. */
+
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+    margin: 5px;
+    background: transparent;
+}
+
+#chat_box {
+    position: absolute;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    overflow: hidden;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #D3D3D3;
+}
+
+.chat_line {
+    margin: 0 3px;
+    padding: 2px 0 3px;
+    line-height: 16px;
+    overflow-wrap: anywhere;
+}
+
+.chat_line .time_stamp {
+    display: none;
+    padding-right: 3px;
+}
+
+.nick {
+    font-weight: bold;
+}
+
+.message {
+    display: inline;
+}
+
+.tag {
+    vertical-align: bottom;
+    height: 18px;
+    width: 18px;
+    margin: 0 3px -1px 0;
+    border-radius: 2px;
+}
+
+.emoticon {
+    margin-bottom: -7px;
+}
+
+/* Theme "Padrão": white bold letters with a black outline */
+body.tema-padrao #chat_box {
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    letter-spacing: 1px;
+}
+
+body.tema-padrao #chat_box .chat_line {
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Connection status: a dot at the top, yellow and pulsing while connecting, green when connected
+   (shown for a moment, then it fades out), red while the connection is lost */
+#onc-status {
+    position: fixed;
+    top: 6px;
+    left: 8px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(20, 20, 20, .88);
+    color: #fff;
+    border-radius: 14px;
+    padding: 5px 12px 5px 10px;
+    font: 600 15px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity .2s;
+}
+
+#onc-status.faded {
+    opacity: 0;
+    transition: opacity .8s;
+}
+
+#onc-status .onc-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+}
+
+#onc-status.connecting .onc-dot { background: #F5C518; animation: onc-pulse 1s ease-in-out infinite; }
+#onc-status.connected .onc-dot { background: #3BD16F; }
+#onc-status.disconnected .onc-dot,
+#onc-status.unavailable .onc-dot { background: #F04A4A; }
+
+@keyframes onc-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .3; transform: scale(.7); }
+}
