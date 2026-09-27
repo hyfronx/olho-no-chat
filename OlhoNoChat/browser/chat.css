@@ -53,6 +53,20 @@ body {
     margin-bottom: -7px;
 }
 
+/* An overlay emote (7TV "zero width", BTTV hats and snow) centered over the emote before it */
+.onc-stack {
+    position: relative;
+    display: inline-block;
+}
+
+.onc-stack .onc-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    margin: 0 !important;
+}
+
 /* Theme "Padrão": white bold letters with a black outline */
 body.tema-padrao #chat_box {
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;

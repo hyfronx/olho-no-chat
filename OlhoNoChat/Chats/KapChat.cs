@@ -89,7 +89,7 @@ namespace OlhoNoChat.Chats
 
         /* Emotes and emojis stand on the bottom of the text, like the letters (the badges and the name are
            centered, see .badges img). The negative top margin keeps a tall emote from making its line taller. */
-        .emote, .emoticon {
+        .emoticon {
             max-height: 28px;
             margin: -4px -2px 0 !important;
             vertical-align: text-bottom !important;

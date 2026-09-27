@@ -126,9 +126,11 @@
                 // Comes right after joining the channel (and again when a chat mode changes)
                 retryDelay = RETRY_MIN_MS;
                 setState('connected');
+                if (message.tags['room-id']) loadChannelEmotes(message.tags['room-id']);
                 break;
             case 'PRIVMSG':
-                onChatMessage(message);
+                if (heldMessages) heldMessages.push(message);
+                else onChatMessage(message);
                 break;
             case 'CLEARCHAT':
                 // A timeout or ban takes that user's messages out; without a user, /clear empties the chat
@@ -202,7 +204,7 @@
             name: tags['display-name'] || login,
             color: userColor(login, tags.color),
             action,
-            parts: splitTwitchEmotes(text, tags.emotes)
+            parts: addOtherEmotes(splitTwitchEmotes(text, tags.emotes))
         }, tags.badges || '');
     }
 
@@ -262,6 +264,115 @@
         return { src: base + '1.0', srcset: base + '2.0 2x, ' + base + '3.0 4x' };
     }
 
+    // --- Emotes of BetterTTV, FrankerFaceZ and 7TV ---------------------------------------------------
+    // Words of a message that are emotes of those sites become pictures. The channel's emotes win over the
+    // global ones; with the same name on two sites: 7TV, then BTTV, then FFZ. Public addresses, no key needed.
+
+    const emoteSets = { channel: [new Map(), new Map(), new Map()], global: [new Map(), new Map(), new Map()] };
+    const SEVEN_TV = 0, BTTV = 1, FFZ = 2;
+
+    // BTTV's overlay emotes (drawn over the emote before them); 7TV marks its own with flag 1
+    const BTTV_ZERO_WIDTH = new Set(['cvHazmat', 'cvMask', 'IceCold', 'SoSnowy', 'TopHat', 'SantaHat', 'ReinDeer', 'CandyCane']);
+
+    const sevenTvEmote = e => {
+        const base = 'https://cdn.7tv.app/emote/' + e.id + '/';
+        return { code: e.name, src: base + '1x.webp', srcset: base + '2x.webp 2x, ' + base + '4x.webp 4x', zeroWidth: (e.flags & 1) === 1 };
+    };
+    const bttvEmote = e => {
+        const base = 'https://cdn.betterttv.net/emote/' + e.id + '/';
+        return { code: e.code, src: base + '1x', srcset: base + '2x 2x, ' + base + '3x 4x', zeroWidth: BTTV_ZERO_WIDTH.has(e.code) };
+    };
+    const ffzEmote = e => ({
+        code: e.code,
+        src: e.images['1x'],
+        srcset: [e.images['2x'] && e.images['2x'] + ' 2x', e.images['4x'] && e.images['4x'] + ' 4x'].filter(Boolean).join(', ')
+    });
+
+    // "modifier" emotes of BTTV/FFZ change the emote next to them in their own extension; here they stay text
+    function loadEmotes(url, target, list, toEmote) {
+        return fetch(url)
+            .then(response => response.ok ? response.json() : null) // 404: the channel doesn't use that site
+            .then(data => (list(data) || []).forEach(e => {
+                if (e.modifier) return;
+                const emote = toEmote(e);
+                if (emote.code && emote.src) target.set(emote.code, emote);
+            }))
+            .catch(e => console.warn('[ONC] Could not load the emotes from ' + url, e));
+    }
+
+    loadEmotes('https://7tv.io/v3/emote-sets/global', emoteSets.global[SEVEN_TV], d => d && d.emotes, sevenTvEmote);
+    loadEmotes('https://api.betterttv.net/3/cached/emotes/global', emoteSets.global[BTTV], d => d, bttvEmote);
+    loadEmotes('https://api.betterttv.net/3/cached/frankerfacez/emotes/global', emoteSets.global[FFZ], d => d, ffzEmote);
+
+    // The chat's messages wait (up to 3 s) until the channel's emotes arrived, so the first ones get them too.
+    // The channel id comes with the ROOMSTATE of the channel; its emotes are loaded once per page.
+    let heldMessages = [];
+    let channelEmotesFor = null;
+
+    function loadChannelEmotes(roomId) {
+        if (channelEmotesFor === roomId) return;
+        channelEmotesFor = roomId;
+        const id = encodeURIComponent(roomId);
+        const loads = [
+            loadEmotes('https://7tv.io/v3/users/twitch/' + id, emoteSets.channel[SEVEN_TV],
+                d => d && d.emote_set && d.emote_set.emotes, sevenTvEmote),
+            loadEmotes('https://api.betterttv.net/3/cached/users/twitch/' + id, emoteSets.channel[BTTV],
+                d => d && (d.channelEmotes || []).concat(d.sharedEmotes || []), bttvEmote),
+            loadEmotes('https://api.betterttv.net/3/cached/frankerfacez/users/twitch/' + id, emoteSets.channel[FFZ], d => d, ffzEmote)
+        ];
+        Promise.race([Promise.all(loads), new Promise(resolve => setTimeout(resolve, 3000))]).then(releaseHeldMessages);
+    }
+
+    function releaseHeldMessages() {
+        if (!heldMessages) return;
+        const messages = heldMessages;
+        heldMessages = null;
+        messages.forEach(onChatMessage);
+    }
+
+    function findEmote(word) {
+        for (const sets of [emoteSets.channel, emoteSets.global]) {
+            for (const set of sets) {
+                const emote = set.get(word);
+                if (emote) return emote;
+            }
+        }
+        return null;
+    }
+
+    // Splits the text parts of a message at the emote words. A word may have punctuation around it ("LUL!").
+    function addOtherEmotes(parts) {
+        const result = [];
+        parts.forEach(part => {
+            if (typeof part !== 'string') {
+                result.push(part);
+                return;
+            }
+            let text = '';
+            part.split(' ').forEach((word, i) => {
+                if (i > 0) text += ' ';
+                let emote = findEmote(word);
+                let before = '', name = word, after = '';
+                if (!emote) {
+                    const m = /^([~!@#$%^&*()]*)(.+?)([~!@#$%^&*()]*)$/.exec(word);
+                    if (m && (m[1] || m[3])) {
+                        emote = findEmote(m[2]);
+                        [before, name, after] = [m[1], m[2], m[3]];
+                    }
+                }
+                if (!emote) {
+                    text += word;
+                    return;
+                }
+                if (text + before) result.push(text + before);
+                result.push({ emote, name });
+                text = after;
+            });
+            if (text) result.push(text);
+        });
+        return result;
+    }
+
     // Users without a color get one of Twitch's default colors. On the dark theme, a color too dark to read
     // on the black background is made lighter.
     const DEFAULT_COLORS = ['#FF0000', '#0000FF', '#008000', '#B22222', '#FF7F50', '#9ACD32', '#FF4500', '#2E8B57',
@@ -319,7 +430,8 @@
             img.src = part.emote.src;
             if (part.emote.srcset) img.srcset = part.emote.srcset;
             img.alt = img.title = part.name;
-            message.append(img);
+            if (!(part.emote.zeroWidth && stackOnPreviousEmote(message, img)))
+                message.append(img);
         });
         linkify(message);
 
@@ -365,6 +477,29 @@
             parts.append(text.slice(last));
             node.replaceWith(parts);
         });
+    }
+
+    // An overlay emote (a hat, snow...) is drawn over the emote right before it, if there is one
+    function stackOnPreviousEmote(message, img) {
+        const isEmote = node => node && node.nodeType === Node.ELEMENT_NODE &&
+            (node.classList.contains('emoticon') || node.classList.contains('onc-stack'));
+        let previous = message.lastChild;
+        if (previous && previous.nodeType === Node.TEXT_NODE && !previous.nodeValue.trim() && isEmote(previous.previousSibling)) {
+            previous.remove();
+            previous = message.lastChild;
+        }
+        if (!isEmote(previous)) return false;
+
+        let stack = previous;
+        if (!stack.classList.contains('onc-stack')) {
+            stack = document.createElement('span');
+            stack.className = 'onc-stack';
+            previous.replaceWith(stack);
+            stack.append(previous);
+        }
+        img.classList.add('onc-overlay');
+        stack.append(img);
+        return true;
     }
 
     function removeLines(selector) {
@@ -468,7 +603,7 @@
         // A line from the app in the user's color, like a /me message (channel point redemptions)
         addAction(name, color, text) {
             const login = name.toLowerCase();
-            showLine({ login, name, color: userColor(login, color), action: true, parts: [text] }, '');
+            showLine({ login, name, color: userColor(login, color), action: true, parts: addOtherEmotes([text]) }, '');
         },
 
         // For the app's watchdog: "open:<ms since Twitch last sent something>" or the state
