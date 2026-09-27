@@ -208,6 +208,61 @@
         }, tags.badges || '');
     }
 
+    // --- Badges --------------------------------------------------------------------------------------
+    // The "badges" tag of a message ("moderator/1,subscriber/12") names each badge; its picture comes from the
+    // channel's own badges (subscriber, bits), then from the global ones. The global ones ship with the app
+    // (badges-globais.json, made by ferramentas\atualizar_badges.ps1); the channel's come from ivr.fi, a public
+    // community API. A badge not found in either is left out; subscriber falls back to the default one.
+    // A line shown before the badges arrived gets them when they do.
+
+    const badgeSets = { global: {}, channel: {} };
+    const BADGE_IMAGE_ID = /\/badges\/v1\/([0-9a-f-]+)\//;
+
+    fetch('badges-globais.json')
+        .then(response => response.json())
+        .then(sets => { badgeSets.global = sets; refreshBadges(); })
+        .catch(e => console.warn('[ONC] Could not load the global badges', e));
+
+    if (channel) {
+        fetch('https://api.ivr.fi/v2/twitch/badges/channel?login=' + encodeURIComponent(channel))
+            .then(response => response.ok ? response.json() : [])
+            .then(list => {
+                const sets = {};
+                (Array.isArray(list) ? list : []).forEach(set => (set.versions || []).forEach(version => {
+                    const m = BADGE_IMAGE_ID.exec(version.image_url_1x || '');
+                    if (m) (sets[set.set_id] ??= {})[version.id] = m[1];
+                }));
+                badgeSets.channel = sets;
+                refreshBadges();
+            })
+            .catch(e => console.warn('[ONC] Could not load the channel badges', e));
+    }
+
+    function badgeImageId(set, version) {
+        return badgeSets.channel[set]?.[version] || badgeSets.global[set]?.[version]
+            || (set === 'subscriber' ? badgeSets.global.subscriber?.['0'] : null);
+    }
+
+    function fillBadges(span) {
+        span.replaceChildren();
+        span.dataset.badges.split(',').forEach(badge => {
+            const [set, version] = badge.split('/');
+            const imageId = badgeImageId(set, version);
+            if (!imageId) return;
+            const base = 'https://static-cdn.jtvnw.net/badges/v1/' + imageId + '/';
+            const img = document.createElement('img');
+            img.className = 'tag ' + set + '-' + version;
+            img.src = base + '1';
+            img.srcset = base + '2 2x, ' + base + '3 4x';
+            img.alt = set;
+            span.append(img);
+        });
+    }
+
+    function refreshBadges() {
+        box.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
+    }
+
     // The "Filtros" of the app: blocked users, "only the listed users" (plus all VIPs / Mods, from the
     // badges tag "vip/1,subscriber/12") and their highlight. Also decides if the new-message sound rings.
     function showLine(line, badges) {
@@ -221,6 +276,7 @@
 
         if (settings.allowedUsersOnly && !allowed) return;
         line.highlight = settings.highlightUsers && allowed ? 'highlight' + byBadge : '';
+        line.badges = badges;
 
         // The app decides if it rings (not while the sound is playing, "Quando tocar")
         if (settings.playSound && ((!settings.highlightUsers && !settings.allowedUsersOnly) || allowed))
@@ -435,7 +491,15 @@
         });
         linkify(message);
 
-        div.append(time, nick);
+        div.append(time);
+        if (line.badges) {
+            const badges = document.createElement('span');
+            badges.className = 'badges';
+            badges.dataset.badges = line.badges;
+            fillBadges(badges);
+            div.append(badges);
+        }
+        div.append(nick);
         if (!line.action) {
             const colon = document.createElement('span');
             colon.className = 'colon';
