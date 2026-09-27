@@ -319,7 +319,7 @@ public partial class MainWindow
         }
         catch (HttpListenerException)
         {
-            ShowChatInputStatus("Não foi possível esperar a resposta da Twitch: outro programa está usando a porta 8981 do computador.");
+            ShowChatInputStatus("Não foi possível esperar a resposta da Twitch: outros programas estão usando as portas do computador que o Olho no Chat usa. Tente de novo daqui a pouco.");
             return;
         }
 

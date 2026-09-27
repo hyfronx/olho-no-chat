@@ -13,8 +13,10 @@ namespace OlhoNoChat.Twitch;
 /// </summary>
 public class TwitchAuthService : ITwitchAuthService
 {
-    private const string Prefix = "http://localhost:8981/";
-    private const string RedirectUri = Prefix + "auth"; // registered for the app at dev.twitch.tv
+    // The page's address is http://localhost:<port>/auth, registered for the app at dev.twitch.tv for each of these
+    // ports. They are tried in order: Windows may have handed one of them to another program's connection (on some
+    // computers its temporary ports start at 1024). The others are outside the usual ranges of temporary ports.
+    private static readonly int[] Ports = { 8981, 28981, 38981, 45981 };
     private static readonly TimeSpan WaitLimit = TimeSpan.FromMinutes(5);
 
     private HttpListener _listener;
@@ -25,8 +27,8 @@ public class TwitchAuthService : ITwitchAuthService
 
     /// <summary>
     /// Opens the browser and waits for the authorization. Returns the access token, or an empty
-    /// string when the user refused, cancelled or took too long. Throws HttpListenerException if the
-    /// local port is busy.
+    /// string when the user refused, cancelled or took too long. Throws HttpListenerException if all
+    /// the local ports are busy.
     /// </summary>
     public async Task<string> ConnectAsync()
     {
@@ -38,12 +40,10 @@ public class TwitchAuthService : ITwitchAuthService
         {
             _state = Guid.NewGuid().ToString("N");
 
-            _listener = new HttpListener();
-            _listener.Prefixes.Add(Prefix);
-            _listener.Start();
+            string redirectUri = StartListener();
             using var abort = _cancel.Token.Register(() => _listener?.Abort());
 
-            LaunchBrowser(_state);
+            LaunchBrowser(_state, redirectUri);
             return await ListenAsync(_cancel.Token);
         }
         finally
@@ -61,11 +61,31 @@ public class TwitchAuthService : ITwitchAuthService
         try { _cancel?.Cancel(); } catch (ObjectDisposedException) { }
     }
 
-    private static void LaunchBrowser(string state)
+    // Listens on the first free port of Ports and returns the page's address on it
+    private string StartListener()
+    {
+        for (int i = 0; ; i++)
+        {
+            string prefix = $"http://localhost:{Ports[i]}/";
+            _listener = new HttpListener();
+            _listener.Prefixes.Add(prefix);
+            try
+            {
+                _listener.Start();
+                return prefix + "auth";
+            }
+            catch (HttpListenerException) when (i < Ports.Length - 1)
+            {
+                _listener.Close();
+            }
+        }
+    }
+
+    private static void LaunchBrowser(string state, string redirectUri)
     {
         string url = "https://id.twitch.tv/oauth2/authorize?response_type=token"
             + "&client_id=" + AppInfo.TwitchClientId
-            + "&redirect_uri=" + Uri.EscapeDataString(RedirectUri)
+            + "&redirect_uri=" + Uri.EscapeDataString(redirectUri)
             + "&scope=" + Uri.EscapeDataString(AppInfo.TwitchScopes)
             + "&force_verify=true"
             + "&state=" + state;

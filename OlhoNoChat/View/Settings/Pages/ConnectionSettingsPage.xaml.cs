@@ -143,7 +143,7 @@ public partial class ConnectionSettingsPage : UserControl
         {
             ShowAccount();
             MessageBox.Show(Window.GetWindow(this),
-                "Não foi possível esperar a resposta da Twitch: outro programa está usando a porta 8981 do computador. Feche esse programa e tente de novo.",
+                "Não foi possível esperar a resposta da Twitch: outros programas estão usando as portas do computador que o Olho no Chat usa. Tente de novo daqui a pouco.",
                 "Conectar com a Twitch", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

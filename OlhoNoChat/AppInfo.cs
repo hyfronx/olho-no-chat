@@ -15,8 +15,8 @@ public static class AppInfo
 #endif
     public const string RepositoryUrl = "https://github.com/hyfronx/olho-no-chat";
 
-    // "Olho no Chat" application registered at dev.twitch.tv (confidential client, OAuth redirect
-    // http://localhost:8981/auth). "Conectar" in the Twitch tab authorizes it in the user's browser.
+    // "Olho no Chat" application registered at dev.twitch.tv (confidential client, OAuth redirects
+    // http://localhost:<port>/auth for the ports in TwitchAuthService.Ports). "Conectar" in the Twitch tab authorizes it in the user's browser.
     public const string TwitchClientId = "zrqsilh31pbdlfjb81onhulkvzytgh";
 
     // What "Conectar" asks for: writing in the chat, reading the channel point redemptions and the list
