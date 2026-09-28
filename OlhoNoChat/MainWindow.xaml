@@ -15,7 +15,7 @@
         ResizeMode="CanResize"
         Topmost="True"
         Icon="/icons/olho_no_chat.ico"
-        Title="" Height="530" Width="360" MinWidth="334" Closed="Window_Closed" Loaded="Window_Loaded">
+        Title="" Height="530" Width="360" MinWidth="298" Closed="Window_Closed" Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="AppTitleBarStyle" TargetType="ui:TitleBarControl">
             <Setter Property="ui:ThemeManager.RequestedTheme" Value="Dark" />
@@ -305,10 +305,6 @@
                                   Checked="btnQuickTop_Toggled" Unchecked="btnQuickTop_Toggled">
                         <ui:FontIcon Style="{StaticResource AlwaysOnTopIcon}" />
                     </ToggleButton>
-                    <Button x:Name="btnQuickScroll" Style="{StaticResource TitleIconButton}" AutomationProperties.Name="Modo rolagem"
-                            Click="QuickScrollMode_Click">
-                        <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE962;" />
-                    </Button>
                     <Rectangle Style="{StaticResource TitleSeparator}" />
 
                     <!-- Opens/closes the "Escrever no chat…" box (MainWindow.ChatInput.cs): lit while it is open -->

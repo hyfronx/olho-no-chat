@@ -20,24 +20,6 @@ public partial class MainWindow
     private const double TextSizeWheelStep = 0.1;
     private const double BackgroundWheelStep = 5; // percent
 
-    // Set when the scroll mode is started from the title bar, so that leaving it shows how to
-    // bring the borders back (the user came from the bordered window).
-    private bool _scrollModeFromToolbar = false;
-
-    // "Modo rolagem": the chat already scrolls while the borders are shown, so this hides the borders
-    // and keeps the chat scrollable on top of the game.
-    private void QuickScrollMode_Click(object sender, RoutedEventArgs e)
-    {
-        if (!hasWebView2Runtime) return;
-
-        // The scroll-mode banner already explains how to leave; the borders notice comes after.
-        _suppressBordersHintOnce = true;
-        hideBorders();
-
-        _scrollModeFromToolbar = true;
-        SetInteractable(true);
-    }
-
     // Tooltips of the title bar buttons, with the current keyboard shortcut.
     private void UpdateHotkeyTooltips()
     {
@@ -50,8 +32,6 @@ public partial class MainWindow
             ? "Sempre no topo: ligado. O chat fica na frente do jogo e das outras janelas. Clique para desligar."
             : "Sempre no topo: desligado. O chat é uma janela comum, que fica atrás de outra quando você clica nela. Clique para ligar.",
             settings.BringToTopHotkey);
-        this.btnQuickScroll.ToolTip = WithHotkey(
-            "Modo rolagem: esconde as bordas e deixa rolar o chat com a rodinha do mouse.", settings.ToggleInteractableHotkey);
     }
 
     private bool _syncingQuickSliders = false;

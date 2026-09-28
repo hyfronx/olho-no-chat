@@ -9,7 +9,6 @@ using System.Windows.Input;
 public partial class MainWindow
 {
     private bool _bordersHintPending = false;
-    private bool _suppressBordersHintOnce = false;
 
     private const string ShowToastScript = """
         (function (text) {
@@ -32,12 +31,6 @@ public partial class MainWindow
 
     private void RequestBordersHint()
     {
-        if (_suppressBordersHintOnce)
-        {
-            _suppressBordersHintOnce = false;
-            return;
-        }
-
         _bordersHintPending = true;
         TryShowBordersHint();
     }

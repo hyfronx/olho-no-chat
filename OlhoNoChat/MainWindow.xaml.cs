@@ -382,12 +382,6 @@ public partial class MainWindow : Window
         if (_hiddenBorders)
         {
             SetWindowFrame(interactable ? AccentBrush : Brushes.Transparent, interactable ? scrollModeBorderThickness : noBorderThickness);
-
-            if (!interactable && _scrollModeFromToolbar)
-            {
-                _scrollModeFromToolbar = false;
-                RequestBordersHint();
-            }
         }
     }
 
@@ -429,7 +423,6 @@ public partial class MainWindow : Window
         this.ResizeMode = ResizeMode.CanResize;
 
         _hiddenBorders = false;
-        _scrollModeFromToolbar = false;
         UpdateChatResizeEdge();
         ApplyInteractable(App.Settings.GeneralSettings.AllowInteraction);
 
