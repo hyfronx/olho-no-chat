@@ -13,7 +13,7 @@ using OlhoNoChat.Sistema;
 namespace OlhoNoChat.Janelas;
 
 /// <summary>
-/// A base das janelas com moldura laranja (Filtros do chat, e Configurações depois): barra de título de 44 px com
+/// A base das janelas com moldura laranja (Configurações e Filtros do chat): barra de título de 44 px com
 /// ícone, nome e "×", coluna de navegação, área das páginas com o canto arredondado, barra de baixo com "Salvar" e
 /// "Fechar". "Salvar" grava sem fechar e mostra "✓ Salvo" por 2,5 s; Fechar, Esc, "×" e Alt+F4 perguntam antes de
 /// fechar se algo mudou. O visual está em Estilos/Controles.xaml (EstiloJanelaComMoldura).
@@ -87,8 +87,8 @@ public abstract class JanelaComMoldura : Window
         MostrarSalvo();
     }
 
-    // "✓ Salvo" no botão por um momento; salvar de novo recomeça a contagem
-    private void MostrarSalvo()
+    /// <summary>"✓ Salvo" no botão por um momento; salvar de novo recomeça a contagem.</summary>
+    protected void MostrarSalvo()
     {
         if (_botaoSalvar == null)
             return;
@@ -179,20 +179,31 @@ public abstract class JanelaComMoldura : Window
         Dispatcher.BeginInvoke(PerguntarAntesDeFechar);
     }
 
-    private async void PerguntarAntesDeFechar()
+    /// <summary>
+    /// Mostra uma pergunta no diálogo da janela (ver <see cref="DialogoNaJanela.PerguntarAsync"/>). Enquanto ela está
+    /// aberta, o Enter é do diálogo, não do "Salvar".
+    /// </summary>
+    protected async Task<RespostaDoDialogo> PerguntarAsync(string titulo, string texto, string principal, string? secundario,
+        string fechar, RespostaDoDialogo padrao)
     {
         if (_dialogo == null)
-            return;
+            return RespostaDoDialogo.Fechar;
 
         bool padraoDaJanela = _botaoSalvar?.IsDefault == true;
         if (_botaoSalvar != null)
-            _botaoSalvar.IsDefault = false; // o Enter é do diálogo enquanto ele está aberto
+            _botaoSalvar.IsDefault = false;
 
-        RespostaDoDialogo resposta = await _dialogo.PerguntarAsync("Salvar as alterações?", TextoDaPerguntaAoFechar,
-            "Salvar", "Não salvar", "Voltar", RespostaDoDialogo.Principal);
+        RespostaDoDialogo resposta = await _dialogo.PerguntarAsync(titulo, texto, principal, secundario, fechar, padrao);
 
         if (_botaoSalvar != null)
             _botaoSalvar.IsDefault = padraoDaJanela;
+        return resposta;
+    }
+
+    private async void PerguntarAntesDeFechar()
+    {
+        RespostaDoDialogo resposta = await PerguntarAsync("Salvar as alterações?", TextoDaPerguntaAoFechar,
+            "Salvar", "Não salvar", "Voltar", RespostaDoDialogo.Principal);
 
         if (resposta == RespostaDoDialogo.Principal)
             SalvarEMostrar();

@@ -1,0 +1,183 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Configuracoes.PaginaChat"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- Os estilos com nome vêm da janela (Estilos/Controles.xaml): DynamicResource, porque a página é montada antes
+         de entrar nela. DataContext = LogicaChat. -->
+    <UserControl.Resources>
+        <ctl:VisivelSe x:Key="VisivelSe" />
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
+        <StackPanel Style="{DynamicResource PainelDaPagina}">
+            <TextBlock Text="Chat" Style="{DynamicResource TituloDaPagina}" />
+            <TextBlock Text="Tipo de chat e quais mensagens aparecem. O canal se troca na faixa em cima do chat." Style="{DynamicResource SubtituloDaPagina}" />
+
+            <!-- Tipo de chat: os painéis abaixo mostram só as opções do tipo escolhido (sem título de seção acima) -->
+            <Border Style="{DynamicResource Cartao}" Margin="0,14,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE8A9;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Tipo de chat" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Como o chat aparece. Se estiver em dúvida, use o Padrão." Style="{DynamicResource Dica}" />
+                    </StackPanel>
+                    <ComboBox x:Name="listaTipoDeChat" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
+                              AutomationProperties.Name="Tipo de chat" SelectedIndex="{Binding TipoDeChat}">
+                        <ComboBoxItem Content="Padrão (recomendado)" />
+                        <ComboBoxItem Content="Chat oficial da Twitch" />
+                        <ComboBoxItem Content="Endereço personalizado" />
+                    </ComboBox>
+                </Grid>
+            </Border>
+
+            <!-- Padrão -->
+            <StackPanel x:Name="painelChatPadrao" Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">
+                <TextBlock Text="Mensagens" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE916;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Apagar mensagens antigas" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="As mensagens somem do chat depois de um tempo. Não precisa ligar para o app ficar leve: o chat já guarda só as últimas 100." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorApagarAntigas" Grid.Column="2" IsChecked="{Binding ApagarMensagensAntigas}"
+                                             AutomationProperties.Name="Apagar mensagens antigas" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <!-- Desbotada com o interruptor desligado -->
+                        <StackPanel x:Name="linhaSegundosParaApagar" Orientation="Horizontal" Margin="36,0,0,0"
+                                    Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ApagarMensagensAntigas}">
+                            <TextBlock Text="Apagar depois de" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBox x:Name="caixaSegundosParaApagar" Width="80" AutomationProperties.Name="Segundos até apagar"
+                                     Text="{Binding SegundosParaApagar, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="segundos" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="Filtros" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE99A;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder bots e comandos" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Style="{DynamicResource Dica}"
+                                           Text="Esconde usuários com nome terminado em &quot;bot&quot; (Nightbot, Moobot...) e mensagens que começam com &quot;!&quot;." />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderBots" Grid.Column="2" IsChecked="{Binding EsconderBots}"
+                                             AutomationProperties.Name="Esconder bots e comandos" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xEB9F;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder GIFs" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Os GIFs que assinantes mandam no chat aparecem só com o nome, sem a imagem animada." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderGifs" Grid.Column="2" IsChecked="{Binding EsconderGifs}"
+                                             AutomationProperties.Name="Esconder GIFs" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE716;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder mensagens de outros canais" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="No chat unido da Twitch, mostra só quem digitou no seu canal. Desligado, as mensagens dos outros canais aparecem com a foto do canal antes do nome." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderOutrosCanais" Grid.Column="2" IsChecked="{Binding EsconderOutrosCanais}"
+                                             AutomationProperties.Name="Esconder mensagens de outros canais" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Abre a janela Filtros do chat (que salva sozinha) -->
+                <Button x:Name="cartaoFiltros" Style="{DynamicResource CartaoClicavel}" AutomationProperties.Name="Filtrar ou destacar usuários"
+                        Click="CartaoFiltros_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE71C;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Filtrar ou destacar usuários" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Mostrar só algumas pessoas, bloquear alguém ou destacar as mensagens de quem você escolher." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="&#xE76C;" Style="{DynamicResource Icone}" FontSize="12" Margin="0,0,6,0" />
+                    </Grid>
+                </Button>
+            </StackPanel>
+
+            <!-- Chat oficial da Twitch -->
+            <StackPanel x:Name="painelChatOficial" Visibility="{Binding ComChatOficial, Converter={StaticResource VisivelSe}}">
+                <TextBlock Text="Extensões de emotes" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="BetterTTV" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <ctl:Interruptor x:Name="interruptorBetterTtv" IsChecked="{Binding BetterTtv}" AutomationProperties.Name="BetterTTV" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <TextBlock Text="Menu de emotes avançado do BetterTTV" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" Margin="0,0,140,0" />
+                            <ctl:Interruptor x:Name="interruptorMenuDoBetterTtv" IsChecked="{Binding MenuDeEmotesDoBetterTtv}"
+                                             AutomationProperties.Name="Menu de emotes avançado do BetterTTV" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <TextBlock Text="Emotes do 7TV" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <ctl:Interruptor x:Name="interruptor7tv" IsChecked="{Binding Emotes7tv}" AutomationProperties.Name="Emotes do 7TV" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <TextBlock Text="FrankerFaceZ" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <ctl:Interruptor x:Name="interruptorFrankerFaceZ" IsChecked="{Binding FrankerFaceZ}" AutomationProperties.Name="FrankerFaceZ" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Endereço personalizado -->
+            <StackPanel x:Name="painelChatEndereco" Visibility="{Binding ComEndereco, Converter={StaticResource VisivelSe}}">
+                <TextBlock Text="Página do chat" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <TextBlock Text="Endereço da página (URL)" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Qualquer página de chat, como as geradas pelo StreamElements ou Streamlabs." Style="{DynamicResource Dica}" />
+                        <TextBox x:Name="caixaEndereco" Margin="0,10,0,0" AutomationProperties.Name="Endereço da página"
+                                 ctl:CaixaDeTexto.TextoDeExemplo="https://..."
+                                 Text="{Binding EnderecoPersonalizado, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

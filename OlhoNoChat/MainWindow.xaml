@@ -17,6 +17,15 @@
         Icon="/icons/olho_no_chat.ico"
         Title="" Height="530" Width="360" MinWidth="298" Closed="Window_Closed" Loaded="Window_Loaded">
     <Window.Resources>
+        <!-- Caixas de texto e botões comuns mais arredondados que o padrão do ModernWpf (caixa do canal, de escrever e de
+             procurar emote, botão Emojis) -->
+        <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+            <Setter Property="ui:ControlHelper.CornerRadius" Value="8" />
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="ui:ControlHelper.CornerRadius" Value="8" />
+        </Style>
+
         <Style x:Key="AppTitleBarStyle" TargetType="ui:TitleBarControl">
             <Setter Property="ui:ThemeManager.RequestedTheme" Value="Dark" />
         </Style>
@@ -523,8 +532,12 @@
                         </Border>
 
                         <!-- The same thin scroll bar as the other windows -->
-                        <ScrollViewer x:Name="EmoteScroll" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0"
-                                      Style="{StaticResource SettingsPageScroll}">
+                        <ScrollViewer x:Name="EmoteScroll" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0" Focusable="False"
+                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                      Template="{DynamicResource ModeloDaRolagem}">
+                            <ScrollViewer.Resources>
+                                <ResourceDictionary Source="Estilos/Rolagem.xaml" />
+                            </ScrollViewer.Resources>
                             <ItemsControl x:Name="EmoteGroups" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>

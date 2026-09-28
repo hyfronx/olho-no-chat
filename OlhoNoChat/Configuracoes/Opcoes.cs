@@ -78,7 +78,6 @@ public sealed class Opcoes
     // Geral
     public bool EsconderBordasAoAbrir { get; set; } = false;
     public bool EsconderIconeDaBarraDeTarefas { get; set; } = false;
-    public bool PermitirCliqueComBordas { get; set; } = true;
     public bool ProcurarAtualizacoes { get; set; } = true;
     public bool PermitirVariasCopias { get; set; } = false;
     // Atalhos: null = sem atalho (apagado pela pessoa)

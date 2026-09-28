@@ -1,0 +1,136 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Configuracoes.PaginaSom"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- DataContext = LogicaSom. Os estilos com nome vêm da janela (DynamicResource). -->
+    <UserControl.Resources>
+        <ctl:VisivelSe x:Key="VisivelSe" />
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
+        <StackPanel Style="{DynamicResource PainelDaPagina}">
+            <TextBlock Text="Som" Style="{DynamicResource TituloDaPagina}" />
+            <TextBlock Text="Um aviso sonoro quando chega mensagem nova no chat." Style="{DynamicResource SubtituloDaPagina}" />
+
+            <TextBlock Text="Aviso de nova mensagem" Style="{DynamicResource TituloDaSecao}" />
+            <!-- O som só toca no chat Padrão -->
+            <Border x:Name="cartaoSom" Style="{DynamicResource Cartao}" Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xEA8F;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Som" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Ao escolher um som, ele toca uma vez para você ouvir." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <!-- Toca ao fechar a lista (também sem trocar de som) -->
+                        <ComboBox x:Name="listaSom" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" Width="190"
+                                  AutomationProperties.Name="Som de nova mensagem"
+                                  ItemsSource="{Binding Sons}" DisplayMemberPath="Nome"
+                                  SelectedValuePath="Valor" SelectedValue="{Binding SomEscolhido}" DropDownClosed="ListaSom_DropDownClosed" />
+                        <Button x:Name="botaoOuvir" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center"
+                                ToolTip="Ouvir o som escolhido" AutomationProperties.Name="Ouvir" Command="{Binding OuvirCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE768;" Style="{DynamicResource Icone}" FontSize="12" Foreground="{DynamicResource LaranjaClaro}" />
+                                <TextBlock Text="Ouvir" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE916;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Quando tocar" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="A primeira mensagem toca; as seguintes só depois desse tempo." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <ComboBox x:Name="listaQuandoTocar" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" Width="260"
+                                  AutomationProperties.Name="Quando tocar o som"
+                                  ItemsSource="{Binding OpcoesDeQuandoTocar}" DisplayMemberPath="Nome"
+                                  SelectedValuePath="Valor" SelectedValue="{Binding QuandoTocar}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <Border x:Name="avisoSomSoNoPadrao" Style="{DynamicResource Cartao}"
+                    Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
+                    <TextBlock Grid.Column="1" Style="{DynamicResource Rotulo}" VerticalAlignment="Center"
+                               Text="O aviso de nova mensagem só funciona com o tipo de chat Padrão." />
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Onde tocar" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE7F5;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Saída de som" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Fone, caixa de som ou outro aparelho." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <ComboBox x:Name="listaSaidaDeSom" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" Width="260"
+                                  AutomationProperties.Name="Saída de som"
+                                  ItemsSource="{Binding Saidas}" DisplayMemberPath="Nome"
+                                  SelectedValuePath="Id" SelectedValue="{Binding SaidaEscolhida}" />
+                    </Grid>
+                    <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE767;" Style="{DynamicResource IconeDoCartao}" />
+                        <TextBlock Grid.Column="1" Text="Volume" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                        <!-- Setas de 5 em 5, Page Up/Down de 10 em 10; com o mouse não fica preso nos múltiplos de 5 -->
+                        <Slider x:Name="deslizanteVolume" Grid.Column="2" Width="220" VerticalAlignment="Center" AutomationProperties.Name="Volume"
+                                Minimum="0" Maximum="100" SmallChange="5" LargeChange="10" IsSnapToTickEnabled="False"
+                                Value="{Binding Volume}" />
+                        <TextBlock x:Name="textoVolume" Grid.Column="3" Width="44" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"
+                                   Style="{DynamicResource Rotulo}" Text="{Binding TextoDoVolume}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Seus próprios sons" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE8B7;" Style="{DynamicResource IconeDoCartao}" VerticalAlignment="Top" Margin="2,2,16,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Pasta dos sons" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Os arquivos .wav e .mp3 dessa pasta aparecem na lista de sons." Style="{DynamicResource Dica}" />
+                        <TextBlock x:Name="textoPastaDosSons" Text="{Binding TextoDaPasta}" Style="{DynamicResource Rotulo}" Margin="0,8,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button x:Name="botaoEscolherPasta" Content="Escolher pasta..." Click="BotaoEscolherPasta_Click" />
+                            <Button x:Name="botaoPastaPadrao" Margin="8,0,0,0" Content="Usar a pasta padrão" Command="{Binding UsarPastaPadraoCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

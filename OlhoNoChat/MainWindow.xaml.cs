@@ -8,7 +8,6 @@ using MessageBox = System.Windows.MessageBox;
 namespace OlhoNoChat;
 
 using Chats;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -25,6 +24,7 @@ using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
 /// The chat window: the chat page (WebView2) over the game, with its borders, quick settings in the title bar and tray menu.
@@ -32,7 +32,6 @@ using OlhoNoChat.Configuracoes;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MainWindow> _logger;
     private readonly ContaDaTwitch _conta;
     private readonly AutorizacaoNoNavegador _autorizacao;
@@ -43,7 +42,7 @@ public partial class MainWindow : Window
     private readonly ProcuraDeAtualizacoes _atualizacoes;
 
     // Configurações aberta (só uma por vez: pedir de novo traz a aberta para a frente)
-    private SettingsWindow _janelaDeConfiguracoes;
+    private JanelaConfiguracoes _janelaDeConfiguracoes;
 
     private WebView2 webView;
     private bool hasWebView2Runtime = false;
@@ -58,14 +57,13 @@ public partial class MainWindow : Window
     private readonly TocadorDeAviso _aviso = new();
     private Chat _currentChat = new WelcomeChat();
 
-    public MainWindow(IServiceProvider serviceProvider, ILogger<MainWindow> logger, ContaDaTwitch conta,
+    public MainWindow(ILogger<MainWindow> logger, ContaDaTwitch conta,
         AutorizacaoNoNavegador autorizacao, EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates,
         ProcuraDeAtualizacoes atualizacoes)
     {
         InitializeComponent();
         SetupQuickPanels();
 
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _conta = conta;
         _autorizacao = autorizacao;
@@ -78,7 +76,7 @@ public partial class MainWindow : Window
         _atualizacoes = atualizacoes;
         // "Atualizar agora": o Velopack fecha o app sem passar pelo Closing, então a posição vai para as opções antes
         _atualizacoes.AntesDeReiniciar = () => App.Opcoes.Janela = PosicaoDaJanela.De(this);
-        _atualizacoes.ProcuraAutomaticaDesligada += () => _janelaDeConfiguracoes?.ProcuraAutomaticaDesligada();
+        _atualizacoes.ProcuraAutomaticaDesligada += () => _janelaDeConfiguracoes?.Logica.ProcuraAutomaticaDesligada();
         this.Closed += (s, e) =>
         {
             _atalhos.Dispose();
@@ -378,7 +376,7 @@ public partial class MainWindow : Window
 
         _hiddenBorders = false;
         UpdateChatResizeEdge();
-        ApplyInteractable(App.Opcoes.PermitirCliqueComBordas);
+        ApplyInteractable(true); // com as bordas visíveis o chat sempre aceita clique (rolar, links)
 
         // The title bar and the toolbar take clicks also when clicking the chat is off
         JanelaDoWindows.TornarClicavel(new WindowInteropHelper(this).Handle);
@@ -689,19 +687,18 @@ public partial class MainWindow : Window
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
-        var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
+        var logica = new LogicaConfiguracoes(App.ArquivoDeConfiguracoes, new LogicaTwitch(_autorizacao, _conta, _resgates));
+        var settingsWindow = new JanelaConfiguracoes(logica, this);
         _janelaDeConfiguracoes = settingsWindow;
 
-        settingsWindow.CheckForUpdateRequested += () => {
-            _ = _atualizacoes.ProcurarAsync(manual: true, dono: settingsWindow);
-        };
+        logica.ProcurarAtualizacoesPedido += () => _ = _atualizacoes.ProcurarAsync(manual: true, dono: settingsWindow);
 
         // What the open chat page was loaded with, to know if a save needs to load it again
         int chatTypeLoaded = App.Opcoes.TipoDeChat;
         string chatReloadKeyLoaded = GetChatReloadKey();
 
         // "Salvar" keeps the window open, so every save is applied right away
-        settingsWindow.SettingsSaved += () =>
+        logica.Salvou += () =>
         {
             int chatTypeBefore = chatTypeLoaded;
             string chatReloadKeyBefore = chatReloadKeyLoaded;
@@ -762,8 +759,7 @@ public partial class MainWindow : Window
         if (!this._hiddenBorders)
         {
             this.webView.Focusable = true;
-            if (App.Opcoes.PermitirCliqueComBordas)
-                SetInteractable(true);
+            SetInteractable(true);
         }
 
         SetupOrReplaceHotkeys();

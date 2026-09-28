@@ -7,7 +7,6 @@ using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Twitch;
-using OlhoNoChat.View.Settings;
 using Velopack;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
@@ -80,7 +79,7 @@ namespace OlhoNoChat
                 // Hook the global unhandled exception handler
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-                // Dependency injection (the provider stays alive through MainWindow)
+                // Dependency injection: the services are created once and handed to the main window
                 var services = new ServiceCollection();
                 services.AddLogging(logging => logging.AddDebug());
                 services.AddSingleton<MainWindow>();
@@ -96,17 +95,6 @@ namespace OlhoNoChat
 #if DEBUG
                 SimuladorDoEventSub.RegistrarSeLigado(services); // resgates de mentira da Twitch CLI
 #endif
-
-                // Settings pages
-                services.AddTransient<ConnectionSettingsPage>();
-                services.AddTransient<ChatSettingsPage>();
-                services.AddTransient<AppearanceSettingsPage>();
-                services.AddTransient<SoundSettingsPage>();
-                services.AddTransient<GeneralSettingsPage>();
-                services.AddTransient<AboutSettingsPage>();
-
-                // Main settings window
-                services.AddTransient<SettingsWindow>();
 
                 // Create and show the main window
                 var mainWindow = services.BuildServiceProvider().GetRequiredService<MainWindow>();

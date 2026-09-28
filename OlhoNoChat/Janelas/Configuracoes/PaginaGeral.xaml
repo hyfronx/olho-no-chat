@@ -1,0 +1,204 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Configuracoes.PaginaGeral"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles"
+             xmlns:atalhos="clr-namespace:OlhoNoChat.Atalhos">
+    <!-- DataContext = LogicaGeral. Os estilos com nome vêm da janela (DynamicResource). Os cartões que abrem e fecham
+         começam fechados toda vez que a janela abre. -->
+    <UserControl.Resources>
+        <ctl:VisivelSe x:Key="VisivelSe" />
+        <Style x:Key="LinhaDoAtalho" TargetType="Grid">
+            <Setter Property="Margin" Value="0,10,0,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
+        <StackPanel Style="{DynamicResource PainelDaPagina}">
+            <TextBlock Text="Geral" Style="{DynamicResource TituloDaPagina}" />
+            <TextBlock Text="Como a janela do chat se comporta." Style="{DynamicResource SubtituloDaPagina}" />
+
+            <TextBlock Text="Janela do chat" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xED1A;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Esconder as bordas ao abrir o app" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="O chat já abre pronto para o jogo, só com as mensagens." Style="{DynamicResource Dica}" />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorEsconderBordas" Grid.Column="2" IsChecked="{Binding EsconderBordasAoAbrir}"
+                                     AutomationProperties.Name="Esconder as bordas ao abrir o app" />
+                </Grid>
+            </Border>
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE75B;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Esconder o ícone da barra de tarefas" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Some da barra de tarefas enquanto as bordas estão ocultas. Para abrir o menu, use o ícone do app perto do relógio do Windows." Style="{DynamicResource Dica}" />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorEsconderIcone" Grid.Column="2" IsChecked="{Binding EsconderIconeDaBarraDeTarefas}"
+                                     AutomationProperties.Name="Esconder o ícone da barra de tarefas" />
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Atalhos de teclado" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}" Padding="0">
+                <StackPanel>
+                    <ToggleButton x:Name="cabecalhoAtalhos" Style="{DynamicResource CabecalhoQueAbre}" AutomationProperties.Name="Mostrar atalhos de teclado">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE765;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Ver e mudar os atalhos" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Funcionam mesmo com o jogo em primeiro plano." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                        </Grid>
+                    </ToggleButton>
+                    <StackPanel Margin="16,0,16,16" Visibility="{Binding IsChecked, ElementName=cabecalhoAtalhos, Converter={StaticResource VisivelSe}}">
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" Margin="-16,0,-16,4" />
+                        <TextBlock Style="{DynamicResource Dica}" Margin="0,4,0,4"
+                                   Text="Use combinações com Ctrl, Alt ou Shift para não atrapalhar outros programas. Para apagar um atalho, clique em &quot;Mudar atalho&quot; e aperte Esc, Delete ou Backspace." />
+
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Mostrar/esconder as bordas" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoBordas" Grid.Column="1" Width="180" Atalho="{Binding AtalhoBordas}" />
+                            <Button x:Name="botaoMudarAtalhoBordas" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoBordas}" Click="MudarAtalho_Click" />
+                        </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Modo rolagem (rolar o chat com o mouse)" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoModoRolagem" Grid.Column="1" Width="180" Atalho="{Binding AtalhoModoRolagem}" />
+                            <Button x:Name="botaoMudarAtalhoModoRolagem" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoModoRolagem}" Click="MudarAtalho_Click" />
+                        </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Sempre no topo (ligar/desligar)" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoSempreNoTopo" Grid.Column="1" Width="180" Atalho="{Binding AtalhoSempreNoTopo}" />
+                            <Button x:Name="botaoMudarAtalhoSempreNoTopo" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoSempreNoTopo}" Click="MudarAtalho_Click" />
+                        </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Escrever no chat (conta da Twitch conectada)" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoEscrever" Grid.Column="1" Width="180" Atalho="{Binding AtalhoEscrever}" />
+                            <Button x:Name="botaoMudarAtalhoEscrever" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoEscrever}" Click="MudarAtalho_Click" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Atualizações" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE895;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Procurar atualizações ao abrir o app" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Avisa quando tiver uma versão nova." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorProcurarAtualizacoes" Grid.Column="2" IsChecked="{Binding ProcurarAtualizacoes}"
+                                         AutomationProperties.Name="Procurar atualizações ao abrir o app" />
+                    </Grid>
+                    <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                    <Grid Margin="36,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="textoVersao" Style="{DynamicResource Dica}" Margin="0" FontSize="13" VerticalAlignment="Center">
+                            <Run Text="Versão atual:" />
+                            <Run Text="{Binding Versao, Mode=OneWay}" Foreground="{DynamicResource Texto}" />
+                        </TextBlock>
+                        <Button x:Name="botaoProcurarAgora" Grid.Column="1" Content="Procurar agora" MinWidth="130"
+                                Command="{Binding ProcurarAgoraCommand}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Avançado" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}" Padding="0">
+                <StackPanel>
+                    <ToggleButton x:Name="cabecalhoAvancado" Style="{DynamicResource CabecalhoQueAbre}" AutomationProperties.Name="Mostrar opções avançadas">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE9F5;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Mostrar opções avançadas" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Coisas que quase ninguém precisa mudar." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                        </Grid>
+                    </ToggleButton>
+                    <StackPanel Margin="16,0,16,14" Visibility="{Binding IsChecked, ElementName=cabecalhoAvancado, Converter={StaticResource VisivelSe}}">
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" Margin="-16,0,-16,12" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}" Margin="36,0,16,0">
+                                <TextBlock Text="Permitir abrir mais de uma cópia do app (beta)" Style="{DynamicResource Rotulo}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorVariasCopias" Grid.Column="1" IsChecked="{Binding PermitirVariasCopias}"
+                                             AutomationProperties.Name="Permitir abrir mais de uma cópia do app" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" Margin="-16,12,-16,12" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}" Margin="36,0,16,0">
+                                <TextBlock Text="Restaurar tudo para o padrão" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Todas as opções voltam como na primeira instalação. O canal, a conta da Twitch e as listas de nomes dos filtros continuam."
+                                           Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <Button x:Name="botaoRestaurar" Grid.Column="1" Content="Restaurar" MinWidth="130" VerticalAlignment="Center"
+                                    AutomationProperties.Name="Restaurar tudo para o padrão" Command="{Binding RestaurarCommand}" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

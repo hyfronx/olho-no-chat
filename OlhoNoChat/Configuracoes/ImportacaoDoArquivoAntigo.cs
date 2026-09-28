@@ -141,7 +141,7 @@ public static class ImportacaoDoArquivoAntigo
         // Geral
         o.EsconderBordasAoAbrir = Booleano(v["AutoHideBorders"]) ?? o.EsconderBordasAoAbrir;
         o.EsconderIconeDaBarraDeTarefas = Booleano(v["HideTaskbarIcon"]) ?? o.EsconderIconeDaBarraDeTarefas;
-        o.PermitirCliqueComBordas = Booleano(v["AllowInteraction"]) ?? o.PermitirCliqueComBordas;
+        // "AllowInteraction" ("Permitir clicar no chat com as bordas visíveis") saiu: com as bordas o chat sempre aceita clique
         o.ProcurarAtualizacoes = Booleano(v["CheckForUpdates"]) ?? o.ProcurarAtualizacoes;
         o.PermitirVariasCopias = Booleano(v["AllowMultipleInstances"]) ?? o.PermitirVariasCopias;
         o.AtalhoBordas = AtalhoAntigo(v, "ToggleBordersHotkey", o.AtalhoBordas);

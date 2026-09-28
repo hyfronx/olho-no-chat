@@ -46,7 +46,6 @@ public sealed class ImportacaoDoArquivoAntigoTestes
         Assert.Equal(90, o.Fundo);
         Assert.True(o.EsconderBordasAoAbrir);
         Assert.True(o.EsconderIconeDaBarraDeTarefas);
-        Assert.False(o.PermitirCliqueComBordas);
         Assert.True(o.DestacarUsuarios);
         Assert.True(o.SoUsuariosDaLista);
         Assert.True(o.DestacarModeradores);

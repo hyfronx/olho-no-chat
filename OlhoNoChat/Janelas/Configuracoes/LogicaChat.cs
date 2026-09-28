@@ -1,0 +1,131 @@
+#nullable enable
+using CommunityToolkit.Mvvm.ComponentModel;
+using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Janelas.Filtros;
+
+namespace OlhoNoChat.Janelas.Configuracoes;
+
+/// <summary>
+/// A aba Chat: o tipo de chat (que muda o que as abas Chat, Aparência e Som mostram) e as opções de cada tipo. O cartão
+/// "Filtrar ou destacar usuários" abre a janela Filtros do chat, que salva sozinha.
+/// </summary>
+public sealed partial class LogicaChat : LogicaDaPagina
+{
+    private readonly Func<Opcoes> _opcoes;
+    private readonly Func<bool> _gravar;
+
+    /// <param name="opcoes">As opções em uso (a janela Filtros do chat lê e grava nelas).</param>
+    /// <param name="gravar">Grava as opções no arquivo.</param>
+    public LogicaChat(Func<Opcoes> opcoes, Func<bool> gravar)
+    {
+        _opcoes = opcoes;
+        _gravar = gravar;
+    }
+
+    /// <summary>A janela Filtros do chat salvou: o chat aplica na hora.</summary>
+    public event Action? FiltrosSalvos;
+
+    /// <summary>A posição na lista "Tipo de chat" (0 Padrão, 1 Chat oficial da Twitch, 2 Endereço personalizado).</summary>
+    [ObservableProperty]
+    private int _tipoDeChat;
+
+    // Padrão
+    [ObservableProperty]
+    private bool _apagarMensagensAntigas;
+
+    /// <summary>Aceita qualquer texto; só um número inteiro maior que 0 apaga as mensagens.</summary>
+    [ObservableProperty]
+    private string _segundosParaApagar = string.Empty;
+
+    [ObservableProperty]
+    private bool _esconderBots;
+
+    [ObservableProperty]
+    private bool _esconderGifs;
+
+    [ObservableProperty]
+    private bool _esconderOutrosCanais;
+
+    // Chat oficial da Twitch
+    [ObservableProperty]
+    private bool _betterTtv;
+
+    [ObservableProperty]
+    private bool _menuDeEmotesDoBetterTtv;
+
+    [ObservableProperty]
+    private bool _emotes7tv;
+
+    [ObservableProperty]
+    private bool _frankerFaceZ;
+
+    // Endereço personalizado
+    [ObservableProperty]
+    private string _enderecoPersonalizado = string.Empty;
+
+    /// <summary>O tipo escolhido na lista (um valor fora da lista conta como Padrão).</summary>
+    public ChatTypes Tipo => Enum.IsDefined(typeof(ChatTypes), TipoDeChat) ? (ChatTypes)TipoDeChat : ChatTypes.Padrao;
+
+    public override void Carregar(Opcoes opcoes)
+    {
+        TipoDeChat = (int)(Enum.IsDefined(typeof(ChatTypes), opcoes.TipoDeChat) ? (ChatTypes)opcoes.TipoDeChat : ChatTypes.Padrao);
+        ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
+        SegundosParaApagar = opcoes.SegundosParaApagar;
+        EsconderBots = opcoes.EsconderBots;
+        EsconderGifs = opcoes.EsconderGifs;
+        EsconderOutrosCanais = opcoes.EsconderOutrosCanais;
+        BetterTtv = opcoes.BetterTtv;
+        MenuDeEmotesDoBetterTtv = opcoes.MenuDeEmotesDoBetterTtv;
+        Emotes7tv = opcoes.Emotes7tv;
+        FrankerFaceZ = opcoes.FrankerFaceZ;
+        // A caixa só mostra o endereço quando ele é o do tipo salvo
+        EnderecoPersonalizado = opcoes.TipoDeChat == (int)ChatTypes.CustomURL ? opcoes.EnderecoPersonalizado : string.Empty;
+    }
+
+    public override void Gravar(Opcoes opcoes)
+    {
+        switch (TipoNaTela)
+        {
+            case ChatTypes.Padrao:
+                opcoes.EnderecoPersonalizado = string.Empty;
+                opcoes.ApagarMensagensAntigas = ApagarMensagensAntigas;
+                opcoes.SegundosParaApagar = SegundosParaApagar;
+                opcoes.EsconderBots = EsconderBots;
+                opcoes.EsconderGifs = EsconderGifs;
+                opcoes.EsconderOutrosCanais = EsconderOutrosCanais;
+                break;
+            case ChatTypes.TwitchPopout:
+                opcoes.BetterTtv = BetterTtv;
+                opcoes.MenuDeEmotesDoBetterTtv = MenuDeEmotesDoBetterTtv;
+                opcoes.Emotes7tv = Emotes7tv;
+                opcoes.FrankerFaceZ = FrankerFaceZ;
+                break;
+            case ChatTypes.CustomURL:
+                opcoes.EnderecoPersonalizado = EnderecoPersonalizado;
+                break;
+        }
+    }
+
+    public override void Estado(IDictionary<string, string> estado)
+    {
+        estado["Chat.TipoDeChat"] = TipoDeChat.ToString();
+        estado["Chat.ApagarMensagensAntigas"] = ApagarMensagensAntigas.ToString();
+        estado["Chat.SegundosParaApagar"] = SegundosParaApagar;
+        estado["Chat.EsconderBots"] = EsconderBots.ToString();
+        estado["Chat.EsconderGifs"] = EsconderGifs.ToString();
+        estado["Chat.EsconderOutrosCanais"] = EsconderOutrosCanais.ToString();
+        estado["Chat.BetterTtv"] = BetterTtv.ToString();
+        estado["Chat.MenuDeEmotesDoBetterTtv"] = MenuDeEmotesDoBetterTtv.ToString();
+        estado["Chat.Emotes7tv"] = Emotes7tv.ToString();
+        estado["Chat.FrankerFaceZ"] = FrankerFaceZ.ToString();
+        estado["Chat.EnderecoPersonalizado"] = EnderecoPersonalizado;
+    }
+
+    /// <summary>A lógica da janela Filtros do chat, que lê e grava direto nas opções (não depende do "Salvar" daqui).</summary>
+    public LogicaFiltros NovaLogicaDosFiltros()
+    {
+        var filtros = new LogicaFiltros(_opcoes(), _gravar);
+        filtros.Salvou += () => FiltrosSalvos?.Invoke();
+        return filtros;
+    }
+}

@@ -2,8 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- A barra de rolagem fina das janelas: por cima do conteúdo, na beirada, sem setas, engrossa com o mouse.
-         Entra em Controles.xaml e, até a etapa que a troca, também na área das páginas e nos editores de CSS da
-         janela Configurações antiga (Styles/Settings.xaml), para as janelas ficarem iguais. -->
+         Entra em Controles.xaml e, até a janela do chat ser trocada, também na lista de emotes do chat (MainWindow),
+         para as janelas ficarem iguais. -->
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Cores.xaml" />

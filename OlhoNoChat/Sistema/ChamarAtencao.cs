@@ -84,12 +84,11 @@ internal static class ChamarAtencao
         return achada;
     }
 
-    // Pisca a moldura laranja (o fundo do painel principal da janela, como em Configurações e Filtros do chat) e um
+    // Pisca a moldura laranja (o "Moldura" do modelo das janelas com moldura: Configurações e Filtros do chat) e um
     // contorno claro em volta da janela inteira. Devolve false para janelas sem essa moldura.
     private static bool PiscarMoldura(Window janela)
     {
-        // Nas janelas novas (Janelas/JanelaComMoldura) a moldura é o "Moldura" do modelo; nas antigas, o painel principal
-        Grid? moldura = janela.Template?.FindName("Moldura", janela) as Grid ?? janela.Content as Grid;
+        Grid? moldura = janela.Template?.FindName("Moldura", janela) as Grid;
         if (moldura?.Background is not SolidColorBrush pincel
             || (Color)pincel.GetAnimationBaseValue(SolidColorBrush.ColorProperty) != LaranjaDaMoldura)
             return false;

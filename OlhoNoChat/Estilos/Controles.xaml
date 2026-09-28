@@ -131,6 +131,85 @@
         <Setter Property="BorderBrush" Value="#888888" />
     </Style>
 
+    <!-- Um cartão inteiro que é um botão (abre uma janela ou um link): clareia com o mouse, borda clara com o foco -->
+    <Style x:Key="CartaoClicavel" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource FundoDoCartao}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BordaDoCartao}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource Texto}" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="MinHeight" Value="60" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource FundoDoCartaoComMouse}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource FundoDoCartaoApertado}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Fundo" Property="BorderBrush" Value="{StaticResource LaranjaClaro}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- O cabeçalho de um cartão que abre e fecha (atalhos, avançado): a seta gira quando está aberto -->
+    <Style x:Key="CabecalhoQueAbre" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{StaticResource Texto}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="MinHeight" Value="60" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocoDoTeclado}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter VerticalAlignment="Center" />
+                            <TextBlock x:Name="Seta" Grid.Column="1" Text="&#xE70D;" Style="{StaticResource Icone}" FontSize="12"
+                                       Margin="16,0,6,0" RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform Angle="0" />
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource FundoDaMarcacao}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Seta" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Um nome de uma lista, com o "×" para tirar -->
     <Style x:Key="Ficha" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource FundoDaFicha}" />
@@ -351,6 +430,141 @@
         </Setter>
     </Style>
 
+    <!-- Caixa de várias linhas (o CSS do tema "Nenhum"): texto no alto, fonte de código, barras de rolagem -->
+    <Style x:Key="CaixaDeVariasLinhas" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="AcceptsTab" Value="True" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalContentAlignment" Value="Top" />
+        <Setter Property="Padding" Value="8,6,6,6" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False" Padding="0,0,4,0"
+                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="BorderBrush" Value="{StaticResource BordaDoCampoComMouse}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource FundoDoCampoComFoco}" />
+                            <Setter TargetName="Fundo" Property="BorderBrush" Value="{StaticResource Laranja}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Editor de CSS (Controles/EditorDeCss): fundo claro, porque as cores do CSS são feitas para ele -->
+    <Style TargetType="ctl:EditorDeCss">
+        <Setter Property="Background" Value="#E8E8E8" />
+        <Setter Property="Foreground" Value="#1E1E1E" />
+        <Setter Property="BorderBrush" Value="{StaticResource BordaDoCartao}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Height" Value="260" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="WordWrap" Value="False" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:EditorDeCss">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                        <ScrollViewer x:Name="PART_ScrollViewer" Focusable="False" CanContentScroll="True"
+                                      Padding="{TemplateBinding Padding}"
+                                      VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+                                      Content="{Binding TextArea, RelativeSource={RelativeSource TemplatedParent}}"
+                                      VerticalContentAlignment="Top" HorizontalContentAlignment="Left" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Controle deslizante (volume) ===== -->
+
+    <Style x:Key="TrilhaDoDeslizante" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Grid Background="Transparent">
+                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" VerticalAlignment="Center" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Bolinha de 20 px com o miolo laranja, que cresce com o mouse em cima -->
+    <Style x:Key="PuxadorDoDeslizante" TargetType="Thumb">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Grid>
+                        <Ellipse Fill="#454545" Stroke="#5A5A5A" StrokeThickness="1" />
+                        <Ellipse x:Name="Miolo" Width="12" Height="12" Fill="{StaticResource Laranja}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Miolo" Property="Width" Value="14" />
+                            <Setter TargetName="Miolo" Property="Height" Value="14" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="Miolo" Property="Width" Value="10" />
+                            <Setter TargetName="Miolo" Property="Height" Value="10" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Slider">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocoDoTeclado}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" VerticalAlignment="Center">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource TrilhaDoDeslizante}" Background="{StaticResource Laranja}"
+                                              Command="Slider.DecreaseLarge" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource TrilhaDoDeslizante}" Background="#66FFFFFF"
+                                              Command="Slider.IncreaseLarge" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource PuxadorDoDeslizante}" />
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== Lista suspensa ===== -->
 
     <Style x:Key="BotaoDaListaSuspensa" TargetType="ToggleButton">
@@ -420,6 +634,13 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- A lista à direita de uma linha de cartão -->
+    <Style x:Key="ListaDaLinha" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+        <Setter Property="Width" Value="230" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!-- Itens da lista aberta: destaque arredondado com um respiro em volta; o escolhido em laranja translúcido -->
@@ -611,6 +832,17 @@
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <!-- Links dentro de um texto (aba Sobre) -->
+    <Style TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{StaticResource LaranjaClaro}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="#FFB199" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ===== Dicas e menus ===== -->

@@ -1,0 +1,62 @@
+<janelas:JanelaComMoldura x:Class="OlhoNoChat.Janelas.Configuracoes.JanelaConfiguracoes"
+                          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                          xmlns:janelas="clr-namespace:OlhoNoChat.Janelas"
+                          xmlns:local="clr-namespace:OlhoNoChat.Janelas.Configuracoes"
+                          Title="Configurações" Icone="&#xE713;" LarguraDaNavegacao="190"
+                          Icon="/icons/olho_no_chat.ico"
+                          Height="720" Width="800" MinHeight="480" MinWidth="680"
+                          Topmost="True"
+                          FocusManager.FocusedElement="{Binding ElementName=listaDePaginas}">
+    <!-- Configurações: seis abas; "Salvar" grava e aplica sem fechar. DataContext = LogicaConfiguracoes. -->
+    <janelas:JanelaComMoldura.Navegacao>
+        <ListBox x:Name="listaDePaginas" Style="{StaticResource ListaDeNavegacao}" ItemContainerStyle="{StaticResource ItemDaNavegacao}"
+                 SelectedIndex="0" SelectionChanged="ListaDePaginas_SelectionChanged">
+            <ListBoxItem AutomationProperties.Name="Chat">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8BD;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Chat" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Aparência">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE790;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Aparência" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Som">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE767;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Som" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Geral">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE713;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Geral" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Twitch">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE77B;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Twitch" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Sobre">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE946;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Sobre" />
+                </StackPanel>
+            </ListBoxItem>
+        </ListBox>
+    </janelas:JanelaComMoldura.Navegacao>
+
+    <Grid x:Name="paginas">
+        <local:PaginaChat x:Name="paginaChat" DataContext="{Binding Chat}" />
+        <local:PaginaAparencia x:Name="paginaAparencia" DataContext="{Binding Aparencia}" Visibility="Collapsed" />
+        <local:PaginaSom x:Name="paginaSom" DataContext="{Binding Som}" Visibility="Collapsed" />
+        <local:PaginaGeral x:Name="paginaGeral" DataContext="{Binding Geral}" Visibility="Collapsed" />
+        <local:PaginaTwitch x:Name="paginaTwitch" DataContext="{Binding Twitch}" Visibility="Collapsed" />
+        <local:PaginaSobre x:Name="paginaSobre" DataContext="{Binding Sobre}" Visibility="Collapsed" />
+    </Grid>
+</janelas:JanelaComMoldura>

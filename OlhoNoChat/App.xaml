@@ -8,7 +8,6 @@
                 <!-- App orange as the accent: switches, focused boxes, selections, main buttons -->
                 <ui:ThemeResources AccentColor="#E85D30" />
                 <ui:XamlControlsResources />
-                <ResourceDictionary Source="Styles/Settings.xaml" />
                 <ResourceDictionary Source="Styles/TitleBar.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
