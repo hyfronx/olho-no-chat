@@ -168,6 +168,7 @@ public class GeneralSettings
     public string FadeTime { get; set; } = "120"; // seconds before old messages disappear (when FadeChat is on)
     public bool BlockBotActivity { get; set; } = true;
     public bool HideGifs { get; set; } = false; // GIFs of the "Padrão" chat are shown (only their title when on)
+    public bool HideOtherChannels { get; set; } = false; // shared chat: the other channels' messages are shown
     // File name in the sounds folder, or "None"; first install: "Job done"
     public const string DefaultChatNotificationSound = "job-done.wav";
     public string ChatNotificationSound { get; set; } = DefaultChatNotificationSound;

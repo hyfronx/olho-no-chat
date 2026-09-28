@@ -62,6 +62,34 @@ body {
     border-radius: 6px;
 }
 
+/* Shared chat: a message typed in another channel stands out with a bar in that channel's color (chat.js,
+   sourceColor) and the channel's picture before the badges (round, with a thin ring). Two classes: the app's
+   CSS, added after this file, sets the padding of every .chat_line */
+.chat_line.onc-other-channel {
+    position: relative;
+    padding-left: 9px !important;
+}
+
+.onc-other-channel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--source-color);
+}
+
+.onc-source img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .6);
+    vertical-align: middle;
+    margin: 0 5px 2px 1px;
+}
+
 /* "Esconder GIFs": the title in brackets instead (chat.js, showOrHideGifs) */
 .onc-gif-title,
 .onc-hide-gifs .onc-gif {

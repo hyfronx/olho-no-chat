@@ -101,6 +101,22 @@
                             <ui:ToggleSwitch Name="cbHideGifs" Grid.Column="2" Style="{StaticResource SettingsToggle}"
                                              AutomationProperties.Name="Esconder GIFs" />
                         </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Glyph="&#xE716;" Style="{StaticResource SettingsCardIcon}" />
+                            <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                                <TextBlock Text="Esconder mensagens de outros canais" Style="{StaticResource SettingsLabel}" />
+                                <TextBlock Style="{StaticResource SettingsHint}"
+                                           Text="No chat unido da Twitch, mostra só quem digitou no seu canal. Desligado, as mensagens dos outros canais aparecem com a foto do canal antes do nome." />
+                            </StackPanel>
+                            <ui:ToggleSwitch Name="cbHideOtherChannels" Grid.Column="2" Style="{StaticResource SettingsToggle}"
+                                             AutomationProperties.Name="Esconder mensagens de outros canais" />
+                        </Grid>
                     </StackPanel>
                 </Border>
                 <Button Name="btOpenChatFilterSettings" Style="{StaticResource SettingsCardButton}" Click="btOpenChatFilterSettings_Click"

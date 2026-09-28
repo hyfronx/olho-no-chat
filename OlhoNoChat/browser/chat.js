@@ -23,7 +23,7 @@
 
     // From the app (PadraoChat.GetMessageSettingsJson)
     let settings = {
-        fade: 0, hideBots: true, hideGifs: false, playSound: false,
+        fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
         vips: [], blockList: []
     };
@@ -194,6 +194,11 @@
 
         if (settings.hideBots && (text[0] === '!' || /bot$/.test(login))) return;
 
+        // Shared chat: a message typed in another channel of the session
+        const tags = message.tags;
+        const sourceRoom = tags['source-room-id'] && tags['source-room-id'] !== tags['room-id'] ? tags['source-room-id'] : '';
+        if (sourceRoom && settings.hideOtherChannels) return;
+
         let action = false;
         const actionMatch = /^\x01ACTION (.*)\x01$/.exec(text);
         if (actionMatch) {
@@ -201,9 +206,9 @@
             text = actionMatch[1];
         }
 
-        const tags = message.tags;
         showLine({
             id: tags.id,
+            sourceRoom,
             login,
             name: tags['display-name'] || login,
             color: userColor(login, tags.color),
@@ -266,6 +271,51 @@
     function refreshBadges() {
         box.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
         newLines.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
+    }
+
+    // --- Shared chat ("chat unido") -----------------------------------------------------------------
+    // While channels share their chats, a message typed in another channel carries that channel's id
+    // ("source-room-id"). Its line gets a bar in a color of that channel and, like on Twitch, starts with the
+    // channel's picture. The name and picture come from ivr.fi (the community API of the channel badges), once
+    // per channel. A line shown before the picture arrived gets it when it does; without it (API down) the line
+    // still has its bar.
+
+    const sourceChannels = new Map(); // room id -> { name, picture } once known, null while loading or failed
+
+    // One color per guest channel, in the order they show up: two channels of a session never share one
+    const SOURCE_COLORS = ['#9146FF', '#00C8AF', '#FFB31A', '#FF5E7A', '#3FA9F5'];
+    const sourceColors = new Map();
+
+    function sourceColor(room) {
+        if (!sourceColors.has(room)) sourceColors.set(room, SOURCE_COLORS[sourceColors.size % SOURCE_COLORS.length]);
+        return sourceColors.get(room);
+    }
+
+    function fillSource(span) {
+        const room = span.dataset.room;
+        if (!sourceChannels.has(room)) loadSourceChannel(room);
+        const info = sourceChannels.get(room);
+        if (!info || span.firstChild) return;
+        const img = document.createElement('img');
+        img.src = info.picture;
+        img.alt = img.title = info.name;
+        span.append(img);
+    }
+
+    function loadSourceChannel(room) {
+        sourceChannels.set(room, null);
+        fetch('https://api.ivr.fi/v2/twitch/user?id=' + encodeURIComponent(room))
+            .then(response => response.ok ? response.json() : [])
+            .then(list => {
+                const user = Array.isArray(list) ? list[0] : list;
+                if (!user || !user.logo) return;
+                // The small size of Twitch's profile pictures (the API gives the 600x600 one)
+                sourceChannels.set(room, { name: user.displayName || user.login, picture: user.logo.replace('600x600', '70x70') });
+                const selector = `.onc-source[data-room="${CSS.escape(room)}"]`;
+                box.querySelectorAll(selector).forEach(fillSource);
+                newLines.querySelectorAll(selector).forEach(fillSource);
+            })
+            .catch(e => console.warn('[ONC] Could not load the shared chat channel ' + room, e));
     }
 
     // The "Filtros" of the app: blocked users, "only the listed users" (plus all VIPs / Mods, from the
@@ -530,6 +580,15 @@
         linkify(message);
 
         div.append(time);
+        if (line.sourceRoom) {
+            const source = document.createElement('span');
+            source.className = 'onc-source';
+            source.dataset.room = line.sourceRoom;
+            fillSource(source);
+            div.classList.add('onc-other-channel');
+            div.style.setProperty('--source-color', sourceColor(line.sourceRoom));
+            div.append(source);
+        }
         if (line.badges) {
             const badges = document.createElement('span');
             badges.className = 'badges';
@@ -707,6 +766,7 @@
         apply(newSettings) {
             Object.assign(settings, newSettings);
             showOrHideGifs();
+            if (settings.hideOtherChannels) removeLines('.onc-other-channel');
         },
 
         // A line from the app in the user's color, like a /me message (channel point redemptions)

@@ -45,6 +45,7 @@ namespace OlhoNoChat.Chats
                 fade,
                 hideBots = settings.BlockBotActivity,
                 hideGifs = settings.HideGifs,
+                hideOtherChannels = settings.HideOtherChannels,
                 highlightUsers = settings.HighlightUsersChat,
                 allowedUsersOnly = settings.AllowedUsersOnlyChat,
                 playSound = settings.ChatNotificationSound?.ToLower() != "none",
