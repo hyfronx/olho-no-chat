@@ -112,8 +112,8 @@ public class AppSettings
         if (_channelFromOldSettings == null)
             return;
 
-        string channel = Twitch.TwitchNames.Extract(_channelFromOldSettings);
-        GeneralSettings.Username = Twitch.TwitchNames.IsValid(channel) ? channel.ToLowerInvariant() : string.Empty;
+        string channel = Twitch.NomesDaTwitch.Extrair(_channelFromOldSettings);
+        GeneralSettings.Username = Twitch.NomesDaTwitch.EhValido(channel) ? channel.ToLowerInvariant() : string.Empty;
         _channelFromOldSettings = null;
         this.Tracker.Persist(this);
     }

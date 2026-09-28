@@ -114,7 +114,9 @@
                     <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
                         <TextBlock Text="Mostrar os resgates no chat" Style="{StaticResource SettingsLabel}" />
                         <TextBlock Style="{StaticResource SettingsHint}"
-                                   Text="Só os resgates do canal da conta conectada. Aparecem apenas no chat Padrão." />
+                                   Text="Só os resgates do canal da conta conectada, quando o chat aberto é o desse canal. Aparecem apenas no chat Padrão." />
+                        <TextBlock Name="lblRedemptionsProblem" Style="{StaticResource SettingsHint}" Foreground="#FF8A65"
+                                   Margin="0,6,0,0" Visibility="Collapsed" />
                     </StackPanel>
                     <ui:ToggleSwitch Name="cbRedemptions" Grid.Column="2" Style="{StaticResource SettingsToggle}"
                                      AutomationProperties.Name="Mostrar os resgates no chat" />

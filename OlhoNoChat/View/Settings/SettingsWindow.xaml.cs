@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using OlhoNoChat.Helpers;
 using OlhoNoChat.View.Settings;
 using ContentDialog = ModernWpf.Controls.ContentDialog;
 using ContentDialogButton = ModernWpf.Controls.ContentDialogButton;

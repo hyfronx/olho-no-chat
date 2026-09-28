@@ -1,7 +1,4 @@
-using NAudio.Wave;
-using OlhoNoChat.Helpers;
-using System.Diagnostics;
-using System.IO;
+using OlhoNoChat.Som;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -13,7 +10,7 @@ namespace OlhoNoChat.View.Settings;
 public partial class SoundSettingsPage : UserControl
 {
     // "Default" is the value stored in the settings; only the label is translated.
-    private string _soundClipsFolder = "Default";
+    private string _soundClipsFolder = SonsDisponiveis.PastaPadrao;
 
     public SoundSettingsPage()
     {
@@ -36,8 +33,11 @@ public partial class SoundSettingsPage : UserControl
 
     public void SaveValues()
     {
-        App.Settings.GeneralSettings.DeviceID = (int)DevicesComboBox.SelectedValue;
-        App.Settings.GeneralSettings.DeviceName = App.Settings.GeneralSettings.DeviceID == -1 ? "Default" : DevicesComboBox.Text;
+        var saida = DevicesComboBox.SelectedItem as TocadorDeAviso.Saida;
+        App.Settings.GeneralSettings.DeviceID = saida?.Id ?? TocadorDeAviso.Padrao;
+        App.Settings.GeneralSettings.DeviceName = saida == null || saida.Id == TocadorDeAviso.Padrao
+            ? TocadorDeAviso.NomeDaPadraoGravado
+            : saida.Nome;
 
         App.Settings.GeneralSettings.OutputVolume = (float)SliderToVolume(this.OutputVolumeSlider.Value);
         App.Settings.GeneralSettings.SoundClipsFolder = _soundClipsFolder;
@@ -77,49 +77,32 @@ public partial class SoundSettingsPage : UserControl
 
     private void LoadDevices()
     {
-        DevicesComboBox.Items.Clear(); // loaded again by "Restaurar tudo para o padrão"
-        DevicesComboBox.Items.Add(new { Id = -1, Name = "Padrão do Windows" });
+        // Loaded again by "Restaurar tudo para o padrão"
+        DevicesComboBox.DisplayMemberPath = nameof(TocadorDeAviso.Saida.Nome);
+        DevicesComboBox.SelectedValuePath = nameof(TocadorDeAviso.Saida.Id);
+        DevicesComboBox.ItemsSource = TocadorDeAviso.ListarSaidas();
 
-        for (int deviceId = 0; deviceId < WaveOut.DeviceCount; deviceId++)
-        {
-            var capabilities = WaveOut.GetCapabilities(deviceId);
-            DevicesComboBox.Items.Add(new { Id = deviceId, Name = capabilities.ProductName });
-        }
-
-        DevicesComboBox.DisplayMemberPath = "Name";
-        DevicesComboBox.SelectedValuePath = "Id";
-
-        DevicesComboBox.SelectedValue = App.Settings.GeneralSettings.DeviceID;
-        if (App.Settings.GeneralSettings.DeviceID != -1 && !DevicesComboBox.Text.StartsWith(App.Settings.GeneralSettings.DeviceName))
-        {
-            DevicesComboBox.SelectedValue = -1;
-        }
+        // Um aparelho que não é mais o mesmo (outro foi ligado ou tirado) aparece como "Padrão do Windows"
+        var settings = App.Settings.GeneralSettings;
+        DevicesComboBox.SelectedValue = TocadorDeAviso.SaidaAindaExiste(settings.DeviceID, settings.DeviceName ?? string.Empty)
+            ? settings.DeviceID
+            : TocadorDeAviso.Padrao;
     }
 
     private void SetSoundClipsFolder(string folder)
     {
-        _soundClipsFolder = string.IsNullOrEmpty(folder) ? "Default" : folder;
-        tbSoundClipsFolder.Text = _soundClipsFolder == "Default" ? "Padrão (sons que vêm com o app)" : _soundClipsFolder;
+        _soundClipsFolder = string.IsNullOrEmpty(folder) ? SonsDisponiveis.PastaPadrao : folder;
+        tbSoundClipsFolder.Text = _soundClipsFolder == SonsDisponiveis.PastaPadrao ? "Padrão (sons que vêm com o app)" : _soundClipsFolder;
     }
 
     private void LoadSoundClips()
     {
         comboChatSound.Items.Clear();
-        comboChatSound.Items.Add(new ComboBoxItem() { Content = "Nenhum", Tag = "None" });
+        comboChatSound.Items.Add(new ComboBoxItem() { Content = "Nenhum", Tag = SonsDisponiveis.Nenhum });
         comboChatSound.SelectedIndex = 0;
 
-        string path = SoundFolder.Resolve(_soundClipsFolder);
-
-        if (!Directory.Exists(path)) return;
-
-        string[] filesWav = Directory.GetFiles(path, "*.wav");
-        string[] filesMp3 = Directory.GetFiles(path, "*.mp3");
-
-        foreach (string file in filesWav.Concat(filesMp3))
-        {
-            string fileName = Path.GetFileName(file);
-            comboChatSound.Items.Add(new ComboBoxItem() { Content = GetSoundDisplayName(fileName), Tag = fileName });
-        }
+        foreach (SonsDisponiveis.Som som in SonsDisponiveis.Listar(SonsDisponiveis.ResolverPasta(_soundClipsFolder)))
+            comboChatSound.Items.Add(new ComboBoxItem() { Content = som.Nome, Tag = som.Arquivo });
     }
 
     private void SelectSound(string fileName)
@@ -128,41 +111,12 @@ public partial class SoundSettingsPage : UserControl
         comboChatSound.SelectedIndex = item == null ? 0 : comboChatSound.Items.IndexOf(item);
     }
 
-    // "job-done.wav" -> "Job done"
-    private static string GetSoundDisplayName(string fileName)
-    {
-        string name = Path.GetFileNameWithoutExtension(fileName).Replace('-', ' ').Replace('_', ' ');
-        return name.Length == 0 ? name : char.ToUpper(name[0]) + name.Substring(1);
-    }
-
     // Plays the chosen sound on the chosen output, at the volume on the slider (not saved yet)
     private void PlaySelectedSound()
     {
-        string file = Path.Combine(SoundFolder.Resolve(_soundClipsFolder), this.comboChatSound.SelectedValue?.ToString() ?? "None");
-        if (!File.Exists(file))
-            return;
-
-        try
-        {
-            var audioFileReader = new AudioFileReader(file);
-            audioFileReader.Volume = (float)SliderToVolume(this.OutputVolumeSlider.Value);
-
-            var waveOutDevice = new WaveOutEvent();
-            if (DevicesComboBox.SelectedValue is int deviceId && deviceId < WaveOut.DeviceCount)
-                waveOutDevice.DeviceNumber = deviceId;
-
-            waveOutDevice.Init(audioFileReader);
-            waveOutDevice.PlaybackStopped += (s, e) =>
-            {
-                audioFileReader.Dispose();
-                waveOutDevice.Dispose();
-            };
-            waveOutDevice.Play();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to play '{file}': {ex.Message}");
-        }
+        TocadorDeAviso.Previa(SonsDisponiveis.Caminho(_soundClipsFolder, this.comboChatSound.SelectedValue?.ToString()),
+            (float)SliderToVolume(this.OutputVolumeSlider.Value),
+            DevicesComboBox.SelectedValue is int deviceId ? deviceId : TocadorDeAviso.Padrao);
     }
 
     // --- Event Handlers --------------------------------------------------------------------------------
@@ -186,7 +140,7 @@ public partial class SoundSettingsPage : UserControl
 
     private void btDefaultSoundClipsFolder_Click(object sender, RoutedEventArgs e)
     {
-        ChangeSoundClipsFolder("Default");
+        ChangeSoundClipsFolder(SonsDisponiveis.PastaPadrao);
     }
 
     private void ChangeSoundClipsFolder(string folder)

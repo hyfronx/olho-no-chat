@@ -115,13 +115,13 @@ namespace OlhoNoChat
         // Accepts "nome", "@nome", "twitch.tv/nome" or the channel link; returns null (and shows why) when it isn't a user name
         private static string ReadUserName(TextBox input, TextBlock error, ObservableCollection<string> list)
         {
-            string name = TwitchNames.Extract(input.Text);
+            string name = NomesDaTwitch.Extrair(input.Text);
 
             string problem = null;
             if (name.Length == 0)
                 problem = "Digite o nome do usuário.";
-            else if (!TwitchNames.IsValid(name))
-                problem = TwitchNames.InvalidNameHint;
+            else if (!NomesDaTwitch.EhValido(name))
+                problem = NomesDaTwitch.DicaNomeInvalido;
             else if (list.Any(u => string.Equals(u, name, StringComparison.OrdinalIgnoreCase)))
                 problem = name + " já está na lista.";
 

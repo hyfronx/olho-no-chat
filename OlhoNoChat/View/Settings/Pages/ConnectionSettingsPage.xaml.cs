@@ -1,5 +1,4 @@
 using OlhoNoChat.Atalhos;
-using System.Net;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,21 +15,29 @@ namespace OlhoNoChat.View.Settings;
 /// </summary>
 public partial class ConnectionSettingsPage : UserControl
 {
-    private readonly ITwitchAuthService _twitchAuthService;
-    private readonly TwitchAccount _account;
+    private readonly AutorizacaoNoNavegador _autorizacao;
+    private readonly ContaDaTwitch _account;
+    private readonly ResgatesDePontos _resgates;
 
-    public ConnectionSettingsPage(ITwitchAuthService twitchAuthService, TwitchAccount account)
+    public ConnectionSettingsPage(AutorizacaoNoNavegador autorizacao, ContaDaTwitch account, ResgatesDePontos resgates)
     {
         InitializeComponent();
-        _twitchAuthService = twitchAuthService;
+        _autorizacao = autorizacao;
         _account = account;
+        _resgates = resgates;
 
         this.Loaded += (s, e) =>
         {
-            _account.Changed += OnAccountChanged;
+            _account.Mudou += OnAccountChanged;
+            _resgates.ProblemaMudou += OnRedemptionsProblemChanged;
             ShowAccount();
+            ShowRedemptionsProblem();
         };
-        this.Unloaded += (s, e) => _account.Changed -= OnAccountChanged;
+        this.Unloaded += (s, e) =>
+        {
+            _account.Mudou -= OnAccountChanged;
+            _resgates.ProblemaMudou -= OnRedemptionsProblemChanged;
+        };
     }
 
     public void SetupValues()
@@ -42,8 +49,8 @@ public partial class ConnectionSettingsPage : UserControl
         ShowAccount();
 
         // Picture and a fresh check of the access
-        if (_account.IsConnected)
-            _ = _account.CheckAsync();
+        if (_account.EstaConectada)
+            _ = _account.VerificarAsync();
     }
 
     public void SaveValues()
@@ -80,13 +87,25 @@ public partial class ConnectionSettingsPage : UserControl
         Dispatcher.BeginInvoke(new Action(ShowAccount));
     }
 
+    // Quando a Twitch recusa os resgates (por exemplo, canal sem pontos de canal), o motivo aparece embaixo da opção
+    private void OnRedemptionsProblemChanged()
+    {
+        Dispatcher.BeginInvoke(new Action(ShowRedemptionsProblem));
+    }
+
+    private void ShowRedemptionsProblem()
+    {
+        lblRedemptionsProblem.Text = _resgates.Problema;
+        lblRedemptionsProblem.Visibility = _resgates.Problema.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void ShowAccount()
     {
-        bool connecting = _twitchAuthService.IsConnecting;
-        bool connected = _account.IsConnected;
+        bool connecting = _autorizacao.EstaEsperando;
+        bool connected = _account.EstaConectada;
 
         // Connected before 1.0.18: the emote list needs a new permission, given by connecting again
-        bool needsNewPermission = connected && _account.PermissionsChecked && !_account.CanReadEmotes;
+        bool needsNewPermission = connected && _account.PermissoesConferidas && !_account.PodeLerEmotes;
 
         btConnect.Visibility = (!connected || needsNewPermission) && !connecting ? Visibility.Visible : Visibility.Collapsed;
         btConnect.Content = connected ? "Conectar de novo" : "Conectar";
@@ -101,7 +120,7 @@ public partial class ConnectionSettingsPage : UserControl
         }
         else if (connected)
         {
-            lblAccount.Text = "Conectado como " + _account.DisplayName;
+            lblAccount.Text = "Conectado como " + _account.NomeMostrado;
             lblAccountHint.Text = needsNewPermission
                 ? "Para ver os seus emotes na caixa de escrever, clique em \"Conectar de novo\" (a Twitch pede uma permissão nova)."
                 : "Você pode escrever no chat, usar os seus emotes e mostrar os resgates de pontos.";
@@ -112,7 +131,7 @@ public partial class ConnectionSettingsPage : UserControl
             lblAccountHint.Text = "Para só ler o chat, não precisa conectar. Conecte para escrever no chat e mostrar os resgates de pontos.";
         }
 
-        string picture = connected ? _account.ProfileImageUrl : string.Empty;
+        string picture = connected ? _account.Foto : string.Empty;
         if (!string.IsNullOrEmpty(picture))
         {
             try
@@ -133,26 +152,24 @@ public partial class ConnectionSettingsPage : UserControl
 
     private async void btConnect_Click(object sender, RoutedEventArgs e)
     {
-        string token;
-        try
+        var waiting = _autorizacao.ConectarAsync();
+        ShowAccount();
+        AutorizacaoNoNavegador.Resultado resultado = await waiting;
+
+        if (resultado.Fim == AutorizacaoNoNavegador.Fim.JaEmAndamento)
+            return;
+        if (resultado.Fim == AutorizacaoNoNavegador.Fim.PortasOcupadas)
         {
-            var waiting = _twitchAuthService.ConnectAsync();
             ShowAccount();
-            token = await waiting;
-        }
-        catch (HttpListenerException)
-        {
-            ShowAccount();
-            MessageBox.Show(Window.GetWindow(this),
-                "Não foi possível esperar a resposta da Twitch: outros programas estão usando as portas do computador que o Olho no Chat usa. Tente de novo daqui a pouco.",
+            MessageBox.Show(Window.GetWindow(this), AutorizacaoNoNavegador.TextoPortasOcupadas,
                 "Conectar com a Twitch", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (!string.IsNullOrEmpty(token))
+        if (resultado.Fim == AutorizacaoNoNavegador.Fim.Token)
         {
             lblAccount.Text = "Conectando…";
-            if (!await _account.ConnectAsync(token))
+            if (!await _account.ConectarAsync(resultado.Token))
             {
                 MessageBox.Show(Window.GetWindow(this),
                     "A Twitch não confirmou o acesso. Confira sua internet e tente de novo.",
@@ -166,12 +183,12 @@ public partial class ConnectionSettingsPage : UserControl
 
     private void btCancelConnect_Click(object sender, RoutedEventArgs e)
     {
-        _twitchAuthService.Cancel();
+        _autorizacao.Cancelar();
     }
 
     private void btDisconnect_Click(object sender, RoutedEventArgs e)
     {
-        _account.Disconnect();
+        _account.Desconectar();
         ShowAccount();
     }
 }

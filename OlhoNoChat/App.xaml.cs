@@ -73,8 +73,16 @@ namespace OlhoNoChat
                 var services = new ServiceCollection();
                 services.AddLogging(logging => logging.AddDebug());
                 services.AddSingleton<MainWindow>();
-                services.AddSingleton<ITwitchAuthService, TwitchAuthService>();
-                services.AddSingleton<TwitchAccount>();
+                services.AddSingleton<ApiDaTwitch>();
+                services.AddSingleton<IContaSalva, ContaSalvaNasConfiguracoes>();
+                services.AddSingleton<ContaDaTwitch>();
+                services.AddSingleton<AutorizacaoNoNavegador>();
+                services.AddSingleton<EnvioDeMensagem>();
+                services.AddSingleton<ListaDeEmotes>();
+                services.AddSingleton<ResgatesDePontos>();
+#if DEBUG
+                SimuladorDoEventSub.RegistrarSeLigado(services); // resgates de mentira da Twitch CLI
+#endif
 
                 // Settings pages
                 services.AddTransient<ConnectionSettingsPage>();

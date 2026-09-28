@@ -1,6 +1,5 @@
 namespace OlhoNoChat;
 
-using System.Net;
 using OlhoNoChat.Sistema;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,7 +7,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OlhoNoChat.Twitch;
 
@@ -22,8 +20,6 @@ using OlhoNoChat.Twitch;
 /// </summary>
 public partial class MainWindow
 {
-    private static readonly TimeSpan EmotesKeptFor = TimeSpan.FromMinutes(10);
-
     public sealed class EmoteItem
     {
         private readonly string _url;
@@ -59,16 +55,10 @@ public partial class MainWindow
     public sealed record EmoteGroupItem(string Title, IReadOnlyList<EmoteItem> Emotes);
 
     private List<EmoteGroupItem> _emoteGroups;
+    private ListaDeEmotes.Lista _emotesList; // the list _emoteGroups was built from
     private bool _emotesOnlyGlobal;
-    private string _emotesChannel;
-    private string _emotesAccount;
-    private DateTime _emotesLoadedAt;
-    private bool _loadingEmotes;
     private DateTime _emotePopupClosedAt = DateTime.MinValue;
     private DispatcherTimer _emoteSearchTimer;
-
-    // What the list depends on besides the channel: the account and whether it may read its emotes
-    private string EmotesAccountKey => App.Settings.GeneralSettings.ChannelID + "|" + _twitchAccount.CanReadEmotes;
 
     // The emote button sits where the box shows its "x" (clear) button while typing: that one is made
     // invisible (the box shows it with an animation, which wins over Visibility)
@@ -130,64 +120,46 @@ public partial class MainWindow
         Keyboard.Focus(tbChatMessage);
     }
 
-    private bool EmotesLoaded => _emoteGroups != null && _emotesChannel == ChatChannel && _emotesAccount == EmotesAccountKey
-                                 && DateTime.UtcNow - _emotesLoadedAt < EmotesKeptFor;
-
     // Twitch sends the list in many small pages (a few seconds): it starts loading as soon as the
     // message box gets the focus, so the list is usually ready when the button is clicked
     private void PreloadEmotes()
     {
-        if (!EmotesLoaded && !_loadingEmotes && ChatInputAvailable)
+        if (ChatInputAvailable && !_listaDeEmotes.EstaPronta(ChatChannel))
             _ = LoadEmotesAsync();
     }
 
+    // A busca que já estiver em andamento (a do foco na caixa) é reaproveitada pela ListaDeEmotes
     private async Task LoadEmotesAsync()
     {
         string channel = ChatChannel;
-        if (EmotesLoaded)
+        if (!_listaDeEmotes.EstaPronta(channel) || _emoteGroups == null)
         {
-            ShowEmotes();
-            return;
-        }
-        if (_loadingEmotes)
-        {
-            // Already loading (e.g. started when the box got the focus): shown when it ends
             EmoteGroups.ItemsSource = null;
+            EmoteNotice.Visibility = Visibility.Collapsed;
             ShowEmoteStatus("Carregando emotes…");
-            return;
         }
-
-        _loadingEmotes = true;
-        EmoteGroups.ItemsSource = null;
-        EmoteNotice.Visibility = Visibility.Collapsed;
-        ShowEmoteStatus("Carregando emotes…");
         try
         {
-            await CheckTwitchAccountOnceAsync();
-            string account = EmotesAccountKey;
-            TwitchAccount.EmoteList list = await _twitchAccount.GetEmotesAsync(channel);
-
-            // Sharp pictures on screens with a bigger text size: the double-size file, kept at the size shown
-            double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
-            string scale = dpi > 1.2 ? "2.0" : "1.0";
-            int decodeWidth = dpi > 1.2 && dpi < 2.0 ? (int)Math.Ceiling(28 * dpi) : 0;
-            _emoteGroups = list.Groups
-                .Select(g => new EmoteGroupItem(g.Title, g.Emotes.Select(emote => new EmoteItem(emote.Id, emote.Name, scale, decodeWidth)).ToList()))
-                .ToList();
-            _emotesOnlyGlobal = list.OnlyGlobal;
-            _emotesChannel = channel;
-            _emotesAccount = account;
-            _emotesLoadedAt = DateTime.UtcNow;
+            await _conta.VerificarUmaVezAsync();
+            ListaDeEmotes.Lista list = await _listaDeEmotes.BuscarAsync(channel);
+            if (_emoteGroups == null || !ReferenceEquals(list, _emotesList))
+            {
+                // Sharp pictures on screens with a bigger text size: the double-size file, kept at the size shown
+                double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+                string scale = dpi > 1.2 ? "2.0" : "1.0";
+                int decodeWidth = dpi > 1.2 && dpi < 2.0 ? (int)Math.Ceiling(28 * dpi) : 0;
+                _emoteGroups = list.Grupos
+                    .Select(g => new EmoteGroupItem(g.Titulo, g.Emotes.Select(emote => new EmoteItem(emote.Id, emote.Nome, scale, decodeWidth)).ToList()))
+                    .ToList();
+                _emotesList = list;
+                _emotesOnlyGlobal = list.SoGlobais;
+            }
             ShowEmotes();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not load the emotes.");
             ShowEmoteStatus("Não foi possível carregar os emotes. Confira sua internet e tente de novo.");
-        }
-        finally
-        {
-            _loadingEmotes = false;
         }
     }
 
@@ -294,32 +266,27 @@ public partial class MainWindow
     // "Conectar de novo" in the list: the same as in the Twitch tab (the browser asks for the new permission)
     private async void btnEmoteReconnect_Click(object sender, RoutedEventArgs e)
     {
-        var auth = _serviceProvider.GetRequiredService<ITwitchAuthService>();
-        if (auth.IsConnecting)
+        if (_autorizacao.EstaEsperando)
             return;
 
         CloseEmotePopup();
         ShowChatInputStatus("Termine no navegador que abriu: clique em \"Autorizar\" na página da Twitch.");
 
-        string token;
-        try
+        AutorizacaoNoNavegador.Resultado resultado = await _autorizacao.ConectarAsync();
+        switch (resultado.Fim)
         {
-            token = await auth.ConnectAsync();
+            case AutorizacaoNoNavegador.Fim.PortasOcupadas:
+                ShowChatInputStatus(AutorizacaoNoNavegador.TextoPortasOcupadas);
+                return;
+            case AutorizacaoNoNavegador.Fim.Token:
+                bool connected = await _conta.ConectarAsync(resultado.Token);
+                _emoteGroups = null; // load again with the new permission
+                _listaDeEmotes.Descartar();
+                ShowChatInputStatus(connected ? null : "A Twitch não confirmou o acesso. Tente de novo na aba Twitch das Configurações.");
+                return;
+            default:
+                ShowChatInputStatus(null);
+                return;
         }
-        catch (HttpListenerException)
-        {
-            ShowChatInputStatus("Não foi possível esperar a resposta da Twitch: outros programas estão usando as portas do computador que o Olho no Chat usa. Tente de novo daqui a pouco.");
-            return;
-        }
-
-        if (string.IsNullOrEmpty(token))
-        {
-            ShowChatInputStatus(null);
-            return;
-        }
-
-        bool connected = await _twitchAccount.ConnectAsync(token);
-        _emoteGroups = null; // load again with the new permission
-        ShowChatInputStatus(connected ? null : "A Twitch não confirmou o acesso. Tente de novo na aba Twitch das Configurações.");
     }
 }

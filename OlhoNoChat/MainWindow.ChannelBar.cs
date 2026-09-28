@@ -6,7 +6,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Chats;
 using Microsoft.Extensions.Logging;
-using OlhoNoChat.Helpers;
 using OlhoNoChat.Twitch;
 
 /// <summary>
@@ -33,7 +32,7 @@ public partial class MainWindow
         get
         {
             string saved = App.Settings.GeneralSettings.Username ?? string.Empty;
-            string name = TwitchNames.Extract(saved);
+            string name = NomesDaTwitch.Extrair(saved);
             return name.Length > 0 ? name : saved.Trim();
         }
     }
@@ -132,16 +131,16 @@ public partial class MainWindow
         if (_checkingChannel)
             return;
 
-        string name = TwitchNames.Extract(tbChannel.Text);
+        string name = NomesDaTwitch.Extrair(tbChannel.Text);
         if (name.Length == 0)
         {
             ShowChannelHint("Digite o nome do canal.");
             tbChannel.Focus();
             return;
         }
-        if (!TwitchNames.IsValid(name))
+        if (!NomesDaTwitch.EhValido(name))
         {
-            ShowChannelHint(TwitchNames.InvalidNameHint);
+            ShowChannelHint(NomesDaTwitch.DicaNomeInvalido);
             tbChannel.Focus();
             return;
         }
@@ -156,7 +155,7 @@ public partial class MainWindow
         }
 
         // With a connected account, Twitch can tell if the channel exists (otherwise the chat just stays empty)
-        if (_twitchAccount.IsConnected)
+        if (_conta.EstaConectada)
         {
             _checkingChannel = true;
             btnChannelApply.IsEnabled = false;
@@ -164,7 +163,7 @@ public partial class MainWindow
             bool? exists;
             try
             {
-                exists = await _twitchAccount.ChannelExistsAsync(name);
+                exists = await _conta.CanalExisteAsync(name);
             }
             finally
             {

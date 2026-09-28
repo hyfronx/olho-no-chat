@@ -21,11 +21,10 @@ using System.Net.Http;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OlhoNoChat.Atalhos;
-using OlhoNoChat.Helpers;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Sistema;
+using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
-using OlhoNoChat.Utils;
 using OlhoNoChat.View;
 
 /// <summary>
@@ -36,8 +35,11 @@ public partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MainWindow> _logger;
-    private TwitchService _twitchService; // created once redemptions are turned on (see EnsureTwitchService)
-    private readonly TwitchAccount _twitchAccount;
+    private readonly ContaDaTwitch _conta;
+    private readonly AutorizacaoNoNavegador _autorizacao;
+    private readonly EnvioDeMensagem _envio;
+    private readonly ListaDeEmotes _listaDeEmotes;
+    private readonly ResgatesDePontos _resgates;
     private readonly AtalhosGlobais _atalhos;
 
     private WebView2 webView;
@@ -50,19 +52,31 @@ public partial class MainWindow : Window
     private bool _hiddenBorders = false;
     private WindowDisplayMode CurrentDisplayMode = WindowDisplayMode.Setup;
 
-    private readonly ChatSoundPlayer _chatSound = new();
+    private readonly TocadorDeAviso _aviso = new();
     private Chat _currentChat = new WelcomeChat();
 
-    public MainWindow(IServiceProvider serviceProvider, ILogger<MainWindow> logger, TwitchAccount twitchAccount)
+    public MainWindow(IServiceProvider serviceProvider, ILogger<MainWindow> logger, ContaDaTwitch conta,
+        AutorizacaoNoNavegador autorizacao, EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates)
     {
         InitializeComponent();
         SetupQuickPanels();
 
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _twitchAccount = twitchAccount ?? throw new ArgumentNullException(nameof(twitchAccount));
+        _conta = conta;
+        _autorizacao = autorizacao;
+        _envio = envio;
+        _listaDeEmotes = listaDeEmotes;
+        _resgates = resgates;
+        _resgates.Resgatado += MostrarResgate;
+        _aviso.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
         _atalhos = new AtalhosGlobais(logger);
-        this.Closed += (s, e) => _atalhos.Dispose();
+        this.Closed += (s, e) =>
+        {
+            _atalhos.Dispose();
+            _resgates.Desligar();
+            _aviso.Dispose();
+        };
 
         App.Settings.Tracker.Configure<MainWindow>()
             .Id(w => w.GetType().Name + "_State", null, false)
@@ -82,17 +96,15 @@ public partial class MainWindow : Window
         mainWindowGrid.SizeChanged += (s, e) => UpdateContentClip();
     }
 
-    // Channel point redemptions appear in the chat (TwitchService already logs them)
-    private void OnChannelPointsRewardRedeemed(object sender, TwitchLib.EventSub.Websockets.Core.EventArgs.Channel.ChannelPointsCustomRewardRedemptionArgs e)
+    // Os resgates são do canal da conta: só aparecem quando o chat aberto é o desse canal (e só o Padrão os mostra)
+    private void MostrarResgate(ResgatesDePontos.Resgate resgate)
     {
-        var payloadEvent = e.Notification.Payload.Event;
-        int cost = payloadEvent.Reward.Cost;
-        string points = cost.ToString("N0", CultureInfo.GetCultureInfo("pt-BR")) + (cost == 1 ? " ponto" : " pontos");
+        if (!string.Equals(ChatChannel, _conta.Login, StringComparison.OrdinalIgnoreCase))
+            return;
 
-        PushNewChatMessageDispatcherInvoke($"resgatou \"{payloadEvent.Reward.Title}\" ({points})", payloadEvent.UserName, "#a1b3c4");
-
-        if (!string.IsNullOrEmpty(payloadEvent.UserInput))
-            PushNewChatMessageDispatcherInvoke(payloadEvent.UserInput, payloadEvent.UserName, "#a1b3c4");
+        PushNewChatMessageDispatcherInvoke(resgate.Texto, resgate.Nome, "#a1b3c4");
+        if (!string.IsNullOrEmpty(resgate.TextoDigitado))
+            PushNewChatMessageDispatcherInvoke(resgate.TextoDigitado, resgate.Nome, "#a1b3c4");
     }
 
     // Os quatro atalhos globais, registrados de novo a cada salvamento (um atalho trocado deixa de valer na hora)
@@ -624,17 +636,25 @@ public partial class MainWindow : Window
     private void UpdateChatSound()
     {
         var settings = App.Settings.GeneralSettings;
-        string file = string.Empty;
-        if (settings.ChatType == (int)ChatTypes.Padrao && !settings.ChatNotificationSound.Equals("none", StringComparison.OrdinalIgnoreCase))
-        {
-            string path = Path.Combine(SoundFolder.Resolve(settings.SoundClipsFolder), settings.ChatNotificationSound);
-            if (File.Exists(path))
-                file = path;
-        }
+        string file = settings.ChatType == (int)ChatTypes.Padrao
+            ? SonsDisponiveis.Caminho(settings.SoundClipsFolder, settings.ChatNotificationSound)
+            : null;
 
-        // The output device plays the loaded file, so it is released first (set up again on the next sound)
-        _chatSound.OnAudioDeviceChanged();
-        _chatSound.SetMediaFile(file);
+        Exception erro = _aviso.Configurar(file, settings.OutputVolume, settings.DeviceID, settings.DeviceName ?? string.Empty,
+            settings.ChatSoundQuietSeconds);
+        if (erro != null)
+        {
+            MessageBox.Show($"Não foi possível carregar o arquivo de som: {file}\n\n{erro.Message}",
+                "Erro ao carregar som", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    // A saída de som gravada não existe mais (ou o Windows a recusou): o aviso já passou para a padrão do Windows
+    private void GravarSaidaDeSomPadrao()
+    {
+        App.Settings.GeneralSettings.DeviceID = TocadorDeAviso.Padrao;
+        App.Settings.GeneralSettings.DeviceName = TocadorDeAviso.NomeDaPadraoGravado;
+        App.Settings.Persist();
     }
 
     private void ShowSettingsWindow()
@@ -709,7 +729,7 @@ public partial class MainWindow : Window
         if (App.Settings.GeneralSettings.RedemptionsEnabled)
             _ = StartRedemptionsAsync();
         else
-            _twitchService?.DisableEventSub();
+            _resgates.Desligar();
         UpdateChatInput();
         UpdateChannelBar();
 

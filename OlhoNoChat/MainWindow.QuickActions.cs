@@ -220,7 +220,7 @@ public partial class MainWindow
 
         if (message == PlaySoundMessage)
         {
-            _chatSound.Play();
+            _aviso.Tocar();
             return;
         }
 

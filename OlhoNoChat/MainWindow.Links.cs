@@ -2,7 +2,6 @@ namespace OlhoNoChat;
 
 using OlhoNoChat.Sistema;
 using Microsoft.Web.WebView2.Core;
-using OlhoNoChat.Utils;
 
 /// <summary>
 /// Links in the chat messages ("Padrão": turned into links by browser/chat.js; "Chat oficial da

@@ -1,7 +1,6 @@
 namespace OlhoNoChat;
 
 using System.Windows.Interop;
-using OlhoNoChat.Helpers;
 
 /// <summary>
 /// While Configurações (or Filtros do chat) is open, Windows keeps the chat disabled. A click on the

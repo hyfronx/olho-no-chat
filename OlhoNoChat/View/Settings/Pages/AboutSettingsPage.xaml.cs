@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
-using OlhoNoChat.Utils;
 
 namespace OlhoNoChat.View.Settings
 {

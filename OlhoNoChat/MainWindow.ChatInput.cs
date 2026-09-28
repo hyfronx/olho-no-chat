@@ -6,8 +6,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using OlhoNoChat.Sistema;
 using OlhoNoChat.Twitch;
 
@@ -15,7 +13,7 @@ using OlhoNoChat.Twitch;
 /// Writing in the chats of a channel ("Padrão" and "Chat oficial da Twitch"; "Endereço personalizado"
 /// has no known channel). Two typing boxes, one at a time (option in the Twitch tab):
 /// - the app's "Escrever no chat…" box under the chat, sending as the account connected in the Twitch
-///   tab (through the Twitch API, see TwitchAccount);
+///   tab (through the Twitch API, see EnvioDeMensagem);
 /// - only in the "Chat oficial da Twitch": Twitch's own box inside the page (emotes, replies, commands),
 ///   which needs a login to twitch.tv inside the chat window.
 /// The box starts closed. "Escrever" (chat bubble of the title bar) opens it (borders visible); the hotkey opens it
@@ -35,11 +33,10 @@ public partial class MainWindow
     private bool _webViewFocusableBeforeCompose = false;
     private IntPtr _composeReturnWindow = IntPtr.Zero;
     private bool _sendingChatMessage = false;
-    private Task<bool> _twitchAccountCheck;
 
     private void StartChatInput()
     {
-        _twitchAccount.Changed += () => Dispatcher.BeginInvoke(new Action(OnTwitchAccountChanged));
+        _conta.Mudou += () => Dispatcher.BeginInvoke(new Action(OnTwitchAccountChanged));
 
         // Clicking the game (or anything else) while writing closes the box
         this.Deactivated += (s, e) => { if (_composing && !_composeFromButton) EndCompose(returnFocus: false); };
@@ -49,43 +46,30 @@ public partial class MainWindow
         tbChatMessage.TextChanged += (s, e) => HideMessageBoxClearButton();
 
         UpdateChatInput();
-        _ = CheckTwitchAccountOnceAsync();
+        _ = _conta.VerificarUmaVezAsync(); // o acesso salvo pode ter expirado ou sido removido
     }
-
-    // The saved access is checked with Twitch once per run (it may have expired or been removed)
-    private Task<bool> CheckTwitchAccountOnceAsync() => _twitchAccountCheck ??= _twitchAccount.CheckAsync();
 
     private async Task StartRedemptionsAsync()
     {
-        if (App.Settings.GeneralSettings.RedemptionsEnabled && await CheckTwitchAccountOnceAsync()
+        if (App.Settings.GeneralSettings.RedemptionsEnabled && await _conta.VerificarUmaVezAsync()
             && App.Settings.GeneralSettings.RedemptionsEnabled)
         {
-            await EnsureTwitchService().InitializeAsync();
+            await _resgates.LigarAsync();
         }
-    }
-
-    // The redemptions client is only built when redemptions are used (they are off by default)
-    private TwitchService EnsureTwitchService()
-    {
-        if (_twitchService == null)
-        {
-            _twitchService = new TwitchService(_serviceProvider.GetRequiredService<ILoggerFactory>(), _twitchAccount);
-            _twitchService.ChannelPointsRewardRedeemed += OnChannelPointsRewardRedeemed;
-        }
-        return _twitchService;
     }
 
     private void OnTwitchAccountChanged()
     {
-        if (!_twitchAccount.IsConnected)
+        if (!_conta.EstaConectada)
         {
-            _twitchService?.DisableEventSub();
+            _resgates.Desligar();
             EndCompose(returnFocus: false);
-            _emoteGroups = null; // frees the pictures (another account loads its own list, see EmotesLoaded)
+            _emoteGroups = null; // frees the pictures (another account loads its own list)
+            _listaDeEmotes.Descartar();
         }
         else if (App.Settings.GeneralSettings.RedemptionsEnabled)
         {
-            _ = EnsureTwitchService().InitializeAsync();
+            _ = _resgates.LigarAsync(); // com um acesso novo, assina de novo
         }
 
         UpdateChatInput();
@@ -121,7 +105,7 @@ public partial class MainWindow
             : "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.";
 
         string button = _hiddenBorders ? string.Empty : "Clique no balão de conversa, na barra laranja, para abrir a caixa. ";
-        return _twitchAccount.IsConnected || UseTwitchChatBox
+        return _conta.EstaConectada || UseTwitchChatBox
             ? "Neste chat você pode escrever. " + button + inGame
             : "Neste chat você pode escrever depois de conectar sua conta em Configurações > Twitch. " + inGame;
     }
@@ -134,7 +118,7 @@ public partial class MainWindow
                                             && App.Settings.GeneralSettings.UseTwitchChatBox;
 
     // The app's box can be used
-    private bool ChatInputAvailable => !UseTwitchChatBox && _twitchAccount.IsConnected && _twitchAccount.CanSendMessages
+    private bool ChatInputAvailable => !UseTwitchChatBox && _conta.EstaConectada && _conta.PodeEnviar
                                        && ChatChannel.Length > 0;
 
     // Twitch's own box can be used: its chat page is the one loaded (not the welcome page)
@@ -154,7 +138,7 @@ public partial class MainWindow
             EmotePopup.IsOpen = false;
 
         if (show)
-            tbChatMessage.ToolTip = $"Vai para o chat de {ChatChannel} como {_twitchAccount.DisplayName}";
+            tbChatMessage.ToolTip = $"Vai para o chat de {ChatChannel} como {_conta.NomeMostrado}";
 
         Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
         btnCloseChatBox.ToolTip = WithHotkey(_composing ? "Fechar a caixa e voltar para o jogo (Esc)." : "Fechar a caixa (Esc).", hotkey);
@@ -245,7 +229,7 @@ public partial class MainWindow
             ? "Para escrever no chat, escolha o tipo de chat \"Padrão\" ou \"Chat oficial da Twitch\" em Configurações > Chat."
             : SavedChannel.Length == 0
                 ? "Para escrever no chat, escolha o canal na faixa de cima do chat."
-                : !_twitchAccount.IsConnected
+                : !_conta.EstaConectada
                     ? "Para escrever no chat, conecte sua conta da Twitch em Configurações > Twitch."
                     : "Para escrever no chat, conecte sua conta de novo em Configurações > Twitch: a Twitch precisa dar a permissão de escrever.");
     }
@@ -366,10 +350,10 @@ public partial class MainWindow
 
         _sendingChatMessage = true;
         btnSendChatMessage.IsEnabled = false;
-        TwitchAccount.SendResult result;
+        EnvioDeMensagem.Resultado result;
         try
         {
-            result = await _twitchAccount.SendChatMessageAsync(ChatChannel, text);
+            result = await _envio.EnviarAsync(ChatChannel, text);
         }
         finally
         {
@@ -377,7 +361,7 @@ public partial class MainWindow
             btnSendChatMessage.IsEnabled = true;
         }
 
-        if (result.Status == TwitchAccount.SendStatus.Sent)
+        if (result.Situacao == EnvioDeMensagem.Situacao.Enviada)
         {
             tbChatMessage.Clear();
             if (_composing && CloseChatBoxAfterSend)
@@ -387,7 +371,7 @@ public partial class MainWindow
         }
         else
         {
-            ShowChatInputStatus(result.Message);
+            ShowChatInputStatus(result.Texto);
         }
     }
 
