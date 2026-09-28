@@ -42,9 +42,9 @@ public partial class ConnectionSettingsPage : UserControl
 
     public void SetupValues()
     {
-        this.comboChatBox.SelectedIndex = App.Settings.GeneralSettings.UseTwitchChatBox ? 1 : 0;
-        this.cbCloseAfterSend.IsOn = App.Settings.GeneralSettings.CloseChatBoxAfterSend;
-        this.cbRedemptions.IsOn = App.Settings.GeneralSettings.RedemptionsEnabled;
+        this.comboChatBox.SelectedIndex = App.Opcoes.CaixaDaTwitch ? 1 : 0;
+        this.cbCloseAfterSend.IsOn = App.Opcoes.FecharCaixaDepoisDeEnviar;
+        this.cbRedemptions.IsOn = App.Opcoes.MostrarResgates;
         UpdateChatBoxHint();
         ShowAccount();
 
@@ -55,14 +55,14 @@ public partial class ConnectionSettingsPage : UserControl
 
     public void SaveValues()
     {
-        App.Settings.GeneralSettings.UseTwitchChatBox = this.comboChatBox.SelectedIndex == 1;
-        App.Settings.GeneralSettings.CloseChatBoxAfterSend = this.cbCloseAfterSend.IsOn;
-        App.Settings.GeneralSettings.RedemptionsEnabled = this.cbRedemptions.IsOn;
+        App.Opcoes.CaixaDaTwitch = this.comboChatBox.SelectedIndex == 1;
+        App.Opcoes.FecharCaixaDepoisDeEnviar = this.cbCloseAfterSend.IsOn;
+        App.Opcoes.MostrarResgates = this.cbRedemptions.IsOn;
     }
 
     private void UpdateChatBoxHint()
     {
-        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        Atalho hotkey = App.Opcoes.AtalhoEscrever;
         bool hasHotkey = Atalho.Existe(hotkey);
         string inGame = hasHotkey
             ? $" No jogo, aperte {hotkey} para abrir ou fechar a caixa por cima do jogo."

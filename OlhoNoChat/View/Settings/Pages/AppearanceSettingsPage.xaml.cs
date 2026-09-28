@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using OlhoNoChat.Configuracoes;
 
 namespace OlhoNoChat.View.Settings;
 
@@ -18,56 +19,49 @@ public partial class AppearanceSettingsPage : UserControl
 
     public void SetupValues()
     {
-        SelectByTag(this.comboTextColor, App.Settings.GeneralSettings.ChatMessageColor ?? string.Empty);
-        SelectByTag(this.comboTextOutline, App.Settings.GeneralSettings.ChatTextOutline);
-        SelectByTag(this.comboTextFont, App.Settings.GeneralSettings.ChatFontFamily);
-        this.cbShowMessageTime.IsOn = App.Settings.GeneralSettings.ShowMessageTime;
-        this.comboTheme.SelectedIndex = App.Settings.GeneralSettings.ThemeIndex == 0 ? 0 : GeneralSettings.DefaultThemeIndex;
+        SelectByTag(this.comboTextColor, App.Opcoes.CorDoTexto ?? string.Empty);
+        SelectByTag(this.comboTextOutline, App.Opcoes.ContornoDasLetras);
+        SelectByTag(this.comboTextFont, App.Opcoes.Fonte);
+        this.cbShowMessageTime.IsOn = App.Opcoes.MostrarHorario;
+        this.comboTheme.SelectedIndex = App.Opcoes.Tema == Opcoes.TemaNenhum ? Opcoes.TemaNenhum : Opcoes.TemaPadrao;
 
         // Twitch Popout Chat settings
-        if (App.Settings.GeneralSettings.UseDefaultTwitchPopoutCSS)
+        if (App.Opcoes.AparenciaPadraoNoChatOficial)
         {
             this.tbPopoutCSS.Text = CustomCSS_Defaults.TwitchPopoutChat;
             this.cbUseDefaultPopoutCSS.IsOn = true;
         }
         else
         {
-            this.tbPopoutCSS.Text = App.Settings.GeneralSettings.TwitchPopoutCSS;
+            this.tbPopoutCSS.Text = App.Opcoes.CssDoChatOficial;
             this.cbUseDefaultPopoutCSS.IsOn = false;
         }
 
-        if (Enum.IsDefined(typeof(ChatTypes), App.Settings.GeneralSettings.ChatType))
-        {
-            var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
+        // Each has its own CSS, so switching the chat type before saving shows the one of the new type. With nothing
+        // saved for a type that isn't the saved one, its editor keeps the example text of the XAML.
+        if (App.Opcoes.TipoDeChat == (int)ChatTypes.CustomURL || App.Opcoes.CssDoEnderecoPersonalizado.Length > 0)
+            this.tbCSS2.Text = App.Opcoes.CssDoEnderecoPersonalizado;
+        if (App.Opcoes.TipoDeChat == (int)ChatTypes.Padrao || App.Opcoes.CssDoTemaNenhum.Length > 0)
+            this.tbCSS.Text = string.IsNullOrEmpty(App.Opcoes.CssDoTemaNenhum)
+                ? CustomCSS_Defaults.NoneTheme_CustomCSS
+                : App.Opcoes.CssDoTemaNenhum;
 
-            if (chatType == ChatTypes.CustomURL)
-            {
-                this.tbCSS2.Text = App.Settings.GeneralSettings.CustomCSS;
-            }
-            else if (chatType == ChatTypes.Padrao)
-            {
-                if (string.IsNullOrEmpty(App.Settings.GeneralSettings.CustomCSS))
-                    this.tbCSS.Text = CustomCSS_Defaults.NoneTheme_CustomCSS;
-                else
-                    this.tbCSS.Text = App.Settings.GeneralSettings.CustomCSS;
-            }
-
-            ShowPanelFor(chatType);
-        }
+        if (Enum.IsDefined(typeof(ChatTypes), App.Opcoes.TipoDeChat))
+            ShowPanelFor((ChatTypes)App.Opcoes.TipoDeChat);
     }
 
     public void SaveValues()
     {
-        if (Enum.IsDefined(typeof(ChatTypes), App.Settings.GeneralSettings.ChatType))
+        if (Enum.IsDefined(typeof(ChatTypes), App.Opcoes.TipoDeChat))
         {
-            var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
+            var chatType = (ChatTypes)App.Opcoes.TipoDeChat;
 
             if (chatType == ChatTypes.CustomURL)
             {
                 if (!string.IsNullOrWhiteSpace(this.tbCSS2.Text) && (this.tbCSS2.Text.ToLower() != "css"))
-                    App.Settings.GeneralSettings.CustomCSS = this.tbCSS2.Text;
+                    App.Opcoes.CssDoEnderecoPersonalizado = this.tbCSS2.Text;
                 else
-                    App.Settings.GeneralSettings.CustomCSS = string.Empty;
+                    App.Opcoes.CssDoEnderecoPersonalizado = string.Empty;
             }
             else if (chatType == ChatTypes.TwitchPopout)
             {
@@ -75,22 +69,22 @@ public partial class AppearanceSettingsPage : UserControl
 
                 if (this.cbUseDefaultPopoutCSS.IsOn)
                 {
-                    App.Settings.GeneralSettings.UseDefaultTwitchPopoutCSS = true;
+                    App.Opcoes.AparenciaPadraoNoChatOficial = true;
                 }
                 else
                 {
-                    App.Settings.GeneralSettings.UseDefaultTwitchPopoutCSS = false;
-                    App.Settings.GeneralSettings.TwitchPopoutCSS = this.tbPopoutCSS.Text;
+                    App.Opcoes.AparenciaPadraoNoChatOficial = false;
+                    App.Opcoes.CssDoChatOficial = this.tbPopoutCSS.Text;
                 }
             }
             else if (chatType == ChatTypes.Padrao)
             {
                 SaveMessageTextOptions();
-                App.Settings.GeneralSettings.ThemeIndex = this.comboTheme.SelectedIndex;
+                App.Opcoes.Tema = this.comboTheme.SelectedIndex;
 
-                if (App.Settings.GeneralSettings.ThemeIndex == 0)
+                if (App.Opcoes.Tema == Opcoes.TemaNenhum)
                 {
-                    App.Settings.GeneralSettings.CustomCSS = this.tbCSS.Text;
+                    App.Opcoes.CssDoTemaNenhum = this.tbCSS.Text;
                 }
             }
         }
@@ -99,20 +93,20 @@ public partial class AppearanceSettingsPage : UserControl
     // "Texto das mensagens": used by the "Padrão" and the "Chat oficial da Twitch"
     private void SaveMessageTextOptions()
     {
-        App.Settings.GeneralSettings.ChatMessageColor = SelectedTag(this.comboTextColor, string.Empty);
-        App.Settings.GeneralSettings.ChatTextOutline = SelectedTag(this.comboTextOutline, "none");
-        App.Settings.GeneralSettings.ChatFontFamily = SelectedTag(this.comboTextFont, "theme");
-        App.Settings.GeneralSettings.ShowMessageTime = this.cbShowMessageTime.IsOn;
+        App.Opcoes.CorDoTexto = SelectedTag(this.comboTextColor, string.Empty);
+        App.Opcoes.ContornoDasLetras = SelectedTag(this.comboTextOutline, "none");
+        App.Opcoes.Fonte = SelectedTag(this.comboTextFont, "theme");
+        App.Opcoes.MostrarHorario = this.cbShowMessageTime.IsOn;
     }
 
     public void ChatTypeChanged(ChatTypes chatType)
     {
         if (chatType == ChatTypes.TwitchPopout)
         {
-            if (string.IsNullOrEmpty(App.Settings.GeneralSettings.TwitchPopoutCSS))
+            if (string.IsNullOrEmpty(App.Opcoes.CssDoChatOficial))
                 this.tbPopoutCSS.Text = CustomCSS_Defaults.TwitchPopoutChat;
             else
-                this.tbPopoutCSS.Text = App.Settings.GeneralSettings.TwitchPopoutCSS;
+                this.tbPopoutCSS.Text = App.Opcoes.CssDoChatOficial;
         }
 
         ShowPanelFor(chatType);
@@ -154,7 +148,7 @@ public partial class AppearanceSettingsPage : UserControl
         }
         else
         {
-            tbPopoutCSS.Text = App.Settings.GeneralSettings.TwitchPopoutCSS;
+            tbPopoutCSS.Text = App.Opcoes.CssDoChatOficial;
             tbPopoutCSS.IsReadOnly = false;
         }
     }

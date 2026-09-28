@@ -20,34 +20,34 @@ public partial class SoundSettingsPage : UserControl
     public void SetupValues()
     {
         LoadDevices();
-        this.OutputVolumeSlider.Value = App.Settings.GeneralSettings.OutputVolume * 100;
+        this.OutputVolumeSlider.Value = App.Opcoes.Volume * 100;
 
-        SetSoundClipsFolder(App.Settings.GeneralSettings.SoundClipsFolder);
+        SetSoundClipsFolder(App.Opcoes.PastaDosSons);
         LoadSoundClips();
-        SelectSound(App.Settings.GeneralSettings.ChatNotificationSound);
-        SelectQuietSeconds(App.Settings.GeneralSettings.ChatSoundQuietSeconds);
+        SelectSound(App.Opcoes.SomDeMensagem);
+        SelectQuietSeconds(App.Opcoes.SegundosEntreSons);
 
-        if (Enum.IsDefined(typeof(ChatTypes), App.Settings.GeneralSettings.ChatType))
-            ChatTypeChanged((ChatTypes)App.Settings.GeneralSettings.ChatType);
+        if (Enum.IsDefined(typeof(ChatTypes), App.Opcoes.TipoDeChat))
+            ChatTypeChanged((ChatTypes)App.Opcoes.TipoDeChat);
     }
 
     public void SaveValues()
     {
         var saida = DevicesComboBox.SelectedItem as TocadorDeAviso.Saida;
-        App.Settings.GeneralSettings.DeviceID = saida?.Id ?? TocadorDeAviso.Padrao;
-        App.Settings.GeneralSettings.DeviceName = saida == null || saida.Id == TocadorDeAviso.Padrao
+        App.Opcoes.SaidaDeSom = saida?.Id ?? TocadorDeAviso.Padrao;
+        App.Opcoes.NomeDaSaidaDeSom = saida == null || saida.Id == TocadorDeAviso.Padrao
             ? TocadorDeAviso.NomeDaPadraoGravado
             : saida.Nome;
 
-        App.Settings.GeneralSettings.OutputVolume = (float)SliderToVolume(this.OutputVolumeSlider.Value);
-        App.Settings.GeneralSettings.SoundClipsFolder = _soundClipsFolder;
-        App.Settings.GeneralSettings.ChatSoundQuietSeconds =
+        App.Opcoes.Volume = (float)SliderToVolume(this.OutputVolumeSlider.Value);
+        App.Opcoes.PastaDosSons = _soundClipsFolder;
+        App.Opcoes.SegundosEntreSons =
             int.TryParse((comboSoundQuiet.SelectedItem as ComboBoxItem)?.Tag as string, out int quiet) ? quiet : 0;
 
         // The other chat types have no new-message sound, so their saved choice is left alone
-        var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
+        var chatType = (ChatTypes)App.Opcoes.TipoDeChat;
         if (chatType == ChatTypes.Padrao)
-            App.Settings.GeneralSettings.ChatNotificationSound = this.comboChatSound.SelectedValue.ToString();
+            App.Opcoes.SomDeMensagem = this.comboChatSound.SelectedValue.ToString();
     }
 
     public void ChatTypeChanged(ChatTypes chatType)
@@ -83,9 +83,9 @@ public partial class SoundSettingsPage : UserControl
         DevicesComboBox.ItemsSource = TocadorDeAviso.ListarSaidas();
 
         // Um aparelho que não é mais o mesmo (outro foi ligado ou tirado) aparece como "Padrão do Windows"
-        var settings = App.Settings.GeneralSettings;
-        DevicesComboBox.SelectedValue = TocadorDeAviso.SaidaAindaExiste(settings.DeviceID, settings.DeviceName ?? string.Empty)
-            ? settings.DeviceID
+        var settings = App.Opcoes;
+        DevicesComboBox.SelectedValue = TocadorDeAviso.SaidaAindaExiste(settings.SaidaDeSom, settings.NomeDaSaidaDeSom ?? string.Empty)
+            ? settings.SaidaDeSom
             : TocadorDeAviso.Padrao;
     }
 

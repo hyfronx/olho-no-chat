@@ -20,7 +20,7 @@ public partial class MainWindow
     private DispatcherTimer _keepOnTopTimer;
     private bool _settingsDialogOpen = false;
 
-    private static bool AlwaysOnTop => App.Settings.GeneralSettings.AlwaysOnTop;
+    private static bool AlwaysOnTop => App.Opcoes.SempreNoTopo;
 
     private void StartKeepOnTopGuard()
     {
@@ -40,10 +40,10 @@ public partial class MainWindow
 
     private void ToggleAlwaysOnTop()
     {
-        App.Settings.GeneralSettings.AlwaysOnTop = !AlwaysOnTop;
+        App.Opcoes.SempreNoTopo = !AlwaysOnTop;
 
         // Save right away: otherwise the change is lost if the app does not close normally
-        App.Settings.Persist();
+        App.ArquivoDeConfiguracoes.Gravar();
         ApplyAlwaysOnTop();
     }
 

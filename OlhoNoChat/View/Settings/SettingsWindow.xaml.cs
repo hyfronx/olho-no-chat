@@ -105,7 +105,7 @@ public partial class SettingsWindow : Window
     private void Save()
     {
         // The pages save according to the chosen chat type
-        App.Settings.GeneralSettings.ChatType = _chatSettingsPage.SelectedChatType;
+        App.Opcoes.TipoDeChat = _chatSettingsPage.SelectedChatType;
 
         _generalSettingsPage.SaveValues();
         _soundSettingsPage.SaveValues();
@@ -113,7 +113,7 @@ public partial class SettingsWindow : Window
         _appearanceSettingsPage.SaveValues();
         _connectionSettingsPage.SaveValues();
 
-        App.Settings.Persist();
+        App.ArquivoDeConfiguracoes.Gravar();
         _savedState = CurrentState();
 
         SettingsSaved?.Invoke();
@@ -121,7 +121,7 @@ public partial class SettingsWindow : Window
     }
 
     // "Restaurar tudo para o padrão" (Geral > Avançado): asks first, then restores the saved options
-    // (AppSettings.ResetToDefaults), shows them on every tab and applies them to the chat like a save
+    // (ArquivoDeConfiguracoes.RestaurarPadrao), shows them on every tab and applies them to the chat like a save
     private async Task ResetToDefaultsAsync()
     {
         var dialog = new ContentDialog
@@ -152,7 +152,7 @@ public partial class SettingsWindow : Window
         if (result != ContentDialogResult.Primary)
             return;
 
-        App.Settings.ResetToDefaults();
+        App.ArquivoDeConfiguracoes.RestaurarPadrao();
 
         SetupValues();
         _generalSettingsPage.SetupValues();
@@ -269,7 +269,7 @@ public partial class SettingsWindow : Window
     // The chat type first: picking it changes the other pages, whose SetupValues then show the saved values
     private void SetupValues()
     {
-        _chatSettingsPage.SelectedChatType = App.Settings.GeneralSettings.ChatType;
+        _chatSettingsPage.SelectedChatType = App.Opcoes.TipoDeChat;
     }
 
     private void Window_SourceInitialized(object sender, EventArgs e)

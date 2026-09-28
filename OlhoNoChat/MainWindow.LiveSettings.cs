@@ -16,15 +16,15 @@ public partial class MainWindow
     // Settings the chat page only reads when it is loaded. If any of them changes, saving loads it again.
     private static string GetChatReloadKey()
     {
-        var s = App.Settings.GeneralSettings;
+        var s = App.Opcoes;
 
-        return (ChatTypes)s.ChatType switch
+        return (ChatTypes)s.TipoDeChat switch
         {
-            ChatTypes.Padrao => string.Join("|", s.Username, s.ThemeIndex),
-            ChatTypes.TwitchPopout => string.Join("|", s.Username, s.BetterTtv, s.BetterTtv_7tv, s.BetterTtv_AdvEmoteMenu,
-                                                  s.FrankerFaceZ, s.UseDefaultTwitchPopoutCSS, s.TwitchPopoutCSS),
-            ChatTypes.CustomURL => string.Join("|", s.CustomURL, s.CustomCSS),
-            _ => s.ChatType.ToString()
+            ChatTypes.Padrao => string.Join("|", s.Canal, s.Tema),
+            ChatTypes.TwitchPopout => string.Join("|", s.Canal, s.BetterTtv, s.Emotes7tv, s.MenuDeEmotesDoBetterTtv,
+                                                  s.FrankerFaceZ, s.AparenciaPadraoNoChatOficial, s.CssDoChatOficial),
+            ChatTypes.CustomURL => string.Join("|", s.EnderecoPersonalizado, s.CssDoEnderecoPersonalizado),
+            _ => s.TipoDeChat.ToString()
         };
     }
 

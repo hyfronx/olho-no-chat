@@ -33,9 +33,6 @@ public static class InfoDoApp
     /// <summary>Versão instalada pelo Velopack, ou "de desenvolvimento" rodando direto da compilação.</summary>
     public static string Versao => VelopackLocator.Current?.CurrentlyInstalledVersion?.ToString() ?? "de desenvolvimento";
 
-    /// <summary>Rodando do zip portátil do Velopack.</summary>
-    public static bool EhPortatil => VelopackLocator.Current?.IsPortable ?? false;
-
     /// <summary>A pasta "browser" ao lado do .exe (página do chat Padrão e página de boas-vindas).</summary>
     public static string PastaDasPaginas => Path.Combine(AppContext.BaseDirectory, "browser");
 

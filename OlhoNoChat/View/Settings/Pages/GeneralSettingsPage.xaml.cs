@@ -20,31 +20,31 @@ public partial class GeneralSettingsPage : UserControl
 
     public void SetupValues()
     {
-        this.cbAutoHideBorders.IsOn = App.Settings.GeneralSettings.AutoHideBorders;
-        this.cbTaskbar.IsOn = App.Settings.GeneralSettings.HideTaskbarIcon;
-        this.cbInteraction.IsOn = App.Settings.GeneralSettings.AllowInteraction;
-        this.cbCheckForUpdates.IsOn = App.Settings.GeneralSettings.CheckForUpdates;
-        this.cbMultiInstance.IsOn = App.Settings.GeneralSettings.AllowMultipleInstances;
+        this.cbAutoHideBorders.IsOn = App.Opcoes.EsconderBordasAoAbrir;
+        this.cbTaskbar.IsOn = App.Opcoes.EsconderIconeDaBarraDeTarefas;
+        this.cbInteraction.IsOn = App.Opcoes.PermitirCliqueComBordas;
+        this.cbCheckForUpdates.IsOn = App.Opcoes.ProcurarAtualizacoes;
+        this.cbMultiInstance.IsOn = App.Opcoes.PermitirVariasCopias;
 
-        this.hotkeyInputToggleBorders.Atalho = App.Settings.GeneralSettings.ToggleBordersHotkey;
-        this.hotkeyInputToggleInteractable.Atalho = App.Settings.GeneralSettings.ToggleInteractableHotkey;
-        this.hotkeyInputBringToTop.Atalho = App.Settings.GeneralSettings.BringToTopHotkey;
-        this.hotkeyInputWriteMessage.Atalho = App.Settings.GeneralSettings.WriteMessageHotkey;
+        this.hotkeyInputToggleBorders.Atalho = App.Opcoes.AtalhoBordas;
+        this.hotkeyInputToggleInteractable.Atalho = App.Opcoes.AtalhoModoRolagem;
+        this.hotkeyInputBringToTop.Atalho = App.Opcoes.AtalhoSempreNoTopo;
+        this.hotkeyInputWriteMessage.Atalho = App.Opcoes.AtalhoEscrever;
     }
 
     public void SaveValues()
     {
-        App.Settings.GeneralSettings.AutoHideBorders = this.cbAutoHideBorders.IsOn;
-        App.Settings.GeneralSettings.HideTaskbarIcon = this.cbTaskbar.IsOn;
-        App.Settings.GeneralSettings.AllowInteraction = this.cbInteraction.IsOn;
-        App.Settings.GeneralSettings.CheckForUpdates = this.cbCheckForUpdates.IsOn;
-        App.Settings.GeneralSettings.AllowMultipleInstances = this.cbMultiInstance.IsOn;
+        App.Opcoes.EsconderBordasAoAbrir = this.cbAutoHideBorders.IsOn;
+        App.Opcoes.EsconderIconeDaBarraDeTarefas = this.cbTaskbar.IsOn;
+        App.Opcoes.PermitirCliqueComBordas = this.cbInteraction.IsOn;
+        App.Opcoes.ProcurarAtualizacoes = this.cbCheckForUpdates.IsOn;
+        App.Opcoes.PermitirVariasCopias = this.cbMultiInstance.IsOn;
 
         // Hotkeys
-        App.Settings.GeneralSettings.ToggleBordersHotkey = hotkeyInputToggleBorders.Atalho;
-        App.Settings.GeneralSettings.ToggleInteractableHotkey = hotkeyInputToggleInteractable.Atalho;
-        App.Settings.GeneralSettings.BringToTopHotkey = hotkeyInputBringToTop.Atalho;
-        App.Settings.GeneralSettings.WriteMessageHotkey = hotkeyInputWriteMessage.Atalho;
+        App.Opcoes.AtalhoBordas = hotkeyInputToggleBorders.Atalho;
+        App.Opcoes.AtalhoModoRolagem = hotkeyInputToggleInteractable.Atalho;
+        App.Opcoes.AtalhoSempreNoTopo = hotkeyInputBringToTop.Atalho;
+        App.Opcoes.AtalhoEscrever = hotkeyInputWriteMessage.Atalho;
     }
 
     // "Mudar atalho" / "Confirmar" of a hotkey row (its editor is in the same row)

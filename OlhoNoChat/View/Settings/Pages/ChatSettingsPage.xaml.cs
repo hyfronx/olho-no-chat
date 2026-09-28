@@ -29,24 +29,24 @@ public partial class ChatSettingsPage : UserControl
 
     public void SetupValues()
     {
-        this.cbHideBots.IsOn = App.Settings.GeneralSettings.BlockBotActivity;
-        this.cbHideGifs.IsOn = App.Settings.GeneralSettings.HideGifs;
-        this.cbHideOtherChannels.IsOn = App.Settings.GeneralSettings.HideOtherChannels;
-        this.cbFade.IsOn = App.Settings.GeneralSettings.FadeChat;
-        this.tbFadeTime.Text = App.Settings.GeneralSettings.FadeTime;
-        this.fadeTimeRow.IsEnabled = App.Settings.GeneralSettings.FadeChat;
+        this.cbHideBots.IsOn = App.Opcoes.EsconderBots;
+        this.cbHideGifs.IsOn = App.Opcoes.EsconderGifs;
+        this.cbHideOtherChannels.IsOn = App.Opcoes.EsconderOutrosCanais;
+        this.cbFade.IsOn = App.Opcoes.ApagarMensagensAntigas;
+        this.tbFadeTime.Text = App.Opcoes.SegundosParaApagar;
+        this.fadeTimeRow.IsEnabled = App.Opcoes.ApagarMensagensAntigas;
 
-        this.cbBetterTtv.IsOn = App.Settings.GeneralSettings.BetterTtv;
-        this.cbBetterTtv_7tv.IsOn = App.Settings.GeneralSettings.BetterTtv_7tv;
-        this.cbBetterTtv_AdvMenu.IsOn = App.Settings.GeneralSettings.BetterTtv_AdvEmoteMenu;
-        this.cbFfz.IsOn = App.Settings.GeneralSettings.FrankerFaceZ;
+        this.cbBetterTtv.IsOn = App.Opcoes.BetterTtv;
+        this.cbBetterTtv_7tv.IsOn = App.Opcoes.Emotes7tv;
+        this.cbBetterTtv_AdvMenu.IsOn = App.Opcoes.MenuDeEmotesDoBetterTtv;
+        this.cbFfz.IsOn = App.Opcoes.FrankerFaceZ;
 
-        if (Enum.IsDefined(typeof(ChatTypes), App.Settings.GeneralSettings.ChatType))
+        if (Enum.IsDefined(typeof(ChatTypes), App.Opcoes.TipoDeChat))
         {
-            var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
+            var chatType = (ChatTypes)App.Opcoes.TipoDeChat;
 
             // Empty for the other types (it used to keep "url", which was then opened as the address)
-            this.tbURL.Text = chatType == ChatTypes.CustomURL ? App.Settings.GeneralSettings.CustomURL : string.Empty;
+            this.tbURL.Text = chatType == ChatTypes.CustomURL ? App.Opcoes.EnderecoPersonalizado : string.Empty;
 
             ShowPanelFor(chatType);
         }
@@ -54,30 +54,30 @@ public partial class ChatSettingsPage : UserControl
 
     public void SaveValues()
     {
-        if (Enum.IsDefined(typeof(ChatTypes), App.Settings.GeneralSettings.ChatType))
+        if (Enum.IsDefined(typeof(ChatTypes), App.Opcoes.TipoDeChat))
         {
-            var chatType = (ChatTypes)App.Settings.GeneralSettings.ChatType;
+            var chatType = (ChatTypes)App.Opcoes.TipoDeChat;
 
             if (chatType == ChatTypes.CustomURL)
             {
-                App.Settings.GeneralSettings.CustomURL = this.tbURL.Text;
+                App.Opcoes.EnderecoPersonalizado = this.tbURL.Text;
             }
             else if (chatType == ChatTypes.TwitchPopout)
             {
-                App.Settings.GeneralSettings.BetterTtv = this.cbBetterTtv.IsOn;
-                App.Settings.GeneralSettings.BetterTtv_7tv = this.cbBetterTtv_7tv.IsOn;
-                App.Settings.GeneralSettings.BetterTtv_AdvEmoteMenu = this.cbBetterTtv_AdvMenu.IsOn;
-                App.Settings.GeneralSettings.FrankerFaceZ = this.cbFfz.IsOn;
+                App.Opcoes.BetterTtv = this.cbBetterTtv.IsOn;
+                App.Opcoes.Emotes7tv = this.cbBetterTtv_7tv.IsOn;
+                App.Opcoes.MenuDeEmotesDoBetterTtv = this.cbBetterTtv_AdvMenu.IsOn;
+                App.Opcoes.FrankerFaceZ = this.cbFfz.IsOn;
             }
             else if (chatType == ChatTypes.Padrao)
             {
-                App.Settings.GeneralSettings.CustomURL = string.Empty;
+                App.Opcoes.EnderecoPersonalizado = string.Empty;
                 // RedemptionsEnabled is saved by the Twitch tab (ConnectionSettingsPage)
-                App.Settings.GeneralSettings.BlockBotActivity = this.cbHideBots.IsOn;
-                App.Settings.GeneralSettings.HideGifs = this.cbHideGifs.IsOn;
-                App.Settings.GeneralSettings.HideOtherChannels = this.cbHideOtherChannels.IsOn;
-                App.Settings.GeneralSettings.FadeChat = this.cbFade.IsOn;
-                App.Settings.GeneralSettings.FadeTime = this.tbFadeTime.Text;
+                App.Opcoes.EsconderBots = this.cbHideBots.IsOn;
+                App.Opcoes.EsconderGifs = this.cbHideGifs.IsOn;
+                App.Opcoes.EsconderOutrosCanais = this.cbHideOtherChannels.IsOn;
+                App.Opcoes.ApagarMensagensAntigas = this.cbFade.IsOn;
+                App.Opcoes.SegundosParaApagar = this.tbFadeTime.Text;
             }
         }
     }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.View.Settings;
@@ -17,7 +18,12 @@ namespace OlhoNoChat
     /// </summary>
     public partial class App : Application
     {
-        public static readonly AppSettings Settings = new AppSettings();
+        /// <summary>O arquivo de configurações, lido no começo da abertura.</summary>
+        public static ArquivoDeConfiguracoes ArquivoDeConfiguracoes { get; private set; }
+
+        /// <summary>As opções em uso.</summary>
+        public static Opcoes Opcoes => ArquivoDeConfiguracoes.Opcoes;
+
         public static bool IsShuttingDown { get; set; } = false;
 
         private InstanciaUnica _instanciaUnica;
@@ -42,7 +48,8 @@ namespace OlhoNoChat
             try {
                 base.OnStartup(e);
 
-                Settings.Init();
+                // Só lê: uma cópia que vai fechar logo (instância única) não grava nada
+                ArquivoDeConfiguracoes = ArquivoDeConfiguracoes.Abrir(InfoDoApp.PastaDeDados);
 
                 // Só uma cópia principal: uma cópia aberta depois manda os argumentos para a primeira
                 _instanciaUnica = InstanciaUnica.TentarSerAPrimeira(Dispatcher);
@@ -51,7 +58,7 @@ namespace OlhoNoChat
                     await InstanciaUnica.EnviarParaAPrimeiraAsync(e.Args);
 
                     // Ação da barra de tarefas, ou "várias cópias" desligado: esta cópia fecha
-                    if (e.Args.Length > 0 || !Settings.GeneralSettings.AllowMultipleInstances)
+                    if (e.Args.Length > 0 || !Opcoes.PermitirVariasCopias)
                     {
                         Application.Current.Shutdown();
                         return;
@@ -65,6 +72,9 @@ namespace OlhoNoChat
                             janela.ExecutarComandos(comandos);
                     };
                 }
+
+                // Cópia que continua aberta: termina a conversão do arquivo antigo e passa a gravar
+                ArquivoDeConfiguracoes.ComecarAGravar();
 
                 // Hook the global unhandled exception handler
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -135,6 +145,7 @@ namespace OlhoNoChat
 
         protected override void OnExit(ExitEventArgs e)
         {
+            ArquivoDeConfiguracoes?.Gravar();
             _instanciaUnica?.Dispose();
             base.OnExit(e);
         }

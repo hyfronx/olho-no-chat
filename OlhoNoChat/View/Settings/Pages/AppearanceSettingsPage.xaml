@@ -32,7 +32,7 @@
                             <ComboBox Name="comboTheme" Grid.Column="2" Style="{StaticResource SettingsComboBox}"
                                       AutomationProperties.Name="Tema do chat"
                                       SelectionChanged="comboTheme_SelectionChanged">
-                                <!-- The position of each item is the saved ThemeIndex (see GeneralSettings.ThemeIndex): keep the order -->
+                                <!-- The position of each item is the saved theme (Opcoes.Tema): keep the order -->
                                 <ComboBoxItem Content="Nenhum (CSS personalizado)" />
                                 <ComboBoxItem Content="Padrão" />
                             </ComboBox>

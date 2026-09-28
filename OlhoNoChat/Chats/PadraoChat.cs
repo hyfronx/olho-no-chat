@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Color = System.Windows.Media.Color;
+using OlhoNoChat.Configuracoes;
 
 namespace OlhoNoChat.Chats
 {
@@ -32,25 +33,25 @@ namespace OlhoNoChat.Chats
         // them on the open page (window.oncChat.apply), without reloading the chat.
         public static string GetMessageSettingsJson()
         {
-            var settings = App.Settings.GeneralSettings;
+            var settings = App.Opcoes;
 
-            var vipList = settings.AllowedUsersList?.Cast<string>().Select(u => u.ToLowerInvariant()).ToList() ?? new List<string>();
-            var blockList = settings.BlockedUsersList?.Cast<string>().Select(u => u.ToLowerInvariant()).ToList() ?? new List<string>();
+            var vipList = settings.ListaDeUsuarios.Select(u => u.ToLowerInvariant()).ToList();
+            var blockList = settings.UsuariosBloqueados.Select(u => u.ToLowerInvariant()).ToList();
 
             // "Apagar mensagens antigas": seconds before a message disappears, 0 = never
-            int fade = settings.FadeChat && int.TryParse(settings.FadeTime, out int seconds) && seconds > 0 ? seconds : 0;
+            int fade = settings.ApagarMensagensAntigas && int.TryParse(settings.SegundosParaApagar, out int seconds) && seconds > 0 ? seconds : 0;
 
             return JsonSerializer.Serialize(new
             {
                 fade,
-                hideBots = settings.BlockBotActivity,
-                hideGifs = settings.HideGifs,
-                hideOtherChannels = settings.HideOtherChannels,
-                highlightUsers = settings.HighlightUsersChat,
-                allowedUsersOnly = settings.AllowedUsersOnlyChat,
-                playSound = settings.ChatNotificationSound?.ToLower() != "none",
-                filterAllowAllVIPs = settings.FilterAllowAllVIPs,
-                filterAllowAllMods = settings.FilterAllowAllMods,
+                hideBots = settings.EsconderBots,
+                hideGifs = settings.EsconderGifs,
+                hideOtherChannels = settings.EsconderOutrosCanais,
+                highlightUsers = settings.DestacarUsuarios,
+                allowedUsersOnly = settings.SoUsuariosDaLista,
+                playSound = settings.SomDeMensagem?.ToLower() != "none",
+                filterAllowAllVIPs = settings.DestacarVips,
+                filterAllowAllMods = settings.DestacarModeradores,
                 vips = vipList,
                 blockList = blockList
             });
@@ -64,21 +65,20 @@ namespace OlhoNoChat.Chats
 
         public override string SetupCustomCSS()
         {
-            // Theme "Nenhum" with the user's own CSS: that CSS instead of ours. Only for that theme: the same
-            // setting also keeps the CSS of the "Endereço personalizado" chat type, which must not end up here.
-            if (App.Settings.GeneralSettings.ThemeIndex == 0 && !string.IsNullOrEmpty(App.Settings.GeneralSettings.CustomCSS))
+            // Theme "Nenhum" with the user's own CSS: that CSS instead of ours
+            if (App.Opcoes.Tema == Opcoes.TemaNenhum && !string.IsNullOrEmpty(App.Opcoes.CssDoTemaNenhum))
             {
-                return App.Settings.GeneralSettings.CustomCSS + GetMessageTextCss();
+                return App.Opcoes.CssDoTemaNenhum + GetMessageTextCss();
             }
 
             // Prepare the dynamic color values first. Invariant: CSS needs "0.59", not "0,59".
-            Color highlightColor = App.Settings.GeneralSettings.ChatHighlightColor;
+            Color highlightColor = App.Opcoes.CorDoDestaque;
             string rgbaHighlight = FormattableString.Invariant($"rgba({highlightColor.R},{highlightColor.G},{highlightColor.B},{highlightColor.A / 255f:0.00})");
 
-            Color modsColor = App.Settings.GeneralSettings.ChatHighlightModsColor;
+            Color modsColor = App.Opcoes.CorDosModeradores;
             string rgbaMods = FormattableString.Invariant($"rgba({modsColor.R},{modsColor.G},{modsColor.B},{modsColor.A / 255f:0.00})");
 
-            Color vipsColor = App.Settings.GeneralSettings.ChatHighlightVIPsColor;
+            Color vipsColor = App.Opcoes.CorDosVips;
             string rgbaVIPs = FormattableString.Invariant($"rgba({vipsColor.R},{vipsColor.G},{vipsColor.B},{vipsColor.A / 255f:0.00})");
 
             // Use a raw string literal to build the final CSS string
@@ -128,25 +128,25 @@ namespace OlhoNoChat.Chats
         // so every rule needs !important to win.
         private static string GetMessageTextCss()
         {
-            var settings = App.Settings.GeneralSettings;
+            var settings = App.Opcoes;
             var css = new System.Text.StringBuilder();
             const string lines = "#chat_box .chat_line, #chat_box .chat_line .nick, #chat_box .chat_line .message";
 
             // Only the message text: user names keep their Twitch color, and /me messages
             // (colored inline by browser/chat.js) keep the user's color too.
-            if (System.Text.RegularExpressions.Regex.IsMatch(settings.ChatMessageColor ?? "", "^#[0-9A-Fa-f]{6}$"))
-                css.Append($"\n#chat_box .chat_line .message:not([style*=\"color\"]) {{ color: {settings.ChatMessageColor} !important; }}");
+            if (System.Text.RegularExpressions.Regex.IsMatch(settings.CorDoTexto ?? "", "^#[0-9A-Fa-f]{6}$"))
+                css.Append($"\n#chat_box .chat_line .message:not([style*=\"color\"]) {{ color: {settings.CorDoTexto} !important; }}");
 
-            if (settings.ChatTextOutline == "soft")
+            if (settings.ContornoDasLetras == "soft")
                 css.Append($"\n#chat_box, {lines} {{ text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.8) !important; }}");
-            else if (settings.ChatTextOutline == "none")
+            else if (settings.ContornoDasLetras == "none")
                 css.Append($"\n#chat_box, {lines} {{ text-shadow: none !important; }}");
 
-            if (settings.ChatFontFamily is "Segoe UI" or "Arial" or "Verdana")
-                css.Append($"\n#chat_box, {lines} {{ font-family: '{settings.ChatFontFamily}', sans-serif !important; letter-spacing: normal !important; }}");
+            if (settings.Fonte is "Segoe UI" or "Arial" or "Verdana")
+                css.Append($"\n#chat_box, {lines} {{ font-family: '{settings.Fonte}', sans-serif !important; letter-spacing: normal !important; }}");
 
             // The page writes the time on every line and hides it (browser/chat.css)
-            if (settings.ShowMessageTime)
+            if (settings.MostrarHorario)
                 css.Append($"\n#chat_box .chat_line .time_stamp {{ {MessageTimeCss} }}");
 
             return css.ToString();

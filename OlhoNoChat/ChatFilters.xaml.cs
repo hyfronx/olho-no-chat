@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
@@ -39,15 +38,10 @@ namespace OlhoNoChat
         {
             InitializeComponent();
 
-            if (App.Settings.GeneralSettings.AllowedUsersList == null)
-                App.Settings.GeneralSettings.AllowedUsersList = new StringCollection();
-            if (App.Settings.GeneralSettings.BlockedUsersList == null)
-                App.Settings.GeneralSettings.BlockedUsersList = new StringCollection();
-
-            foreach (string s in App.Settings.GeneralSettings.AllowedUsersList)
+            foreach (string s in App.Opcoes.ListaDeUsuarios)
                 allowedUsers.Add(s);
 
-            foreach (string s in App.Settings.GeneralSettings.BlockedUsersList)
+            foreach (string s in App.Opcoes.UsuariosBloqueados)
                 blockedUsers.Add(s);
 
             lvAllowedUsernames.ItemsSource = allowedUsers;
@@ -56,16 +50,16 @@ namespace OlhoNoChat
             blockedUsers.CollectionChanged += (s, e) => UpdateEmptyLists();
             UpdateEmptyLists();
 
-            highlightColor = new HighlightColorChoice(colorPicker, tbCustomColor, tbCustomColorError, App.Settings.GeneralSettings.ChatHighlightColor);
-            modsColor = new HighlightColorChoice(colorPickerMods, tbCustomColorMods, tbCustomColorModsError, App.Settings.GeneralSettings.ChatHighlightModsColor);
-            vipsColor = new HighlightColorChoice(colorPickerVIPs, tbCustomColorVIPs, tbCustomColorVIPsError, App.Settings.GeneralSettings.ChatHighlightVIPsColor);
-            this.cbAllMods.IsOn = App.Settings.GeneralSettings.FilterAllowAllMods;
-            this.cbAllVIPs.IsOn = App.Settings.GeneralSettings.FilterAllowAllVIPs;
+            highlightColor = new HighlightColorChoice(colorPicker, tbCustomColor, tbCustomColorError, App.Opcoes.CorDoDestaque);
+            modsColor = new HighlightColorChoice(colorPickerMods, tbCustomColorMods, tbCustomColorModsError, App.Opcoes.CorDosModeradores);
+            vipsColor = new HighlightColorChoice(colorPickerVIPs, tbCustomColorVIPs, tbCustomColorVIPsError, App.Opcoes.CorDosVips);
+            this.cbAllMods.IsOn = App.Opcoes.DestacarModeradores;
+            this.cbAllVIPs.IsOn = App.Opcoes.DestacarVips;
 
             // The list either shows only its users or highlights them (never both)
-            if (App.Settings.GeneralSettings.AllowedUsersOnlyChat)
+            if (App.Opcoes.SoUsuariosDaLista)
                 this.cbAllowedUsers.IsChecked = true;
-            else if (App.Settings.GeneralSettings.HighlightUsersChat)
+            else if (App.Opcoes.DestacarUsuarios)
                 this.cbHighlightUsers.IsChecked = true;
             else
                 this.rbListOff.IsChecked = true;
@@ -193,16 +187,16 @@ namespace OlhoNoChat
             if (tbNewBlockedUser.Text.Trim().Length > 0)
                 AddUser(tbNewBlockedUser, tbBlockedUserError, blockedUsers);
 
-            App.Settings.GeneralSettings.HighlightUsersChat = this.cbHighlightUsers.IsChecked ?? false;
-            App.Settings.GeneralSettings.AllowedUsersOnlyChat = this.cbAllowedUsers.IsChecked ?? false;
-            App.Settings.GeneralSettings.FilterAllowAllMods = this.cbAllMods.IsOn;
-            App.Settings.GeneralSettings.FilterAllowAllVIPs = this.cbAllVIPs.IsOn;
-            App.Settings.GeneralSettings.AllowedUsersList = ToStringCollection(allowedUsers);
-            App.Settings.GeneralSettings.BlockedUsersList = ToStringCollection(blockedUsers);
-            App.Settings.GeneralSettings.ChatHighlightColor = highlightColor.Save();
-            App.Settings.GeneralSettings.ChatHighlightModsColor = modsColor.Save();
-            App.Settings.GeneralSettings.ChatHighlightVIPsColor = vipsColor.Save();
-            App.Settings.Persist();
+            App.Opcoes.DestacarUsuarios = this.cbHighlightUsers.IsChecked ?? false;
+            App.Opcoes.SoUsuariosDaLista = this.cbAllowedUsers.IsChecked ?? false;
+            App.Opcoes.DestacarModeradores = this.cbAllMods.IsOn;
+            App.Opcoes.DestacarVips = this.cbAllVIPs.IsOn;
+            App.Opcoes.ListaDeUsuarios = allowedUsers.ToList();
+            App.Opcoes.UsuariosBloqueados = blockedUsers.ToList();
+            App.Opcoes.CorDoDestaque = highlightColor.Save();
+            App.Opcoes.CorDosModeradores = modsColor.Save();
+            App.Opcoes.CorDosVips = vipsColor.Save();
+            App.ArquivoDeConfiguracoes.Gravar();
 
             savedState = CurrentState();
             Saved?.Invoke();
@@ -290,14 +284,6 @@ namespace OlhoNoChat
 
             closeConfirmed = true;
             Close();
-        }
-
-        private static StringCollection ToStringCollection(IEnumerable<string> names)
-        {
-            var collection = new StringCollection();
-            foreach (string name in names)
-                collection.Add(name);
-            return collection;
         }
 
         // Moderator/VIP options and colours depend on what the list is used for

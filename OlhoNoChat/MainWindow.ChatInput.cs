@@ -51,8 +51,8 @@ public partial class MainWindow
 
     private async Task StartRedemptionsAsync()
     {
-        if (App.Settings.GeneralSettings.RedemptionsEnabled && await _conta.VerificarUmaVezAsync()
-            && App.Settings.GeneralSettings.RedemptionsEnabled)
+        if (App.Opcoes.MostrarResgates && await _conta.VerificarUmaVezAsync()
+            && App.Opcoes.MostrarResgates)
         {
             await _resgates.LigarAsync();
         }
@@ -67,7 +67,7 @@ public partial class MainWindow
             _emoteGroups = null; // frees the pictures (another account loads its own list)
             _listaDeEmotes.Descartar();
         }
-        else if (App.Settings.GeneralSettings.RedemptionsEnabled)
+        else if (App.Opcoes.MostrarResgates)
         {
             _ = _resgates.LigarAsync(); // com um acesso novo, assina de novo
         }
@@ -99,7 +99,7 @@ public partial class MainWindow
 
     private string WriteHintText()
     {
-        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        Atalho hotkey = App.Opcoes.AtalhoEscrever;
         string inGame = Atalho.Existe(hotkey)
             ? $"No jogo, aperte {hotkey} para abrir ou fechar a caixa de escrever."
             : "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.";
@@ -114,8 +114,8 @@ public partial class MainWindow
     private static string ChatChannel => ChatTypeUsesChannel ? SavedChannel : string.Empty;
 
     // Twitch's own box chosen in the Twitch tab (the "Padrão" page has none)
-    private static bool UseTwitchChatBox => App.Settings.GeneralSettings.ChatType == (int)ChatTypes.TwitchPopout
-                                            && App.Settings.GeneralSettings.UseTwitchChatBox;
+    private static bool UseTwitchChatBox => App.Opcoes.TipoDeChat == (int)ChatTypes.TwitchPopout
+                                            && App.Opcoes.CaixaDaTwitch;
 
     // The app's box can be used
     private bool ChatInputAvailable => !UseTwitchChatBox && _conta.EstaConectada && _conta.PodeEnviar
@@ -140,7 +140,7 @@ public partial class MainWindow
         if (show)
             tbChatMessage.ToolTip = $"Vai para o chat de {ChatChannel} como {_conta.NomeMostrado}";
 
-        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        Atalho hotkey = App.Opcoes.AtalhoEscrever;
         btnCloseChatBox.ToolTip = WithHotkey(_composing ? "Fechar a caixa e voltar para o jogo (Esc)." : "Fechar a caixa (Esc).", hotkey);
 
         // "Escrever" is lit while the box is open, and only offered where one can write
@@ -193,7 +193,7 @@ public partial class MainWindow
         CloseChatBox(returnFocus: true);
     }
 
-    private static bool CloseChatBoxAfterSend => App.Settings.GeneralSettings.CloseChatBoxAfterSend;
+    private static bool CloseChatBoxAfterSend => App.Opcoes.FecharCaixaDepoisDeEnviar;
 
     // The chat page and its dark background also cover the message box row when the borders are hidden
     private void SetChatRowSpan(int rows)

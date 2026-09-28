@@ -47,8 +47,9 @@ jobs:
         run: |
           dotnet tool install -g vpk --version 0.0.1298
           vpk download github --repoUrl https://github.com/${{ github.repository }}
-          # Shortcut only in the Start menu (the default also puts one on the Desktop)
-          vpk pack -u OlhoNoChat --packTitle "Olho no Chat" --packAuthors "Hyfronx" -v ${{ steps.get-version.outputs.version }} --packDir publish --mainExe OlhoNoChat.exe --icon OlhoNoChat/olho_no_chat.ico --shortcuts StartMenuRoot
+          # Shortcut only in the Start menu (the default also puts one on the Desktop); no portable zip (the app
+          # always keeps its settings in %AppData%\OlhoNoChat)
+          vpk pack -u OlhoNoChat --packTitle "Olho no Chat" --packAuthors "Hyfronx" -v ${{ steps.get-version.outputs.version }} --packDir publish --mainExe OlhoNoChat.exe --icon OlhoNoChat/olho_no_chat.ico --shortcuts StartMenuRoot --noPortable
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "Olho no Chat v${{ steps.get-version.outputs.version }}" --tag ${{ github.ref_name }} --token ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         env:

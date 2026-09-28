@@ -58,29 +58,29 @@ namespace OlhoNoChat.Chats
 
             if (this.ChatType == ChatTypes.TwitchPopout)
             {
-                if (App.Settings.GeneralSettings.UseDefaultTwitchPopoutCSS)
+                if (App.Opcoes.AparenciaPadraoNoChatOficial)
                     css = CustomCSS_Defaults.TwitchPopoutChat;
-                else if (!string.IsNullOrEmpty(App.Settings.GeneralSettings.TwitchPopoutCSS))
-                    css = App.Settings.GeneralSettings.TwitchPopoutCSS;
+                else if (!string.IsNullOrEmpty(App.Opcoes.CssDoChatOficial))
+                    css = App.Opcoes.CssDoChatOficial;
 
                 // Messages with the look of the "Padrão" chat (with the app's own look only)
-                if (App.Settings.GeneralSettings.UseDefaultTwitchPopoutCSS)
+                if (App.Opcoes.AparenciaPadraoNoChatOficial)
                     css += "\n" + MessageLookCss();
 
                 // Only one typing box at a time, and Twitch's own only while it is open
-                css += "\n" + (App.Settings.GeneralSettings.UseTwitchChatBox
+                css += "\n" + (App.Opcoes.CaixaDaTwitch
                     ? CustomCSS_Defaults.TwitchChatBoxWhileOpen
                     : CustomCSS_Defaults.HideTwitchChatBox);
 
                 // Our time (SetupJavascript); Twitch's own one would show a second time
-                css += App.Settings.GeneralSettings.ShowMessageTime
+                css += App.Opcoes.MostrarHorario
                     ? $"\n.chat-line__message .onc-time {{ {PadraoChat.MessageTimeCss} }}\n.chat-line__timestamp {{ display: none !important; }}"
                     : "\n.onc-time { display: none !important; }";
             }
             else
             {
-                if (!string.IsNullOrEmpty(App.Settings.GeneralSettings.CustomCSS))
-                    css = App.Settings.GeneralSettings.CustomCSS;
+                if (!string.IsNullOrEmpty(App.Opcoes.CssDoEnderecoPersonalizado))
+                    css = App.Opcoes.CssDoEnderecoPersonalizado;
             }
 
             return css;
@@ -91,10 +91,10 @@ namespace OlhoNoChat.Chats
         // extension or without it, each message is a ".chat-line__message".
         private static string MessageLookCss()
         {
-            var settings = App.Settings.GeneralSettings;
+            var settings = App.Opcoes;
             // The theme's font has 1 px between letters; a chosen font keeps its own spacing (as in the "Padrão" chat)
-            bool chosenFont = settings.ChatFontFamily is "Segoe UI" or "Arial" or "Verdana";
-            string font = chosenFont ? $"'{settings.ChatFontFamily}', sans-serif" : PadraoChat.MessageFontFamily;
+            bool chosenFont = settings.Fonte is "Segoe UI" or "Arial" or "Verdana";
+            string font = chosenFont ? $"'{settings.Fonte}', sans-serif" : PadraoChat.MessageFontFamily;
             string letterSpacing = chosenFont ? "normal" : "1px";
 
             var css = new StringBuilder($$"""
@@ -119,14 +119,14 @@ namespace OlhoNoChat.Chats
                 """);
 
             // Only the message text: the names keep their Twitch color
-            if (System.Text.RegularExpressions.Regex.IsMatch(settings.ChatMessageColor ?? "", "^#[0-9A-Fa-f]{6}$"))
-                css.Append($"\n.chat-line__message .text-fragment {{ color: {settings.ChatMessageColor} !important; }}");
+            if (System.Text.RegularExpressions.Regex.IsMatch(settings.CorDoTexto ?? "", "^#[0-9A-Fa-f]{6}$"))
+                css.Append($"\n.chat-line__message .text-fragment {{ color: {settings.CorDoTexto} !important; }}");
 
             // "Contorno preto" is the outline of the default CSS above
             const string lines = ".chat-line__message, .chat-line__message *";
-            if (settings.ChatTextOutline == "soft")
+            if (settings.ContornoDasLetras == "soft")
                 css.Append($"\n{lines} {{ text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.8) !important; }}");
-            else if (settings.ChatTextOutline == "none")
+            else if (settings.ContornoDasLetras == "none")
                 css.Append($"\n{lines} {{ text-shadow: none !important; }}");
 
             return css.ToString();

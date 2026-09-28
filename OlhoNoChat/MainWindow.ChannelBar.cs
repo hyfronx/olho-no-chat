@@ -24,14 +24,14 @@ public partial class MainWindow
     // "Padrão" and "Chat oficial da Twitch" show a channel's chat (and can write in it)
     private static bool IsChannelChatType(int chatType) => chatType is (int)ChatTypes.Padrao or (int)ChatTypes.TwitchPopout;
 
-    private static bool ChatTypeUsesChannel => IsChannelChatType(App.Settings.GeneralSettings.ChatType);
+    private static bool ChatTypeUsesChannel => IsChannelChatType(App.Opcoes.TipoDeChat);
 
     // The saved channel as a name (older versions could save a link)
     private static string SavedChannel
     {
         get
         {
-            string saved = App.Settings.GeneralSettings.Username ?? string.Empty;
+            string saved = App.Opcoes.Canal ?? string.Empty;
             string name = NomesDaTwitch.Extrair(saved);
             return name.Length > 0 ? name : saved.Trim();
         }
@@ -191,8 +191,8 @@ public partial class MainWindow
     private void SetChannel(string channel)
     {
         _logger.LogInformation("Channel changed on the channel strip.");
-        App.Settings.GeneralSettings.Username = channel;
-        App.Settings.Persist();
+        App.Opcoes.Canal = channel;
+        App.ArquivoDeConfiguracoes.Gravar();
 
         _channelEditorOpen = false;
         tbChannel.Text = channel;
@@ -210,7 +210,7 @@ public partial class MainWindow
         {
             ShowWelcomePage();
         }
-        else if (App.Settings.GeneralSettings.ChatType == (int)ChatTypes.TwitchPopout)
+        else if (App.Opcoes.TipoDeChat == (int)ChatTypes.TwitchPopout)
         {
             _currentChat = new CustomURLChat(ChatTypes.TwitchPopout);
             NavigateToUrl("https://www.twitch.tv/popout/" + channel + "/chat?popout=");

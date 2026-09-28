@@ -26,6 +26,7 @@ using OlhoNoChat.Sistema;
 using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.View;
+using OlhoNoChat.Configuracoes;
 
 /// <summary>
 /// The chat window: the chat page (WebView2) over the game, with its borders, quick settings in the title bar and tray menu.
@@ -78,12 +79,13 @@ public partial class MainWindow : Window
             _aviso.Dispose();
         };
 
-        App.Settings.Tracker.Configure<MainWindow>()
-            .Id(w => w.GetType().Name + "_State", null, false)
-            .Properties(w => new { w.Top, w.Width, w.Height, w.Left, w.WindowState })
-            .PersistOn(nameof(Window.Closing))
-            .StopTrackingOn(nameof(Window.Closing));
-        App.Settings.Tracker.Track(this);
+        // Where the chat window was when it closed (nothing on the first start: the size of the XAML)
+        App.Opcoes.Janela?.AplicarEm(this);
+        this.Closing += (s, e) =>
+        {
+            App.Opcoes.Janela = PosicaoDaJanela.De(this);
+            App.ArquivoDeConfiguracoes.Gravar();
+        };
 
         SetupOrReplaceHotkeys();
 
@@ -110,11 +112,11 @@ public partial class MainWindow : Window
     // Os quatro atalhos globais, registrados de novo a cada salvamento (um atalho trocado deixa de valer na hora)
     private void SetupOrReplaceHotkeys()
     {
-        var settings = App.Settings.GeneralSettings;
-        _atalhos.Definir("MostrarEsconderBordas", settings.ToggleBordersHotkey, ToggleBorderVisibility);
-        _atalhos.Definir("ModoRolagem", settings.ToggleInteractableHotkey, ToggleInteractable);
-        _atalhos.Definir("SempreNoTopo", settings.BringToTopHotkey, ToggleAlwaysOnTop);
-        _atalhos.Definir("EscreverNoChat", settings.WriteMessageHotkey, OnHotKeyWriteMessage);
+        var settings = App.Opcoes;
+        _atalhos.Definir("MostrarEsconderBordas", settings.AtalhoBordas, ToggleBorderVisibility);
+        _atalhos.Definir("ModoRolagem", settings.AtalhoModoRolagem, ToggleInteractable);
+        _atalhos.Definir("SempreNoTopo", settings.AtalhoSempreNoTopo, ToggleAlwaysOnTop);
+        _atalhos.Definir("EscreverNoChat", settings.AtalhoEscrever, OnHotKeyWriteMessage);
 
         UpdateHotkeyTooltips();
     }
@@ -340,7 +342,7 @@ public partial class MainWindow : Window
             return;
 
         bool enabled = this.webView.Focusable;
-        Atalho hotkey = App.Settings.GeneralSettings.ToggleInteractableHotkey;
+        Atalho hotkey = App.Opcoes.AtalhoModoRolagem;
         string hotkeyText = Atalho.Existe(hotkey) ? hotkey.ToString() : string.Empty;
 
         string mode = System.Text.Json.JsonSerializer.Serialize(new { enabled, banner = enabled && _hiddenBorders, hotkey = hotkeyText });
@@ -369,7 +371,7 @@ public partial class MainWindow : Window
 
         _hiddenBorders = false;
         UpdateChatResizeEdge();
-        ApplyInteractable(App.Settings.GeneralSettings.AllowInteraction);
+        ApplyInteractable(App.Opcoes.PermitirCliqueComBordas);
 
         // The title bar and the toolbar take clicks also when clicking the chat is off
         JanelaDoWindows.TornarClicavel(new WindowInteropHelper(this).Handle);
@@ -389,7 +391,7 @@ public partial class MainWindow : Window
         if (_composeFromButton)
             EndCompose(returnFocus: false);
 
-        if (App.Settings.GeneralSettings.HideTaskbarIcon)
+        if (App.Opcoes.EsconderIconeDaBarraDeTarefas)
             this.ShowInTaskbar = false;
 
         // Prevent interaction with the browser
@@ -456,7 +458,7 @@ public partial class MainWindow : Window
     // The "Padrão" chat page of a channel (a name, see SavedChannel): the app's own page (browser\chat.html)
     private void SetChatAddress(string channel)
     {
-        bool darkTheme = App.Settings.GeneralSettings.ThemeIndex != 0;
+        bool darkTheme = App.Opcoes.Tema != 0;
         NavigateToUrl(InfoDoApp.EnderecoDoChatPadrao(channel, darkTheme));
     }
 
@@ -490,7 +492,7 @@ public partial class MainWindow : Window
         zoom = Math.Round(Math.Clamp(zoom, this.sliderTextSize.Minimum, this.sliderTextSize.Maximum), 2);
 
         this.webView.ZoomFactor = zoom;
-        App.Settings.GeneralSettings.ZoomLevel = zoom;
+        App.Opcoes.TamanhoDoTexto = zoom;
         UpdateQuickValues();
     }
 
@@ -505,7 +507,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel);
+        SetZoomFactor(App.Opcoes.TamanhoDoTexto);
 
         // Not on the welcome page, which has the same chat type setting but no Twitch chat
         if (_currentChat.ChatType == ChatTypes.TwitchPopout)
@@ -520,6 +522,7 @@ public partial class MainWindow : Window
         UpdateChatLinks();
         TryShowBordersHint();
         TryShowWriteHint();
+        TryShowSettingsNotice(); // last: the most important notice stays on screen
 
         // Channel point redemptions (after the saved Twitch access is checked)
         _ = StartRedemptionsAsync();
@@ -527,15 +530,15 @@ public partial class MainWindow : Window
 
     private async void TwitchPopoutSetup()
     {
-        if (App.Settings.GeneralSettings.BetterTtv)
+        if (App.Opcoes.BetterTtv)
         {
             // BTTV's options, kept in the page's localStorage: "7TV emotes" is the flag 16 of emotes[0] (there
             // once BTTV has saved its emote options) and the emote menu is 0 off, 1 legacy, 2 modern.
             // Written on every load, so that turning an option off works too.
-            string sevenTvFlag = App.Settings.GeneralSettings.BetterTtv_7tv
+            string sevenTvFlag = App.Opcoes.Emotes7tv
                 ? "settings.emotes[0] = settings.emotes[0] | 16;"
                 : "settings.emotes[0] = settings.emotes[0] & ~16;";
-            int emoteMenu = App.Settings.GeneralSettings.BetterTtv_AdvEmoteMenu ? 2 : 0;
+            int emoteMenu = App.Opcoes.MenuDeEmotesDoBetterTtv ? 2 : 0;
 
             var bttvSettingsScript = $$"""
                 (function() {
@@ -561,7 +564,7 @@ public partial class MainWindow : Window
             // Inject the main BTTV script.
             InsertCustomJavaScriptFromUrl("https://cdn.betterttv.net/betterttv.js");
         }
-        if (App.Settings.GeneralSettings.FrankerFaceZ)
+        if (App.Opcoes.FrankerFaceZ)
         {
             // Observe for FrankerFaceZ's reskin stylesheet
             // that breaks the transparency and remove it
@@ -626,8 +629,7 @@ public partial class MainWindow : Window
 
     private void OpenSettingsFolder()
     {
-        string folderPath = (App.Settings.Tracker.Store as Jot.Storage.JsonFileStore).FolderPath;
-        AbrirNoWindows.Pasta(folderPath);
+        AbrirNoWindows.Pasta(App.ArquivoDeConfiguracoes.Pasta);
     }
 
     // The new-message sound of the "Padrão" chat, the only chat type that plays one. It follows the saved chat
@@ -635,13 +637,13 @@ public partial class MainWindow : Window
     // Also after every save: the sound, its volume or the output device may have changed.
     private void UpdateChatSound()
     {
-        var settings = App.Settings.GeneralSettings;
-        string file = settings.ChatType == (int)ChatTypes.Padrao
-            ? SonsDisponiveis.Caminho(settings.SoundClipsFolder, settings.ChatNotificationSound)
+        var settings = App.Opcoes;
+        string file = settings.TipoDeChat == (int)ChatTypes.Padrao
+            ? SonsDisponiveis.Caminho(settings.PastaDosSons, settings.SomDeMensagem)
             : null;
 
-        Exception erro = _aviso.Configurar(file, settings.OutputVolume, settings.DeviceID, settings.DeviceName ?? string.Empty,
-            settings.ChatSoundQuietSeconds);
+        Exception erro = _aviso.Configurar(file, settings.Volume, settings.SaidaDeSom, settings.NomeDaSaidaDeSom ?? string.Empty,
+            settings.SegundosEntreSons);
         if (erro != null)
         {
             MessageBox.Show($"Não foi possível carregar o arquivo de som: {file}\n\n{erro.Message}",
@@ -652,9 +654,9 @@ public partial class MainWindow : Window
     // A saída de som gravada não existe mais (ou o Windows a recusou): o aviso já passou para a padrão do Windows
     private void GravarSaidaDeSomPadrao()
     {
-        App.Settings.GeneralSettings.DeviceID = TocadorDeAviso.Padrao;
-        App.Settings.GeneralSettings.DeviceName = TocadorDeAviso.NomeDaPadraoGravado;
-        App.Settings.Persist();
+        App.Opcoes.SaidaDeSom = TocadorDeAviso.Padrao;
+        App.Opcoes.NomeDaSaidaDeSom = TocadorDeAviso.NomeDaPadraoGravado;
+        App.ArquivoDeConfiguracoes.Gravar();
     }
 
     private void ShowSettingsWindow()
@@ -680,7 +682,7 @@ public partial class MainWindow : Window
         };
 
         // What the open chat page was loaded with, to know if a save needs to load it again
-        int chatTypeLoaded = App.Settings.GeneralSettings.ChatType;
+        int chatTypeLoaded = App.Opcoes.TipoDeChat;
         string chatReloadKeyLoaded = GetChatReloadKey();
 
         // "Salvar" keeps the window open, so every save is applied right away
@@ -688,7 +690,7 @@ public partial class MainWindow : Window
         {
             int chatTypeBefore = chatTypeLoaded;
             string chatReloadKeyBefore = chatReloadKeyLoaded;
-            chatTypeLoaded = App.Settings.GeneralSettings.ChatType;
+            chatTypeLoaded = App.Opcoes.TipoDeChat;
             chatReloadKeyLoaded = GetChatReloadKey();
 
             if (!IsChannelChatType(chatTypeBefore) && IsChannelChatType(chatTypeLoaded))
@@ -708,7 +710,7 @@ public partial class MainWindow : Window
         }
         TryShowWriteHint();
 
-        // Changes that were not saved never reach App.Settings, so there is nothing to undo
+        // Changes that were not saved never reach App.Opcoes, so there is nothing to undo
         _atalhos.Ligados = true;
     }
 
@@ -717,7 +719,7 @@ public partial class MainWindow : Window
     {
         // Loading the chat page again clears the messages on screen, so it only happens when a
         // setting needs it (channel, theme, chat type...). The rest is applied to the open page.
-        bool reloadChat = App.Settings.GeneralSettings.ChatType != chatTypeBefore
+        bool reloadChat = App.Opcoes.TipoDeChat != chatTypeBefore
             || GetChatReloadKey() != chatReloadKeyBefore
             || !await TryApplyChatSettingsLiveAsync();
 
@@ -726,7 +728,7 @@ public partial class MainWindow : Window
         UpdateChatSound();
 
         // Channel point redemptions and the "Escrever no chat…" box (options of the Twitch tab)
-        if (App.Settings.GeneralSettings.RedemptionsEnabled)
+        if (App.Opcoes.MostrarResgates)
             _ = StartRedemptionsAsync();
         else
             _resgates.Desligar();
@@ -734,17 +736,17 @@ public partial class MainWindow : Window
         UpdateChannelBar();
 
         // The taskbar button hides only with the borders (see hideBorders)
-        this.ShowInTaskbar = !_hiddenBorders || !App.Settings.GeneralSettings.HideTaskbarIcon;
+        this.ShowInTaskbar = !_hiddenBorders || !App.Opcoes.EsconderIconeDaBarraDeTarefas;
 
         // Text size, background and "Sempre no topo" of the title bar (changed here only by "Restaurar tudo para o padrão")
-        SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel);
+        SetZoomFactor(App.Opcoes.TamanhoDoTexto);
         ApplyBackgroundOpacity();
         ApplyAlwaysOnTop();
 
         if (!this._hiddenBorders)
         {
             this.webView.Focusable = true;
-            if (App.Settings.GeneralSettings.AllowInteraction)
+            if (App.Opcoes.PermitirCliqueComBordas)
                 SetInteractable(true);
         }
 
@@ -762,7 +764,7 @@ public partial class MainWindow : Window
         Sistema.MolduraDaJanela.Aplicar(this); // own close button, no gray line around
 
         // Every time the app opens (it used to be once a day)
-        if (App.Settings.GeneralSettings.CheckForUpdates)
+        if (App.Opcoes.ProcurarAtualizacoes)
         {
             _ = CheckForUpdateAsync();
         }
@@ -820,7 +822,7 @@ public partial class MainWindow : Window
                 if (dialog.ShouldDisableUpdates)
                 {
                     _logger.LogInformation("User has disabled automatic update checks.");
-                    App.Settings.GeneralSettings.CheckForUpdates = false;
+                    App.Opcoes.ProcurarAtualizacoes = false;
                 }
             }
         }
@@ -845,11 +847,8 @@ public partial class MainWindow : Window
 
     private void SetupBrowser()
     {
-        if (App.Settings.GeneralSettings.ZoomLevel <= 0)
-            App.Settings.GeneralSettings.ZoomLevel = GeneralSettings.DefaultZoomLevel;
-
         // The background is applied with the borders (see ApplyInteractable)
-        if (App.Settings.GeneralSettings.AutoHideBorders)
+        if (App.Opcoes.EsconderBordasAoAbrir)
             hideBorders();
         else
             drawBorders();
@@ -864,16 +863,16 @@ public partial class MainWindow : Window
     /// </summary>
     private void LoadChat()
     {
-        var settings = App.Settings.GeneralSettings;
+        var settings = App.Opcoes;
 
         if (ChatTypeUsesChannel)
         {
             LoadChannelChat();
         }
-        else if (settings.ChatType == (int)ChatTypes.CustomURL && !string.IsNullOrWhiteSpace(settings.CustomURL))
+        else if (settings.TipoDeChat == (int)ChatTypes.CustomURL && !string.IsNullOrWhiteSpace(settings.EnderecoPersonalizado))
         {
             _currentChat = new CustomURLChat(ChatTypes.CustomURL);
-            NavigateToUrl(settings.CustomURL);
+            NavigateToUrl(settings.EnderecoPersonalizado);
         }
         else
         {
@@ -911,7 +910,7 @@ public partial class MainWindow : Window
     // The saved "Fundo" (0-255) on the dark background of the chat
     private void ApplyBackgroundOpacity()
     {
-        double opacity = App.Settings.GeneralSettings.OpacityLevel / 255.0;
+        double opacity = App.Opcoes.Fundo / 255.0;
 
         // A 0% background still takes clicks in setup mode
         if (opacity <= 0 && this.CurrentDisplayMode == WindowDisplayMode.Setup)
@@ -925,7 +924,7 @@ public partial class MainWindow : Window
     {
         if (!hasWebView2Runtime) return;
 
-        App.Settings.GeneralSettings.OpacityLevel = (byte)Math.Clamp(level, 0, 255);
+        App.Opcoes.Fundo = (byte)Math.Clamp(level, 0, 255);
         ApplyBackgroundOpacity();
         SchedulePersist();
     }

@@ -46,13 +46,27 @@ public partial class MainWindow
 
         _bordersHintPending = false;
 
-        Atalho hotkey = App.Settings.GeneralSettings.ToggleBordersHotkey;
+        Atalho hotkey = App.Opcoes.AtalhoBordas;
         string howTo = Atalho.Existe(hotkey)
             ? $"Para mostrar de novo: aperte {hotkey}, ou clique com o botão direito no ícone do Olho no Chat perto do relógio."
             : "Para mostrar de novo: clique com o botão direito no ícone do Olho no Chat perto do relógio.";
 
         string text = "Bordas ocultas: agora só o chat fica por cima do jogo.\n" + howTo;
         ShowChatToast(text);
+    }
+
+    // Configurações ilegíveis na abertura (decisão 20): o aviso diz onde ficou a cópia do arquivo. Mostrado uma vez,
+    // quando a primeira página do chat carrega.
+    private string _settingsNotice = App.ArquivoDeConfiguracoes.Aviso;
+
+    private void TryShowSettingsNotice()
+    {
+        bool chatPageLoaded = _chatPageLoadedAt != DateTime.MinValue && !_chatNavigationPending;
+        if (_settingsNotice == null || !chatPageLoaded || this.webView?.CoreWebView2 == null)
+            return;
+
+        ShowChatToast(_settingsNotice);
+        _settingsNotice = null;
     }
 
     private void HideBordersHint()

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
+using OlhoNoChat.Configuracoes;
 
 /// <summary>
 /// Quick settings of the title bar (text size and background panels with a slider, tooltips), and the
@@ -24,32 +25,31 @@ public partial class MainWindow
     // Tooltips of the title bar buttons, with the current keyboard shortcut.
     private void UpdateHotkeyTooltips()
     {
-        var settings = App.Settings.GeneralSettings;
+        var settings = App.Opcoes;
 
         this.btnHide.ToolTip = WithHotkey(
             "Ocultar bordas: deixa só o chat por cima do jogo. Para mostrar as bordas de novo, use o atalho ou o ícone do Olho no Chat perto do relógio.",
-            settings.ToggleBordersHotkey);
-        this.btnQuickTop.ToolTip = WithHotkey(settings.AlwaysOnTop
+            settings.AtalhoBordas);
+        this.btnQuickTop.ToolTip = WithHotkey(settings.SempreNoTopo
             ? "Sempre no topo: ligado. O chat fica na frente do jogo e das outras janelas. Clique para desligar."
             : "Sempre no topo: desligado. O chat é uma janela comum, que fica atrás de outra quando você clica nela. Clique para ligar.",
-            settings.BringToTopHotkey);
+            settings.AtalhoSempreNoTopo);
     }
 
     private bool _syncingQuickSliders = false;
     private Popup _quickPanelClosed;
     private DateTime _quickPanelClosedAt = DateTime.MinValue;
-    private DispatcherTimer _persistTimer;
 
     // Current text size and background in the panels and the tooltips of their buttons
     private void UpdateQuickValues()
     {
-        var settings = App.Settings.GeneralSettings;
-        string textSize = $"{Math.Round(settings.ZoomLevel * 100)}%";
-        string background = $"{Math.Round(settings.OpacityLevel / 2.55)}%";
+        var settings = App.Opcoes;
+        string textSize = $"{Math.Round(settings.TamanhoDoTexto * 100)}%";
+        string background = $"{Math.Round(settings.Fundo / 2.55)}%";
 
         _syncingQuickSliders = true;
-        this.sliderTextSize.Value = settings.ZoomLevel;
-        this.sliderBackground.Value = settings.OpacityLevel / 2.55;
+        this.sliderTextSize.Value = settings.TamanhoDoTexto;
+        this.sliderBackground.Value = settings.Fundo / 2.55;
         _syncingQuickSliders = false;
 
         this.tbTextSizeValue.Text = textSize;
@@ -58,27 +58,13 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetHelpText(this.btnBackground, background);
         this.tipTextSize.Content = $"Tamanho do texto: {textSize}\nClique para ajustar, ou gire a rodinha do mouse aqui.";
         this.tipBackground.Content = $"Fundo do chat: {background}\nClique para ajustar, ou gire a rodinha do mouse aqui.";
-        this.btnTextSizeReset.ToolTip = $"Voltar ao padrão ({Math.Round(GeneralSettings.DefaultZoomLevel * 100)}%)";
-        this.btnBackgroundReset.ToolTip = $"Voltar ao padrão ({Math.Round(GeneralSettings.DefaultOpacityLevel / 2.55)}%)";
+        this.btnTextSizeReset.ToolTip = $"Voltar ao padrão ({Math.Round(Opcoes.TamanhoDoTextoPadrao * 100)}%)";
+        this.btnBackgroundReset.ToolTip = $"Voltar ao padrão ({Math.Round(Opcoes.FundoPadrao / 2.55)}%)";
     }
 
     // Saved a moment after the last change (a slider sends many while it is dragged): otherwise
     // the change is lost if the app does not close normally
-    private void SchedulePersist()
-    {
-        if (_persistTimer == null)
-        {
-            _persistTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-            _persistTimer.Tick += (s, e) =>
-            {
-                _persistTimer.Stop();
-                App.Settings.Persist();
-            };
-        }
-
-        _persistTimer.Stop();
-        _persistTimer.Start();
-    }
+    private static void SchedulePersist() => App.ArquivoDeConfiguracoes.GravarDaquiAPouco();
 
     private void sliderTextSize_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
@@ -96,13 +82,13 @@ public partial class MainWindow
     private void TextSizeReset_Click(object sender, RoutedEventArgs e)
     {
         if (!hasWebView2Runtime) return;
-        SetZoomFactor(GeneralSettings.DefaultZoomLevel);
+        SetZoomFactor(Opcoes.TamanhoDoTextoPadrao);
         SchedulePersist();
     }
 
     private void BackgroundReset_Click(object sender, RoutedEventArgs e)
     {
-        SetOpacityLevel(GeneralSettings.DefaultOpacityLevel);
+        SetOpacityLevel(Opcoes.FundoPadrao);
     }
 
     // The mouse wheel over the button (or over the slider) changes the value without opening the panel
@@ -110,7 +96,7 @@ public partial class MainWindow
     {
         e.Handled = true;
         if (!hasWebView2Runtime) return;
-        SetZoomFactor(App.Settings.GeneralSettings.ZoomLevel + Math.Sign(e.Delta) * TextSizeWheelStep);
+        SetZoomFactor(App.Opcoes.TamanhoDoTexto + Math.Sign(e.Delta) * TextSizeWheelStep);
         SchedulePersist();
         ShowValueTip(sender, this.tipTextSize);
     }
@@ -118,7 +104,7 @@ public partial class MainWindow
     private void Background_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         e.Handled = true;
-        double percent = Math.Round(App.Settings.GeneralSettings.OpacityLevel / 2.55) + Math.Sign(e.Delta) * BackgroundWheelStep;
+        double percent = Math.Round(App.Opcoes.Fundo / 2.55) + Math.Sign(e.Delta) * BackgroundWheelStep;
         SetOpacityLevel((int)Math.Round(Math.Clamp(percent, 0, 100) * 2.55));
         ShowValueTip(sender, this.tipBackground);
     }

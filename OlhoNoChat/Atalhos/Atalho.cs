@@ -1,7 +1,6 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
-using Newtonsoft.Json;
 
 namespace OlhoNoChat.Atalhos;
 
@@ -10,19 +9,15 @@ namespace OlhoNoChat.Atalhos;
 /// antigos).
 /// </summary>
 /// <remarks>
-/// No arquivo de configurações o atalho é gravado como {"Key": n, "Modifiers": m}, com os números do WPF. Os
-/// nomes do JSON ficam em inglês até a etapa 3 da reescrita trocar o arquivo; as propriedades têm set porque o
-/// leitor de hoje preenche o objeto que já existe.
+/// No arquivo de configurações fica {"Tecla": n, "Modificadores": m}, com os números do WPF (o arquivo das
+/// versões até a 1.5 usava {"Key": n, "Modifiers": m}: ver <see cref="Configuracoes.ImportacaoDoArquivoAntigo"/>).
 /// </remarks>
 public sealed record Atalho
 {
-    [JsonProperty("Key")]
-    public Key Tecla { get; set; }
+    public Key Tecla { get; init; }
 
-    [JsonProperty("Modifiers")]
-    public ModifierKeys Modificadores { get; set; }
+    public ModifierKeys Modificadores { get; init; }
 
-    [JsonConstructor]
     public Atalho() { }
 
     public Atalho(Key tecla, ModifierKeys modificadores)
