@@ -32,3 +32,5 @@ O jogo precisa estar em modo **janela** ou **tela cheia sem bordas** para o chat
 ## Licença
 
 Distribuído sob a [GNU GPL v3](LICENSE).
+
+O Olho no Chat nasceu como uma versão modificada do [Transparent Twitch Chat Overlay](https://github.com/baffler/Transparent-Twitch-Chat-Overlay), de baffler, também distribuído sob a GNU GPL v3. As modificações começaram em setembro de 2026.
