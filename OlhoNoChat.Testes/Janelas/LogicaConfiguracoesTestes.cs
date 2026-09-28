@@ -3,6 +3,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Extensions.Logging.Abstractions;
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.Configuracoes;
 using OlhoNoChat.Som;
@@ -592,7 +593,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
 
         c.Aparencia.AparenciaPadraoNoChatOficial = false;
 
-        Assert.Equal(CustomCSS_Defaults.TwitchPopoutChat, c.Aparencia.TextoDoEditorDoChatOficial);
+        Assert.Equal(CssDoChat.PadraoDoChatOficial, c.Aparencia.TextoDoEditorDoChatOficial);
     }
 
     [Fact]
@@ -601,7 +602,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         var c = Abrir(o => { o.AparenciaPadraoNoChatOficial = true; o.CssDoChatOficial = "meu css"; });
 
         c.Aparencia.TextoDoEditorDoChatOficial = "tentativa";
-        Assert.Equal(CustomCSS_Defaults.TwitchPopoutChat, c.Aparencia.TextoDoEditorDoChatOficial);
+        Assert.Equal(CssDoChat.PadraoDoChatOficial, c.Aparencia.TextoDoEditorDoChatOficial);
 
         // Desligada, mostra o CSS guardado; ligar e desligar de novo não perde o que foi digitado
         c.Aparencia.AparenciaPadraoNoChatOficial = false;
@@ -615,7 +616,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     [Fact]
     public void CssDoTemaNenhum_VazioMostraOExemploDoTema()
     {
-        Assert.Equal(CustomCSS_Defaults.NoneTheme_CustomCSS, Abrir().Aparencia.CssDoTemaNenhum);
+        Assert.Equal(CssDoChat.ExemploDoTemaNenhum, Abrir().Aparencia.CssDoTemaNenhum);
         Assert.Equal("salvo", Abrir(o => o.CssDoTemaNenhum = "salvo").Aparencia.CssDoTemaNenhum);
     }
 

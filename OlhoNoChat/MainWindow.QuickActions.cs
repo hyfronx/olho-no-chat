@@ -1,7 +1,7 @@
 namespace OlhoNoChat;
 
 using OlhoNoChat.Atalhos;
-using Microsoft.Web.WebView2.Core;
+using OlhoNoChat.Chat;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -15,9 +15,6 @@ using OlhoNoChat.Configuracoes;
 /// </summary>
 public partial class MainWindow
 {
-    private const string ExitScrollModeMessage = "onc:exit-scroll-mode";
-    private const string PlaySoundMessage = "onc:play-sound";
-
     // Steps of the mouse wheel over the text size and background buttons (the sliders move in smaller steps)
     private const double TextSizeWheelStep = 0.1;
     private const double BackgroundWheelStep = 5; // percent
@@ -191,29 +188,31 @@ public partial class MainWindow
             : text;
     }
 
-    // Messages posted by our scripts in the chat page (e.g. a message that may ring, clicking the scroll-mode banner).
-    private void webView_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+    // Messages posted by the chat pages (e.g. a message that may ring, clicking the scroll-mode banner).
+    private void OnChatPageMessage(MensagemDaPagina message)
     {
-        string message;
-        try
+        switch (message)
         {
-            message = e.TryGetWebMessageAsString();
+            case MensagemDaPagina.TocarSom:
+                _aviso.Tocar();
+                break;
+            case MensagemDaPagina.Conectando:
+                OnChatStateMessage(ChatConnection.Connecting);
+                break;
+            case MensagemDaPagina.Conectado:
+                OnChatStateMessage(ChatConnection.Connected);
+                break;
+            case MensagemDaPagina.Desconectado:
+                OnChatStateMessage(ChatConnection.Disconnected);
+                break;
+            case MensagemDaPagina.EscritaEnviada:
+            case MensagemDaPagina.EscritaCancelada:
+                OnComposeMessage(message);
+                break;
+            case MensagemDaPagina.SairDoModoRolagem:
+                if (_navegador.Controle?.Focusable == true)
+                    SetInteractable(false);
+                break;
         }
-        catch (ArgumentException)
-        {
-            return; // not a plain string message
-        }
-
-        if (message == PlaySoundMessage)
-        {
-            _aviso.Tocar();
-            return;
-        }
-
-        if (TryHandleComposeMessage(message) || TryHandleChatStateMessage(message))
-            return;
-
-        if (message == ExitScrollModeMessage && this.webView.Focusable)
-            SetInteractable(false);
     }
 }

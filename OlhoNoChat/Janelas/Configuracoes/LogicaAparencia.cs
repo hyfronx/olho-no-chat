@@ -1,6 +1,7 @@
 #nullable enable
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
 
 namespace OlhoNoChat.Janelas.Configuracoes;
@@ -92,7 +93,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     /// </summary>
     public string TextoDoEditorDoChatOficial
     {
-        get => AparenciaPadraoNoChatOficial ? CustomCSS_Defaults.TwitchPopoutChat : CssDoChatOficial;
+        get => AparenciaPadraoNoChatOficial ? CssDoChat.PadraoDoChatOficial : CssDoChatOficial;
         set
         {
             if (!AparenciaPadraoNoChatOficial)
@@ -103,7 +104,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     public override void Carregar(Opcoes opcoes)
     {
         Tema = (opcoes.Tema == Opcoes.TemaNenhum ? Opcoes.TemaNenhum : Opcoes.TemaPadrao).ToString();
-        CssDoTemaNenhum = opcoes.CssDoTemaNenhum.Length > 0 ? opcoes.CssDoTemaNenhum : CustomCSS_Defaults.NoneTheme_CustomCSS;
+        CssDoTemaNenhum = opcoes.CssDoTemaNenhum.Length > 0 ? opcoes.CssDoTemaNenhum : CssDoChat.ExemploDoTemaNenhum;
 
         // Um valor que não está na lista aparece como o primeiro item ("Padrão do tema", "Contorno preto")
         CorDoTexto = NaLista(Cores, opcoes.CorDoTexto);
@@ -113,10 +114,10 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
 
         AparenciaPadraoNoChatOficial = opcoes.AparenciaPadraoNoChatOficial;
         // Nada guardado ainda: o editor começa com o CSS padrão, para editar a partir dele (decisão 11)
-        CssDoChatOficial = opcoes.CssDoChatOficial.Length > 0 ? opcoes.CssDoChatOficial : CustomCSS_Defaults.TwitchPopoutChat;
+        CssDoChatOficial = opcoes.CssDoChatOficial.Length > 0 ? opcoes.CssDoChatOficial : CssDoChat.PadraoDoChatOficial;
 
         // Vazio e com o endereço salvo, fica vazio (salvar sem mexer não grava o exemplo)
-        CssDoEnderecoPersonalizado = opcoes.TipoDeChat == (int)ChatTypes.CustomURL || opcoes.CssDoEnderecoPersonalizado.Length > 0
+        CssDoEnderecoPersonalizado = opcoes.TipoDeChat == (int)TipoDeChat.EnderecoPersonalizado || opcoes.CssDoEnderecoPersonalizado.Length > 0
             ? opcoes.CssDoEnderecoPersonalizado
             : ExemploDoCssDoEndereco;
     }
@@ -128,19 +129,19 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     {
         switch (TipoNaTela)
         {
-            case ChatTypes.Padrao:
+            case TipoDeChat.Padrao:
                 GravarTextoDasMensagens(opcoes);
                 opcoes.Tema = int.Parse(Tema);
                 if (opcoes.Tema == Opcoes.TemaNenhum)
                     opcoes.CssDoTemaNenhum = CssDoTemaNenhum;
                 break;
-            case ChatTypes.TwitchPopout:
+            case TipoDeChat.ChatOficial:
                 GravarTextoDasMensagens(opcoes);
                 opcoes.AparenciaPadraoNoChatOficial = AparenciaPadraoNoChatOficial;
                 if (!AparenciaPadraoNoChatOficial)
                     opcoes.CssDoChatOficial = CssDoChatOficial;
                 break;
-            case ChatTypes.CustomURL:
+            case TipoDeChat.EnderecoPersonalizado:
                 opcoes.CssDoEnderecoPersonalizado = string.IsNullOrWhiteSpace(CssDoEnderecoPersonalizado)
                                                     || CssDoEnderecoPersonalizado.Equals("css", StringComparison.OrdinalIgnoreCase)
                     ? string.Empty

@@ -40,8 +40,7 @@ public partial class MainWindow
     // (at startup the borders are hidden before the chat page exists).
     private void TryShowBordersHint()
     {
-        bool chatPageLoaded = _chatPageLoadedAt != DateTime.MinValue && !_chatNavigationPending;
-        if (!_bordersHintPending || !_hiddenBorders || !chatPageLoaded || this.webView?.CoreWebView2 == null)
+        if (!_bordersHintPending || !_hiddenBorders || !_navegador.PaginaPronta || _navegador.Controle?.CoreWebView2 == null)
             return;
 
         _bordersHintPending = false;
@@ -61,8 +60,7 @@ public partial class MainWindow
 
     private void TryShowSettingsNotice()
     {
-        bool chatPageLoaded = _chatPageLoadedAt != DateTime.MinValue && !_chatNavigationPending;
-        if (_settingsNotice == null || !chatPageLoaded || this.webView?.CoreWebView2 == null)
+        if (_settingsNotice == null || !_navegador.PaginaPronta || _navegador.Controle?.CoreWebView2 == null)
             return;
 
         ShowChatToast(_settingsNotice);
@@ -72,7 +70,6 @@ public partial class MainWindow
     private void HideBordersHint()
     {
         _bordersHintPending = false;
-        if (this.webView?.CoreWebView2 != null)
-            _ = this.webView.CoreWebView2.ExecuteScriptAsync(HideToastScript);
+        _navegador.Executar(HideToastScript);
     }
 }

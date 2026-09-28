@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
 
@@ -180,9 +181,9 @@ public static class ImportacaoDoArquivoAntigo
 
         int? tipo = Inteiro(v["ChatType"]);
         int? tema = Inteiro(v["ThemeIndex"]);
-        if (tipo == (int)ChatTypes.CustomURL)
+        if (tipo == (int)TipoDeChat.EnderecoPersonalizado)
             o.CssDoEnderecoPersonalizado = css;
-        else if (tipo == (int)ChatTypes.Padrao && tema == Opcoes.TemaNenhum)
+        else if (tipo == (int)TipoDeChat.Padrao && tema == Opcoes.TemaNenhum)
             o.CssDoTemaNenhum = css;
         else
             o.CssDoTemaNenhum = o.CssDoEnderecoPersonalizado = css;

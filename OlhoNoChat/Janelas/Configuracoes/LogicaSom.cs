@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Som;
 
@@ -136,7 +137,7 @@ public sealed partial class LogicaSom : LogicaDaPagina
         opcoes.SegundosEntreSons = int.TryParse(QuandoTocar, out int segundos) ? segundos : 0;
 
         // Os outros tipos de chat não têm som de mensagem: a escolha salva continua a mesma
-        if (TipoNaTela == ChatTypes.Padrao)
+        if (TipoNaTela == TipoDeChat.Padrao)
             opcoes.SomDeMensagem = SomEscolhido;
     }
 

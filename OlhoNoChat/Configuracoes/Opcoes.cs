@@ -2,7 +2,9 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Som;
+using Tipos = OlhoNoChat.Chat.TipoDeChat;
 
 namespace OlhoNoChat.Configuracoes;
 
@@ -30,8 +32,8 @@ public sealed class Opcoes
 
     // Chat (o canal é trocado na faixa acima do chat)
     public string Canal { get; set; } = string.Empty;
-    /// <summary>0 = Padrão, 1 = Chat oficial da Twitch, 2 = Endereço personalizado (<see cref="ChatTypes"/>).</summary>
-    public int TipoDeChat { get; set; } = (int)ChatTypes.Padrao;
+    /// <summary>0 = Padrão, 1 = Chat oficial da Twitch, 2 = Endereço personalizado (<see cref="Tipos"/>).</summary>
+    public int TipoDeChat { get; set; } = (int)Tipos.Padrao;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Do jeito que foi digitado na aba Chat.</summary>
@@ -120,8 +122,7 @@ public sealed class Opcoes
         if (Tema != TemaNenhum && Tema != TemaPadrao)
             Tema = TemaPadrao;
         // O 3 era o jCyan, removido
-        if (!Enum.IsDefined(typeof(ChatTypes), TipoDeChat))
-            TipoDeChat = (int)ChatTypes.Padrao;
+        TipoDeChat = (int)TiposDeChat.Ler(TipoDeChat);
         if (TamanhoDoTexto <= 0 || double.IsNaN(TamanhoDoTexto))
             TamanhoDoTexto = TamanhoDoTextoPadrao;
         if (float.IsNaN(Volume))

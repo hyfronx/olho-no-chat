@@ -1,6 +1,7 @@
 namespace OlhoNoChat;
 
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.Chat;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,9 +24,6 @@ using OlhoNoChat.Twitch;
 /// </summary>
 public partial class MainWindow
 {
-    private const string ComposeSentMessage = "onc:compose-sent";
-    private const string ComposeCancelMessage = "onc:compose-cancel";
-
     private bool _composing = false; // opened with the hotkey
     private bool _chatBoxOpen = false; // opened with "Escrever" (borders visible)
     private bool _composeFromButton = false; // Twitch's own box opened with "Escrever" (borders visible)
@@ -88,8 +86,7 @@ public partial class MainWindow
 
     private void TryShowWriteHint()
     {
-        bool chatPageLoaded = _chatPageLoadedAt != DateTime.MinValue && !_chatNavigationPending;
-        if (!_writeHintPending || _settingsDialogOpen || !chatPageLoaded || this.webView?.CoreWebView2 == null)
+        if (!_writeHintPending || _settingsDialogOpen || !_navegador.PaginaPronta || _navegador.Controle?.CoreWebView2 == null)
             return;
 
         _writeHintPending = false;
@@ -114,15 +111,16 @@ public partial class MainWindow
     private static string ChatChannel => ChatTypeUsesChannel ? SavedChannel : string.Empty;
 
     // Twitch's own box chosen in the Twitch tab (the "Padrão" page has none)
-    private static bool UseTwitchChatBox => App.Opcoes.TipoDeChat == (int)ChatTypes.TwitchPopout
+    private static bool UseTwitchChatBox => App.Opcoes.TipoDeChat == (int)TipoDeChat.ChatOficial
                                             && App.Opcoes.CaixaDaTwitch;
 
     // The app's box can be used
     private bool ChatInputAvailable => !UseTwitchChatBox && _conta.EstaConectada && _conta.PodeEnviar
                                        && ChatChannel.Length > 0;
 
-    // Twitch's own box can be used: its chat page is the one loaded (not the welcome page)
-    private bool TwitchBoxAvailable => UseTwitchChatBox && ChatChannel.Length > 0 && _currentChat?.ChatType == ChatTypes.TwitchPopout;
+    // Twitch's own box can be used: its chat page is the one loaded (not the welcome page), in a working browser
+    private bool TwitchBoxAvailable => UseTwitchChatBox && ChatChannel.Length > 0 && _navegador.Pagina is ChatOficialDaTwitch
+                                       && _navegador.Controle != null;
 
     private bool ChatBoxOpen => _composing || (_chatBoxOpen && !_hiddenBorders);
 
@@ -198,7 +196,7 @@ public partial class MainWindow
     // The chat page and its dark background also cover the message box row when the borders are hidden
     private void SetChatRowSpan(int rows)
     {
-        this.webView?.SetValue(Grid.RowSpanProperty, rows);
+        _navegador.Controle?.SetValue(Grid.RowSpanProperty, rows);
         this.overlay.SetValue(Grid.RowSpanProperty, rows);
     }
 
@@ -248,8 +246,8 @@ public partial class MainWindow
 
         if (_composingInTwitchBox)
         {
-            _webViewFocusableBeforeCompose = this.webView.Focusable;
-            this.webView.Focusable = true;
+            _webViewFocusableBeforeCompose = _navegador.Controle.Focusable;
+            _navegador.Controle.Focusable = true;
         }
         else if (_hiddenBorders)
         {
@@ -262,9 +260,8 @@ public partial class MainWindow
 
         if (_composingInTwitchBox)
         {
-            this.webView.Focus();
-            _ = this.webView.CoreWebView2?.ExecuteScriptAsync(
-                "(function () { document.body.classList.add('onc-writing'); var box = document.querySelector('[data-a-target=\"chat-input\"]'); if (box) box.focus(); })();");
+            _navegador.Controle.Focus();
+            _navegador.Executar(ContratoComAPagina.AbrirCaixaDaTwitch);
         }
         else
         {
@@ -273,15 +270,11 @@ public partial class MainWindow
         }
     }
 
-    // Twitch's box tells when its message was sent or Esc was pressed (see CustomURLChat.SetupJavascript)
-    private bool TryHandleComposeMessage(string message)
+    // Twitch's box tells when its message was sent or Esc was pressed (see ChatOficialDaTwitch.Script)
+    private void OnComposeMessage(MensagemDaPagina message)
     {
-        if (message != ComposeSentMessage && message != ComposeCancelMessage)
-            return false;
-
-        if (_composingInTwitchBox && (message == ComposeCancelMessage || (CloseChatBoxAfterSend && !_composeFromButton)))
+        if (_composingInTwitchBox && (message == MensagemDaPagina.EscritaCancelada || (CloseChatBoxAfterSend && !_composeFromButton)))
             EndCompose(returnFocus: true);
-        return true;
     }
 
     private void EndCompose(bool returnFocus)
@@ -292,10 +285,10 @@ public partial class MainWindow
         _composing = false;
         _composeFromButton = false;
 
-        if (_composingInTwitchBox)
+        if (_composingInTwitchBox && _navegador.Controle != null)
         {
-            this.webView.Focusable = _webViewFocusableBeforeCompose;
-            _ = this.webView.CoreWebView2?.ExecuteScriptAsync("document.body && document.body.classList.remove('onc-writing');");
+            _navegador.Controle.Focusable = _webViewFocusableBeforeCompose;
+            _navegador.Executar(ContratoComAPagina.FecharCaixaDaTwitch);
         }
         _composingInTwitchBox = false;
 
@@ -383,7 +376,6 @@ public partial class MainWindow
 
     private void ShowChatToast(string text)
     {
-        if (this.webView?.CoreWebView2 != null)
-            _ = this.webView.CoreWebView2.ExecuteScriptAsync($"{ShowToastScript}({JsonSerializer.Serialize(text)});");
+        _navegador.Executar($"{ShowToastScript}({JsonSerializer.Serialize(text)});");
     }
 }

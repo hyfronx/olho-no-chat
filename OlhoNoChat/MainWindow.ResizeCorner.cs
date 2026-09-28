@@ -51,24 +51,25 @@ public partial class MainWindow
         bool cut = ResizeCornerActive && this.MessageBar.Visibility != Visibility.Visible;
         this.ResizeCornerGrip.Visibility = cut ? Visibility.Visible : Visibility.Collapsed;
 
-        if (this.webView == null || this.webView.Handle == IntPtr.Zero)
+        var chat = _navegador?.Controle;
+        if (chat == null || chat.Handle == IntPtr.Zero)
             return;
 
         if (!cut)
         {
             if (_chatCornerCut)
-                JanelaDoWindows.TirarRecorte(this.webView.Handle);
+                JanelaDoWindows.TirarRecorte(chat.Handle);
             _chatCornerCut = false;
             return;
         }
 
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
-        int width = (int)Math.Round(this.webView.ActualWidth * dpi.DpiScaleX);
-        int height = (int)Math.Round(this.webView.ActualHeight * dpi.DpiScaleY);
+        int width = (int)Math.Round(chat.ActualWidth * dpi.DpiScaleX);
+        int height = (int)Math.Round(chat.ActualHeight * dpi.DpiScaleY);
         int cutWidth = (int)Math.Ceiling((CornerGripSize - ResizeEdgeMargin.Right) * dpi.DpiScaleX);
         int cutHeight = (int)Math.Ceiling((CornerGripSize - ResizeEdgeMargin.Bottom) * dpi.DpiScaleY);
 
-        if (JanelaDoWindows.RecortarCantoDeBaixo(this.webView.Handle, width, height, cutWidth, cutHeight))
+        if (JanelaDoWindows.RecortarCantoDeBaixo(chat.Handle, width, height, cutWidth, cutHeight))
             _chatCornerCut = true;
     }
 }

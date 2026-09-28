@@ -7,17 +7,14 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace OlhoNoChat;
 
-using Chats;
 using Microsoft.Extensions.Logging;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.Wpf;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Sistema;
 using OlhoNoChat.Som;
@@ -44,7 +41,8 @@ public partial class MainWindow : Window
     // Configurações aberta (só uma por vez: pedir de novo traz a aberta para a frente)
     private JanelaConfiguracoes _janelaDeConfiguracoes;
 
-    private WebView2 webView;
+    // O chat dentro da janela (o WebView2 e as páginas)
+    private readonly NavegadorDoChat _navegador;
     private bool hasWebView2Runtime = false;
 
     private DispatcherTimer _timerCheckWebView2Install;
@@ -55,7 +53,6 @@ public partial class MainWindow : Window
     private WindowDisplayMode CurrentDisplayMode = WindowDisplayMode.Setup;
 
     private readonly TocadorDeAviso _aviso = new();
-    private Chat _currentChat = new WelcomeChat();
 
     public MainWindow(ILogger<MainWindow> logger, ContaDaTwitch conta,
         AutorizacaoNoNavegador autorizacao, EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates,
@@ -94,8 +91,9 @@ public partial class MainWindow : Window
 
         SetupOrReplaceHotkeys();
 
+        _navegador = new NavegadorDoChat(logger, mainWindowGrid, linha: 2, () => App.Opcoes, () => !_hiddenBorders);
+        LigarNavegador();
         InitializeWebViewAsync();
-        StartChatWatchdog();
         StartKeepOnTopGuard();
         StartDialogAttention();
         StartResizeCorner();
@@ -114,6 +112,50 @@ public partial class MainWindow : Window
             PushNewChatMessageDispatcherInvoke(resgate.TextoDigitado, resgate.Nome, "#a1b3c4");
     }
 
+    // O que a janela faz quando o chat carrega, recebe um aviso da página ou perde o navegador interno
+    private void LigarNavegador()
+    {
+        // O controle fica a alguns pixels das bordas de redimensionar (e o canto de baixo é recortado dele)
+        _navegador.ControleCriado += controle =>
+        {
+            controle.SizeChanged += (s, e) => UpdateResizeCorner();
+            UpdateChatResizeEdge();
+        };
+
+        _navegador.ComecouACarregar += () =>
+        {
+            if (_composingInTwitchBox)
+                EndCompose(returnFocus: false); // a caixa da Twitch vai embora com a página dela
+            OnChatPageLoading();
+        };
+
+        _navegador.Carregou += sucesso =>
+        {
+            OnChatPageLoaded(sucesso);
+            if (!sucesso)
+                return;
+
+            UpdateQuickValues(); // o tamanho do texto salvo pode ter sido ajustado aos limites
+            UpdateChatScrollMode();
+            UpdateChatLinks();
+            TryShowBordersHint();
+            TryShowWriteHint();
+            TryShowSettingsNotice(); // por último: o aviso mais importante fica na tela
+
+            // Resgates de pontos do canal (depois de verificar o acesso salvo à Twitch)
+            _ = StartRedemptionsAsync();
+        };
+
+        _navegador.Mensagem += OnChatPageMessage;
+
+        _navegador.FalhouDeVez += texto =>
+        {
+            _atalhos.Ligados = false; // o chat antigo não pode mais ser usado
+            MessageBox.Show(texto, "Falha na recuperação", MessageBoxButton.OK, MessageBoxImage.Stop);
+            ExitApplication();
+        };
+    }
+
     // Os quatro atalhos globais, registrados de novo a cada salvamento (um atalho trocado deixa de valer na hora)
     private void SetupOrReplaceHotkeys()
     {
@@ -128,20 +170,8 @@ public partial class MainWindow : Window
 
     private void CheckWebView2Timer_Tick(object sender, EventArgs e)
     {
-        string version = "";
-        try
-        {
-            version = CoreWebView2Environment.GetAvailableBrowserVersionString();
-        }
-        catch
-        {
-            return;
-        }
-
-        if (string.IsNullOrEmpty(version))
-            return;
-
-        InitializeWebViewAsync();
+        if (NavegadorDoChat.EstaInstalado())
+            InitializeWebViewAsync();
     }
 
     private void ShowWebViewInstallUI()
@@ -199,16 +229,7 @@ public partial class MainWindow : Window
 
     private async void InitializeWebViewAsync()
     {
-        try
-        {
-            string version = CoreWebView2Environment.GetAvailableBrowserVersionString();
-            if (string.IsNullOrEmpty(version))
-            {
-                ShowWebViewInstallUI();
-                return;
-            }
-        }
-        catch (Exception)
+        if (!NavegadorDoChat.EstaInstalado())
         {
             ShowWebViewInstallUI();
             return;
@@ -225,47 +246,8 @@ public partial class MainWindow : Window
         // Make sure the placeholder overlay is hidden
         PlaceholderOverlay.Visibility = Visibility.Collapsed;
 
-        await SetupWebViewAsync();
-    }
-
-    // recreated: after the browser process ended (see MainWindow.ChatResilience.cs). The new control takes
-    // the old one's place as it was: the borders, the scroll mode and the focus of the game stay.
-    private async Task SetupWebViewAsync(bool recreated = false)
-    {
-        // Create and configure.
-        webView = new WebView2
-        {
-            DefaultBackgroundColor = System.Drawing.Color.Transparent
-        };
-        if (recreated)
-            webView.Focusable = CurrentDisplayMode == WindowDisplayMode.Setup;
-
-        CoreWebView2Environment cwv2Environment = await WebView2EnvironmentManager.GetEnvironmentAsync();
-
-        // Add to visual tree (the row span is set with the borders, see SetChatRowSpan).
-        Grid.SetRow(webView, 2);
-        if (recreated)
-            Grid.SetRowSpan(webView, Grid.GetRowSpan(this.overlay));
-        this.mainWindowGrid.Children.Add(webView);
-        webView.SizeChanged += (s, e) => UpdateResizeCorner();
-        UpdateChatResizeEdge();
-
-        // Initialize and subscribe to events.
-        await webView.EnsureCoreWebView2Async(cwv2Environment);
-
-        webView.NavigationCompleted += webView_NavigationCompleted;
-        webView.WebMessageReceived += webView_WebMessageReceived;
-        webView.CoreWebView2.ProcessFailed += webView_CoreWebView2ProcessFailed;
-        webView.CoreWebView2.SetVirtualHostNameToFolderMapping(InfoDoApp.HostDasPaginas, InfoDoApp.PastaDasPaginas,
-            CoreWebView2HostResourceAccessKind.DenyCors);
-
-        ApplyLightweightWebViewSettings(webView.CoreWebView2);
-        SetupChatLinks(webView.CoreWebView2);
-
-        if (recreated)
-            LoadChat();
-        else
-            SetupBrowser();
+        await _navegador.CriarAsync();
+        SetupBrowser();
     }
 
     // Argumentos desta abertura, ou pedidos de uma cópia aberta depois (ver InstanciaUnica)
@@ -317,8 +299,8 @@ public partial class MainWindow : Window
     // The window takes clicks (setup mode) or lets them through to the game (overlay)
     private void ApplyInteractable(bool interactable)
     {
-        if (this.webView != null)
-            this.webView.Focusable = interactable;
+        if (_navegador.Controle != null)
+            _navegador.Controle.Focusable = interactable;
 
         CurrentDisplayMode = interactable ? WindowDisplayMode.Setup : WindowDisplayMode.Overlay;
         var hwnd = new WindowInteropHelper(this).Handle;
@@ -343,16 +325,20 @@ public partial class MainWindow : Window
     // only when the borders are hidden (otherwise the window is simply in setup mode).
     private void UpdateChatScrollMode()
     {
-        if (_currentChat?.ChatType != ChatTypes.Padrao || this.webView?.CoreWebView2 == null)
+        if (_navegador.Pagina is not ChatPadrao || _navegador.Controle == null)
             return;
 
-        bool enabled = this.webView.Focusable;
+        bool enabled = _navegador.Controle.Focusable;
         Atalho hotkey = App.Opcoes.AtalhoModoRolagem;
         string hotkeyText = Atalho.Existe(hotkey) ? hotkey.ToString() : string.Empty;
+        _navegador.Executar(ContratoComAPagina.ModoRolagem(enabled, enabled && _hiddenBorders, hotkeyText));
+    }
 
-        string mode = System.Text.Json.JsonSerializer.Serialize(new { enabled, banner = enabled && _hiddenBorders, hotkey = hotkeyText });
-        _ = this.webView.CoreWebView2.ExecuteScriptAsync(
-            $"window.oncScrollModeWanted = {mode}; if (window.oncSetScrollMode) window.oncSetScrollMode(window.oncScrollModeWanted);");
+    // The "Padrão" chat shows its links as clickable only while the borders are visible
+    private void UpdateChatLinks()
+    {
+        if (_navegador.Pagina is ChatPadrao)
+            _navegador.Executar(ContratoComAPagina.LinksClicaveis(!_hiddenBorders));
     }
 
     // With the borders shown, the side and bottom edges of the window resize it: the chat page (its own
@@ -361,7 +347,7 @@ public partial class MainWindow : Window
 
     private void UpdateChatResizeEdge()
     {
-        this.webView?.SetValue(MarginProperty, _hiddenBorders ? this.noBorderThickness : ResizeEdgeMargin);
+        _navegador.Controle?.SetValue(MarginProperty, _hiddenBorders ? this.noBorderThickness : ResizeEdgeMargin);
         UpdateResizeCorner();
     }
 
@@ -443,30 +429,6 @@ public partial class MainWindow : Window
         this.Width = 320;
     }
 
-    private async void NavigateToUrl(string url)
-    {
-        try
-        {
-            OnChatNavigationStarting();
-            await ClearWebViewDiskCacheAsync();
-            this.webView.CoreWebView2.Navigate(url);
-        }
-        catch (Exception ex)
-        {
-            _chatNavigationPending = false;
-            string urlStatus = string.IsNullOrEmpty(url) ? "<Empty>" : url;
-            _logger.LogError(ex, "Failed to navigate to custom chat URL: " + urlStatus);
-            MessageBox.Show($"Não foi possível abrir esse endereço.\nErro: {ex.Message}\nEndereço: '{urlStatus}'", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    // The "Padrão" chat page of a channel (a name, see SavedChannel): the app's own page (browser\chat.html)
-    private void SetChatAddress(string channel)
-    {
-        bool darkTheme = App.Opcoes.Tema != 0;
-        NavigateToUrl(InfoDoApp.EnderecoDoChatPadrao(channel, darkTheme));
-    }
-
     private void ExitApplication()
     {
         App.IsShuttingDown = true;
@@ -490,146 +452,11 @@ public partial class MainWindow : Window
     }
 
     // The text size gives letters of the same size in the "Padrão" and "Chat oficial da Twitch"
-    // chats: the official one uses the font and size of the "Padrão" (CustomURLChat.MessageLookCss).
-    // Kept within the range of its slider.
+    // chats: the official one uses the font and size of the "Padrão" (CssDoChat)
     private void SetZoomFactor(double zoom)
     {
-        zoom = Math.Round(Math.Clamp(zoom, this.sliderTextSize.Minimum, this.sliderTextSize.Maximum), 2);
-
-        this.webView.ZoomFactor = zoom;
-        App.Opcoes.TamanhoDoTexto = zoom;
+        App.Opcoes.TamanhoDoTexto = _navegador.AplicarZoom(zoom);
         UpdateQuickValues();
-    }
-
-    private async void webView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
-    {
-        OnChatNavigationCompleted();
-        OnChatPageLoaded(e.IsSuccess);
-
-        if (!e.IsSuccess)
-        {
-            _logger.LogWarning("Chat page failed to load: {Status}", e.WebErrorStatus);
-            return;
-        }
-
-        SetZoomFactor(App.Opcoes.TamanhoDoTexto);
-
-        // Not on the welcome page, which has the same chat type setting but no Twitch chat
-        if (_currentChat.ChatType == ChatTypes.TwitchPopout)
-            TwitchPopoutSetup();
-
-        // Our CSS and then the chat type's script, in one call: the first lines already get our look
-        string css = this._currentChat.SetupCustomCSS();
-        string script = (string.IsNullOrEmpty(css) ? string.Empty : InsertCustomCSS2(css) + "\n") + this._currentChat.SetupJavascript();
-        if (!string.IsNullOrEmpty(script))
-            await this.webView.ExecuteScriptAsync(script);
-        UpdateChatScrollMode();
-        UpdateChatLinks();
-        TryShowBordersHint();
-        TryShowWriteHint();
-        TryShowSettingsNotice(); // last: the most important notice stays on screen
-
-        // Channel point redemptions (after the saved Twitch access is checked)
-        _ = StartRedemptionsAsync();
-    }
-
-    private async void TwitchPopoutSetup()
-    {
-        if (App.Opcoes.BetterTtv)
-        {
-            // BTTV's options, kept in the page's localStorage: "7TV emotes" is the flag 16 of emotes[0] (there
-            // once BTTV has saved its emote options) and the emote menu is 0 off, 1 legacy, 2 modern.
-            // Written on every load, so that turning an option off works too.
-            string sevenTvFlag = App.Opcoes.Emotes7tv
-                ? "settings.emotes[0] = settings.emotes[0] | 16;"
-                : "settings.emotes[0] = settings.emotes[0] & ~16;";
-            int emoteMenu = App.Opcoes.MenuDeEmotesDoBetterTtv ? 2 : 0;
-
-            var bttvSettingsScript = $$"""
-                (function() {
-                    try {
-                        const settingsKey = 'bttv_settings';
-                        let settings = JSON.parse(localStorage.getItem(settingsKey) || '{}');
-
-                        if (settings.emotes && Array.isArray(settings.emotes)) {
-                            {{sevenTvFlag}}
-                        }
-                        settings.emoteMenu = {{emoteMenu}};
-
-                        localStorage.setItem(settingsKey, JSON.stringify(settings));
-                        console.log('BTTV settings (7TV / emote menu) applied.');
-                    } catch (e) {
-                        console.error('Failed to pre-configure BTTV settings', e);
-                    }
-                })();
-                """;
-
-            await webView.CoreWebView2.ExecuteScriptAsync(bttvSettingsScript);
-
-            // Inject the main BTTV script.
-            InsertCustomJavaScriptFromUrl("https://cdn.betterttv.net/betterttv.js");
-        }
-        if (App.Opcoes.FrankerFaceZ)
-        {
-            // Observe for FrankerFaceZ's reskin stylesheet
-            // that breaks the transparency and remove it
-            InsertCustomJavaScript(@"
-(function() {
-    const head = document.getElementsByTagName(""head"")[0];
-    const observer = new MutationObserver((mutations, observer) => {
-        for (const mut of mutations) {
-            if (mut.type === ""childList"") {
-                for (const node of mut.addedNodes) {
-                    if (node.tagName.toLowerCase() === ""link"" && node.href.includes(""color_normalizer"")) {
-                        node.remove();
-                    }
-                }
-            }
-        }
-    });
-    observer.observe(head, {
-        attributes: false,
-        childList: true,
-        subtree: false,
-    });
-})();
-                        ");
-
-            InsertCustomJavaScriptFromUrl("https://cdn.frankerfacez.com/static/script.min.js");
-        }
-    }
-
-    // A single style element, updated in place when the settings change (see MainWindow.LiveSettings.cs)
-    private string InsertCustomCSS2(string CSS)
-    {
-        string uriEncodedCSS = Uri.EscapeDataString(CSS);
-        string script = "(function () { var oncCSS = document.getElementById('" + CustomCssElementId + "');";
-        script += "if (!oncCSS) { oncCSS = document.createElement('style'); oncCSS.id = '" + CustomCssElementId + "'; document.querySelector('head').appendChild(oncCSS); }";
-        script += "oncCSS.textContent = decodeURIComponent(\"" + uriEncodedCSS + "\"); })();";
-        return script;
-    }
-
-    private async void InsertCustomJavaScript(string JS)
-    {
-        try
-        {
-            await this.webView.ExecuteScriptAsync(JS);
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private void InsertCustomJavaScriptFromUrl(string scriptUrl)
-    {
-        InsertCustomJavaScript(@"
-(function() {
-    const script = document.createElement(""script"");
-    script.src = """ + scriptUrl + @""";
-    document.getElementsByTagName(""head"")[0].appendChild(script);
-})();
-            ");
     }
 
     private void OpenSettingsFolder()
@@ -643,7 +470,7 @@ public partial class MainWindow : Window
     private void UpdateChatSound()
     {
         var settings = App.Opcoes;
-        string file = settings.TipoDeChat == (int)ChatTypes.Padrao
+        string file = settings.TipoDeChat == (int)TipoDeChat.Padrao
             ? SonsDisponiveis.Caminho(settings.PastaDosSons, settings.SomDeMensagem)
             : null;
 
@@ -693,22 +520,19 @@ public partial class MainWindow : Window
 
         logica.ProcurarAtualizacoesPedido += () => _ = _atualizacoes.ProcurarAsync(manual: true, dono: settingsWindow);
 
-        // What the open chat page was loaded with, to know if a save needs to load it again
-        int chatTypeLoaded = App.Opcoes.TipoDeChat;
-        string chatReloadKeyLoaded = GetChatReloadKey();
+        // The chat type saved before, for the notice about writing when a chat with a channel is chosen
+        int chatTypeSaved = App.Opcoes.TipoDeChat;
 
         // "Salvar" keeps the window open, so every save is applied right away
         logica.Salvou += () =>
         {
-            int chatTypeBefore = chatTypeLoaded;
-            string chatReloadKeyBefore = chatReloadKeyLoaded;
-            chatTypeLoaded = App.Opcoes.TipoDeChat;
-            chatReloadKeyLoaded = GetChatReloadKey();
+            int chatTypeBefore = chatTypeSaved;
+            chatTypeSaved = App.Opcoes.TipoDeChat;
 
-            if (!IsChannelChatType(chatTypeBefore) && IsChannelChatType(chatTypeLoaded))
+            if (!IsChannelChatType(chatTypeBefore) && IsChannelChatType(chatTypeSaved))
                 RequestWriteHint();
 
-            _ = ApplySavedSettingsAsync(chatTypeBefore, chatReloadKeyBefore);
+            _ = ApplySavedSettingsAsync();
         };
 
         _settingsDialogOpen = true;
@@ -728,16 +552,11 @@ public partial class MainWindow : Window
     }
 
     // Applies the settings just saved in the Settings (or Chat Filters) window
-    private async Task ApplySavedSettingsAsync(int chatTypeBefore, string chatReloadKeyBefore)
+    private async Task ApplySavedSettingsAsync()
     {
         // Loading the chat page again clears the messages on screen, so it only happens when a
         // setting needs it (channel, theme, chat type...). The rest is applied to the open page.
-        bool reloadChat = App.Opcoes.TipoDeChat != chatTypeBefore
-            || GetChatReloadKey() != chatReloadKeyBefore
-            || !await TryApplyChatSettingsLiveAsync();
-
-        if (reloadChat)
-            LoadChat();
+        await _navegador.AplicarOpcoesSalvasAsync();
         UpdateChatSound();
 
         // Channel point redemptions and the "Escrever no chat…" box (options of the Twitch tab)
@@ -758,7 +577,8 @@ public partial class MainWindow : Window
 
         if (!this._hiddenBorders)
         {
-            this.webView.Focusable = true;
+            if (_navegador.Controle != null)
+                _navegador.Controle.Focusable = true;
             SetInteractable(true);
         }
 
@@ -796,30 +616,7 @@ public partial class MainWindow : Window
             drawBorders();
 
         UpdateChatSound();
-        LoadChat();
-    }
-
-    /// <summary>
-    /// Loads the page of the saved chat type: the channel chat, the custom address, or the welcome page
-    /// when there is no channel or address.
-    /// </summary>
-    private void LoadChat()
-    {
-        var settings = App.Opcoes;
-
-        if (ChatTypeUsesChannel)
-        {
-            LoadChannelChat();
-        }
-        else if (settings.TipoDeChat == (int)ChatTypes.CustomURL && !string.IsNullOrWhiteSpace(settings.EnderecoPersonalizado))
-        {
-            _currentChat = new CustomURLChat(ChatTypes.CustomURL);
-            NavigateToUrl(settings.EnderecoPersonalizado);
-        }
-        else
-        {
-            ShowWelcomePage();
-        }
+        _navegador.AbrirDasOpcoes();
     }
 
     private void MenuItem_SettingsClick(object sender, RoutedEventArgs e)
@@ -876,12 +673,9 @@ public partial class MainWindow : Window
     {
         Dispatcher.InvokeAsync(() =>
         {
-            if (this.webView?.CoreWebView2 == null)
-                return;
-
-            string js = this._currentChat.PushNewChatMessage(message, nick, color);
-            if (!string.IsNullOrEmpty(js))
-                _ = this.webView.ExecuteScriptAsync(js);
+            // Only the "Padrão" page shows them, as action lines (like /me)
+            if (_navegador.Pagina is ChatPadrao)
+                _navegador.Executar(ContratoComAPagina.AdicionarAcao(nick ?? string.Empty, color, message));
         });
     }
 

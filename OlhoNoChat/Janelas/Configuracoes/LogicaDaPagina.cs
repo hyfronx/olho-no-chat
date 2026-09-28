@@ -1,5 +1,6 @@
 #nullable enable
 using CommunityToolkit.Mvvm.ComponentModel;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
 
 namespace OlhoNoChat.Janelas.Configuracoes;
@@ -11,10 +12,10 @@ namespace OlhoNoChat.Janelas.Configuracoes;
 /// </summary>
 public abstract class LogicaDaPagina : ObservableObject
 {
-    private ChatTypes _tipoNaTela;
+    private TipoDeChat _tipoNaTela;
 
     /// <summary>O tipo de chat escolhido na aba Chat (ainda sem salvar).</summary>
-    public ChatTypes TipoNaTela
+    public TipoDeChat TipoNaTela
     {
         get => _tipoNaTela;
         set
@@ -29,9 +30,9 @@ public abstract class LogicaDaPagina : ObservableObject
         }
     }
 
-    public bool ComPadrao => TipoNaTela == ChatTypes.Padrao;
-    public bool ComChatOficial => TipoNaTela == ChatTypes.TwitchPopout;
-    public bool ComEndereco => TipoNaTela == ChatTypes.CustomURL;
+    public bool ComPadrao => TipoNaTela == TipoDeChat.Padrao;
+    public bool ComChatOficial => TipoNaTela == TipoDeChat.ChatOficial;
+    public bool ComEndereco => TipoNaTela == TipoDeChat.EnderecoPersonalizado;
 
     /// <summary>"Texto das mensagens" vale para o Padrão e para o chat oficial (que imita o Padrão).</summary>
     public bool ComTextoDasMensagens => ComPadrao || ComChatOficial;

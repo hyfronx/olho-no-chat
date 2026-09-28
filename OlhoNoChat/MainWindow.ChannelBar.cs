@@ -4,8 +4,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using Chats;
 using Microsoft.Extensions.Logging;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Twitch;
 
 /// <summary>
@@ -22,20 +22,12 @@ public partial class MainWindow
     private bool _checkingChannel = false;
 
     // "Padrão" and "Chat oficial da Twitch" show a channel's chat (and can write in it)
-    private static bool IsChannelChatType(int chatType) => chatType is (int)ChatTypes.Padrao or (int)ChatTypes.TwitchPopout;
+    private static bool IsChannelChatType(int chatType) => TiposDeChat.UsaCanal(TiposDeChat.Ler(chatType));
 
     private static bool ChatTypeUsesChannel => IsChannelChatType(App.Opcoes.TipoDeChat);
 
     // The saved channel as a name (older versions could save a link)
-    private static string SavedChannel
-    {
-        get
-        {
-            string saved = App.Opcoes.Canal ?? string.Empty;
-            string name = NomesDaTwitch.Extrair(saved);
-            return name.Length > 0 ? name : saved.Trim();
-        }
-    }
+    private static string SavedChannel => PaginaDoChat.CanalSalvo(App.Opcoes);
 
     private void UpdateChannelBar()
     {
@@ -198,35 +190,14 @@ public partial class MainWindow
         tbChannel.Text = channel;
         UpdateChannelBar();
 
-        LoadChannelChat();
+        // The chat of the channel, or the welcome page without one
+        _navegador.AbrirDasOpcoes();
         UpdateChatInput();
-    }
-
-    /// <summary>Loads the chat of the saved channel ("Padrão" or "Chat oficial da Twitch"), or the welcome page without one.</summary>
-    private void LoadChannelChat()
-    {
-        string channel = SavedChannel;
-        if (channel.Length == 0)
-        {
-            ShowWelcomePage();
-        }
-        else if (App.Opcoes.TipoDeChat == (int)ChatTypes.TwitchPopout)
-        {
-            _currentChat = new CustomURLChat(ChatTypes.TwitchPopout);
-            NavigateToUrl("https://www.twitch.tv/popout/" + channel + "/chat?popout=");
-        }
-        else
-        {
-            _currentChat = new Chats.PadraoChat();
-            SetChatAddress(channel);
-        }
     }
 
     // --- Connection dot ------------------------------------------------------------------------------
     // "Padrão": the page reports its connection to Twitch (onc:chat-state:..., see browser/chat.js).
     // "Chat oficial da Twitch": the page itself connects, so the dot follows the page loading.
-
-    private const string ChatStateMessagePrefix = "onc:chat-state:";
 
     private enum ChatConnection { None, Connecting, Connected, Disconnected }
     private ChatConnection _chatConnection = ChatConnection.None;
@@ -242,37 +213,25 @@ public partial class MainWindow
         UpdateChannelStatusDot();
     }
 
-    // A chat page starts loading (see OnChatNavigationStarting): only the channel chats have a dot
+    // A chat page starts loading: only the channel chats have a dot
     private void OnChatPageLoading()
     {
-        SetChatConnection(_currentChat?.ChatType is ChatTypes.Padrao or ChatTypes.TwitchPopout
-            ? ChatConnection.Connecting
-            : ChatConnection.None);
+        SetChatConnection(_navegador.Pagina?.Canal != null ? ChatConnection.Connecting : ChatConnection.None);
     }
 
     private void OnChatPageLoaded(bool success)
     {
         if (!success)
             SetChatConnection(_chatConnection == ChatConnection.None ? ChatConnection.None : ChatConnection.Disconnected);
-        else if (_currentChat?.ChatType == ChatTypes.TwitchPopout)
+        else if (_navegador.Pagina is ChatOficialDaTwitch)
             SetChatConnection(ChatConnection.Connected);
     }
 
-    private bool TryHandleChatStateMessage(string message)
+    // The "Padrão" page reports its connection
+    private void OnChatStateMessage(ChatConnection state)
     {
-        if (!message.StartsWith(ChatStateMessagePrefix, StringComparison.Ordinal))
-            return false;
-
-        if (_currentChat?.ChatType == ChatTypes.Padrao)
-        {
-            SetChatConnection(message.Substring(ChatStateMessagePrefix.Length) switch
-            {
-                "connected" => ChatConnection.Connected,
-                "disconnected" => ChatConnection.Disconnected,
-                _ => ChatConnection.Connecting
-            });
-        }
-        return true;
+        if (_navegador.Pagina is ChatPadrao)
+            SetChatConnection(state);
     }
 
     private void UpdateChannelStatusDot()
@@ -308,13 +267,5 @@ public partial class MainWindow
         {
             ChannelStatusDot.BeginAnimation(UIElement.OpacityProperty, null);
         }
-    }
-
-    // The welcome page tells where to type the channel: in the strip, or in Configurações for the other chat types
-    private void ShowWelcomePage()
-    {
-        _currentChat = new WelcomeChat();
-        string page = new Uri(InfoDoApp.PaginaDeBoasVindas).AbsoluteUri;
-        NavigateToUrl(ChatTypeUsesChannel ? page + "?canal" : page);
     }
 }

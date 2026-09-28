@@ -1,7 +1,9 @@
 #nullable enable
 using CommunityToolkit.Mvvm.ComponentModel;
+using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.Filtros;
+using Tipos = OlhoNoChat.Chat.TipoDeChat;
 
 namespace OlhoNoChat.Janelas.Configuracoes;
 
@@ -64,11 +66,11 @@ public sealed partial class LogicaChat : LogicaDaPagina
     private string _enderecoPersonalizado = string.Empty;
 
     /// <summary>O tipo escolhido na lista (um valor fora da lista conta como Padrão).</summary>
-    public ChatTypes Tipo => Enum.IsDefined(typeof(ChatTypes), TipoDeChat) ? (ChatTypes)TipoDeChat : ChatTypes.Padrao;
+    public Tipos Tipo => TiposDeChat.Ler(TipoDeChat);
 
     public override void Carregar(Opcoes opcoes)
     {
-        TipoDeChat = (int)(Enum.IsDefined(typeof(ChatTypes), opcoes.TipoDeChat) ? (ChatTypes)opcoes.TipoDeChat : ChatTypes.Padrao);
+        TipoDeChat = (int)TiposDeChat.Ler(opcoes.TipoDeChat);
         ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
         SegundosParaApagar = opcoes.SegundosParaApagar;
         EsconderBots = opcoes.EsconderBots;
@@ -79,14 +81,14 @@ public sealed partial class LogicaChat : LogicaDaPagina
         Emotes7tv = opcoes.Emotes7tv;
         FrankerFaceZ = opcoes.FrankerFaceZ;
         // A caixa só mostra o endereço quando ele é o do tipo salvo
-        EnderecoPersonalizado = opcoes.TipoDeChat == (int)ChatTypes.CustomURL ? opcoes.EnderecoPersonalizado : string.Empty;
+        EnderecoPersonalizado = opcoes.TipoDeChat == (int)Tipos.EnderecoPersonalizado ? opcoes.EnderecoPersonalizado : string.Empty;
     }
 
     public override void Gravar(Opcoes opcoes)
     {
         switch (TipoNaTela)
         {
-            case ChatTypes.Padrao:
+            case Tipos.Padrao:
                 opcoes.EnderecoPersonalizado = string.Empty;
                 opcoes.ApagarMensagensAntigas = ApagarMensagensAntigas;
                 opcoes.SegundosParaApagar = SegundosParaApagar;
@@ -94,13 +96,13 @@ public sealed partial class LogicaChat : LogicaDaPagina
                 opcoes.EsconderGifs = EsconderGifs;
                 opcoes.EsconderOutrosCanais = EsconderOutrosCanais;
                 break;
-            case ChatTypes.TwitchPopout:
+            case Tipos.ChatOficial:
                 opcoes.BetterTtv = BetterTtv;
                 opcoes.MenuDeEmotesDoBetterTtv = MenuDeEmotesDoBetterTtv;
                 opcoes.Emotes7tv = Emotes7tv;
                 opcoes.FrankerFaceZ = FrankerFaceZ;
                 break;
-            case ChatTypes.CustomURL:
+            case Tipos.EnderecoPersonalizado:
                 opcoes.EnderecoPersonalizado = EnderecoPersonalizado;
                 break;
         }
