@@ -69,21 +69,39 @@
 
                 <TextBlock Text="Filtros" Style="{StaticResource SettingsSectionTitle}" />
                 <Border Style="{StaticResource SettingsCard}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:FontIcon Glyph="&#xE99A;" Style="{StaticResource SettingsCardIcon}" />
-                        <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
-                            <TextBlock Text="Esconder bots e comandos" Style="{StaticResource SettingsLabel}" />
-                            <TextBlock Style="{StaticResource SettingsHint}"
-                                       Text="Esconde usuários com nome terminado em &quot;bot&quot; (Nightbot, Moobot...) e mensagens que começam com &quot;!&quot;." />
-                        </StackPanel>
-                        <ui:ToggleSwitch Name="cbHideBots" Grid.Column="2" Style="{StaticResource SettingsToggle}"
-                                         AutomationProperties.Name="Esconder bots e comandos" />
-                    </Grid>
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Glyph="&#xE99A;" Style="{StaticResource SettingsCardIcon}" />
+                            <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                                <TextBlock Text="Esconder bots e comandos" Style="{StaticResource SettingsLabel}" />
+                                <TextBlock Style="{StaticResource SettingsHint}"
+                                           Text="Esconde usuários com nome terminado em &quot;bot&quot; (Nightbot, Moobot...) e mensagens que começam com &quot;!&quot;." />
+                            </StackPanel>
+                            <ui:ToggleSwitch Name="cbHideBots" Grid.Column="2" Style="{StaticResource SettingsToggle}"
+                                             AutomationProperties.Name="Esconder bots e comandos" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource SettingsCardDivider}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Glyph="&#xEB9F;" Style="{StaticResource SettingsCardIcon}" />
+                            <StackPanel Grid.Column="1" Style="{StaticResource SettingsRowText}">
+                                <TextBlock Text="Esconder GIFs" Style="{StaticResource SettingsLabel}" />
+                                <TextBlock Style="{StaticResource SettingsHint}"
+                                           Text="Os GIFs que assinantes mandam no chat aparecem só com o nome, sem a imagem animada." />
+                            </StackPanel>
+                            <ui:ToggleSwitch Name="cbHideGifs" Grid.Column="2" Style="{StaticResource SettingsToggle}"
+                                             AutomationProperties.Name="Esconder GIFs" />
+                        </Grid>
+                    </StackPanel>
                 </Border>
                 <Button Name="btOpenChatFilterSettings" Style="{StaticResource SettingsCardButton}" Click="btOpenChatFilterSettings_Click"
                         AutomationProperties.Name="Filtrar ou destacar usuários">

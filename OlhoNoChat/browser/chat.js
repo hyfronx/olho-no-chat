@@ -23,7 +23,7 @@
 
     // From the app (PadraoChat.GetMessageSettingsJson)
     let settings = {
-        fade: 0, hideBots: true, playSound: false,
+        fade: 0, hideBots: true, hideGifs: false, playSound: false,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
         vips: [], blockList: []
     };
@@ -208,7 +208,7 @@
             name: tags['display-name'] || login,
             color: userColor(login, tags.color),
             action,
-            parts: addOtherEmotes(splitTwitchEmotes(text, tags.emotes))
+            parts: addOtherEmotes(splitAtPlaces(text, [...twitchEmotePlaces(tags.emotes), ...gifPlaces(tags.gifs)]))
         }, tags.badges || '');
     }
 
@@ -292,18 +292,39 @@
 
     // The "emotes" tag ("25:0-4,12-16/1902:6-10") gives each emote's place counted in characters
     // (code points, so an emoji before an emote counts as one)
-    function splitTwitchEmotes(text, emotesTag) {
-        if (!emotesTag) return [text];
-
+    function twitchEmotePlaces(emotesTag) {
         const places = [];
-        emotesTag.split('/').forEach(entry => {
+        (emotesTag || '').split('/').forEach(entry => {
             const [id, ranges] = entry.split(':');
             if (!ranges) return;
             ranges.split(',').forEach(range => {
                 const [first, last] = range.split('-').map(Number);
-                places.push({ id, first, last });
+                places.push({ first, last, part: name => ({ emote: twitchEmoteUrls(id), name }) });
             });
         });
+        return places;
+    }
+
+    // GIFs (GIPHY, sent by tier 2 and 3 subscribers since September 2026): the "gifs" tag gives each one's
+    // place the same way, then its id and its address ("0-33|<id>|https://media4.giphy.com/..."). The text
+    // there is the GIF's title in brackets. Twitch asks for the address exactly as it comes.
+    function gifPlaces(gifsTag) {
+        const places = [];
+        (gifsTag || '').split(/,(?=\d+-\d+\|)/).forEach(entry => {
+            const m = /^(\d+)-(\d+)\|[^|]*\|(https:\/\/\S+)$/.exec(entry);
+            if (m) places.push({ first: Number(m[1]), last: Number(m[2]), part: name => ({ gif: m[3], name }) });
+        });
+        return places;
+    }
+
+    // "Esconder GIFs" (Configurações > Chat): only their title, also on the lines already shown
+    function showOrHideGifs() {
+        document.body.classList.toggle('onc-hide-gifs', !!settings.hideGifs);
+    }
+
+    // The message split at the places of its emotes and GIFs; the text around them stays text
+    function splitAtPlaces(text, places) {
+        if (!places.length) return [text];
         places.sort((a, b) => a.first - b.first);
 
         const chars = Array.from(text);
@@ -312,8 +333,7 @@
         places.forEach(place => {
             if (place.first < next || place.last >= chars.length) return;
             if (place.first > next) parts.push(chars.slice(next, place.first).join(''));
-            const name = chars.slice(place.first, place.last + 1).join('');
-            parts.push({ emote: twitchEmoteUrls(place.id), name });
+            parts.push(place.part(chars.slice(place.first, place.last + 1).join('')));
             next = place.last + 1;
         });
         if (next < chars.length) parts.push(chars.slice(next).join(''));
@@ -484,6 +504,19 @@
         line.parts.forEach(part => {
             if (typeof part === 'string') {
                 message.append(part);
+                return;
+            }
+            if (part.gif) {
+                // Both are there, the setting shows one (see showOrHideGifs); a hidden GIF isn't even downloaded
+                const title = document.createElement('span');
+                title.className = 'onc-gif-title';
+                title.textContent = part.name;
+                const gif = document.createElement('img');
+                gif.className = 'onc-gif';
+                gif.loading = 'lazy';
+                gif.src = part.gif;
+                gif.alt = gif.title = part.name;
+                message.append(title, gif);
                 return;
             }
             const img = document.createElement('img');
@@ -664,6 +697,7 @@
     window.oncChat = {
         start(newSettings) {
             Object.assign(settings, newSettings);
+            showOrHideGifs();
             if (started || !channel) return;
             started = true;
             connect();
@@ -672,6 +706,7 @@
         // Settings saved while the chat is open (see MainWindow.LiveSettings.cs)
         apply(newSettings) {
             Object.assign(settings, newSettings);
+            showOrHideGifs();
         },
 
         // A line from the app in the user's color, like a /me message (channel point redemptions)

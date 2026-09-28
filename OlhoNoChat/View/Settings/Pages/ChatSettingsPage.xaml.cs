@@ -30,6 +30,7 @@ public partial class ChatSettingsPage : UserControl
     public void SetupValues()
     {
         this.cbHideBots.IsOn = App.Settings.GeneralSettings.BlockBotActivity;
+        this.cbHideGifs.IsOn = App.Settings.GeneralSettings.HideGifs;
         this.cbFade.IsOn = App.Settings.GeneralSettings.FadeChat;
         this.tbFadeTime.Text = App.Settings.GeneralSettings.FadeTime;
         this.fadeTimeRow.IsEnabled = App.Settings.GeneralSettings.FadeChat;
@@ -72,6 +73,7 @@ public partial class ChatSettingsPage : UserControl
                 App.Settings.GeneralSettings.CustomURL = string.Empty;
                 // RedemptionsEnabled is saved by the Twitch tab (ConnectionSettingsPage)
                 App.Settings.GeneralSettings.BlockBotActivity = this.cbHideBots.IsOn;
+                App.Settings.GeneralSettings.HideGifs = this.cbHideGifs.IsOn;
                 App.Settings.GeneralSettings.FadeChat = this.cbFade.IsOn;
                 App.Settings.GeneralSettings.FadeTime = this.tbFadeTime.Text;
             }

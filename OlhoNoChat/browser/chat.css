@@ -53,6 +53,25 @@ body {
     margin-bottom: -7px;
 }
 
+/* A GIF sent in the chat (GIPHY): on its own line under the name, never taller than about six lines */
+.onc-gif {
+    display: block;
+    max-width: min(100%, 320px);
+    max-height: 140px;
+    margin: 4px 0 2px;
+    border-radius: 6px;
+}
+
+/* "Esconder GIFs": the title in brackets instead (chat.js, showOrHideGifs) */
+.onc-gif-title,
+.onc-hide-gifs .onc-gif {
+    display: none;
+}
+
+.onc-hide-gifs .onc-gif-title {
+    display: inline;
+}
+
 /* An overlay emote (7TV "zero width", BTTV hats and snow) centered over the emote before it */
 .onc-stack {
     position: relative;
