@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Twitch;
@@ -90,6 +91,8 @@ namespace OlhoNoChat
                 services.AddSingleton<EnvioDeMensagem>();
                 services.AddSingleton<ListaDeEmotes>();
                 services.AddSingleton<ResgatesDePontos>();
+                services.AddSingleton(sp => new ProcuraDeAtualizacoes(sp.GetRequiredService<ILogger<ProcuraDeAtualizacoes>>(),
+                    () => Opcoes, () => ArquivoDeConfiguracoes.Gravar()));
 #if DEBUG
                 SimuladorDoEventSub.RegistrarSeLigado(services); // resgates de mentira da Twitch CLI
 #endif

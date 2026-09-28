@@ -1,0 +1,76 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- As cores do app. As janelas novas usam só estas (nada do ModernWpf). -->
+
+    <!-- Laranja do app: moldura, interruptores ligados, caixa com o foco, item escolhido, botão principal -->
+    <Color x:Key="CorLaranja">#E85D30</Color>
+    <!-- Laranja claro: títulos de seção, ícones dos cartões, avisos de erro, links -->
+    <Color x:Key="CorLaranjaClaro">#FF8A65</Color>
+
+    <SolidColorBrush x:Key="Laranja" Color="{StaticResource CorLaranja}" />
+    <SolidColorBrush x:Key="LaranjaClaro" Color="{StaticResource CorLaranjaClaro}" />
+    <SolidColorBrush x:Key="LaranjaComMouse" Color="#F06A3E" />
+    <SolidColorBrush x:Key="LaranjaApertado" Color="#D4532A" />
+    <SolidColorBrush x:Key="LaranjaTransparente" Color="#4DE85D30" />
+    <SolidColorBrush x:Key="LaranjaTransparenteComMouse" Color="#66E85D30" />
+
+    <!-- Fundos -->
+    <SolidColorBrush x:Key="FundoDaPagina" Color="#1C1C1C" />
+    <SolidColorBrush x:Key="FundoDoAviso" Color="#121212" />
+    <SolidColorBrush x:Key="FundoDaBarraDeBaixo" Color="#161616" />
+    <SolidColorBrush x:Key="LinhaDaBarraDeBaixo" Color="#2A2A2A" />
+    <SolidColorBrush x:Key="FundoDoCartao" Color="#282828" />
+    <SolidColorBrush x:Key="FundoDoCartaoComMouse" Color="#303030" />
+    <SolidColorBrush x:Key="FundoDoCartaoApertado" Color="#242424" />
+    <SolidColorBrush x:Key="BordaDoCartao" Color="#333333" />
+    <SolidColorBrush x:Key="FundoDaFicha" Color="#383838" />
+    <SolidColorBrush x:Key="FundoDoCartaoDeAviso" Color="#2A211D" />
+    <SolidColorBrush x:Key="BordaDoCartaoDeAviso" Color="#4A3226" />
+    <SolidColorBrush x:Key="TextoDoCartaoDeAviso" Color="#E6D6CF" />
+    <!-- Sombra por cima da janela enquanto um diálogo está aberto -->
+    <SolidColorBrush x:Key="FundoAtrasDoDialogo" Color="#99000000" />
+    <SolidColorBrush x:Key="FundoDoDialogo" Color="#202020" />
+    <SolidColorBrush x:Key="BordaDoDialogo" Color="#3A3A3A" />
+
+    <!-- Textos -->
+    <SolidColorBrush x:Key="Texto" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextoDaDica" Color="#A6A6A6" />
+    <SolidColorBrush x:Key="TextoDesativado" Color="#6E6E6E" />
+
+    <!-- Controles -->
+    <SolidColorBrush x:Key="FundoDoBotao" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="FundoDoBotaoComMouse" Color="#40FFFFFF" />
+    <SolidColorBrush x:Key="FundoDoBotaoApertado" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="FundoDoCampo" Color="#66000000" />
+    <SolidColorBrush x:Key="FundoDoCampoComFoco" Color="#000000" />
+    <SolidColorBrush x:Key="BordaDoCampo" Color="#8A8A8A" />
+    <SolidColorBrush x:Key="BordaDoCampoComMouse" Color="#B0B0B0" />
+    <SolidColorBrush x:Key="FundoDaLista" Color="#333333" />
+    <SolidColorBrush x:Key="FundoDaListaComMouse" Color="#3B3B3B" />
+    <SolidColorBrush x:Key="FundoDaListaApertada" Color="#2C2C2C" />
+    <SolidColorBrush x:Key="BordaDaLista" Color="#444444" />
+    <SolidColorBrush x:Key="FundoDaListaAberta" Color="#282828" />
+    <SolidColorBrush x:Key="BordaDaListaAberta" Color="#484848" />
+    <SolidColorBrush x:Key="FundoDoItemComMouse" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="BordaDaMarcacao" Color="#9E9E9E" />
+    <SolidColorBrush x:Key="FundoDaMarcacao" Color="#0DFFFFFF" />
+    <SolidColorBrush x:Key="BolinhaDesligada" Color="#D0D0D0" />
+    <SolidColorBrush x:Key="BarraDeRolagem" Color="#5A5A5A" />
+    <SolidColorBrush x:Key="BarraDeRolagemComMouse" Color="#808080" />
+    <SolidColorBrush x:Key="FundoDaDica" Color="#2B2B2B" />
+    <SolidColorBrush x:Key="BordaDaDica" Color="#454545" />
+
+    <!-- Navegação lateral (sobre o laranja) -->
+    <SolidColorBrush x:Key="PilulaComMouse" Color="#1F000000" />
+    <SolidColorBrush x:Key="PilulaEscolhida" Color="#40000000" />
+
+    <!-- Botões da barra de título: sombra com o mouse, e o vermelho do Windows 11 no de fechar -->
+    <SolidColorBrush x:Key="BotaoDaBarraComMouse" Color="#2E000000" />
+    <SolidColorBrush x:Key="BotaoDaBarraApertado" Color="#47000000" />
+    <SolidColorBrush x:Key="FecharComMouse" Color="#C42B1C" />
+    <SolidColorBrush x:Key="FecharApertado" Color="#A8261A" />
+
+    <!-- Ícones: os do Windows 11, ou os do Windows 10 quando não há -->
+    <FontFamily x:Key="FonteDosIcones">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+</ResourceDictionary>

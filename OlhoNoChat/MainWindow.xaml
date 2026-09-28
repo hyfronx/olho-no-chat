@@ -522,8 +522,9 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- The same thin scroll bar as the other windows -->
                         <ScrollViewer x:Name="EmoteScroll" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0"
-                                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                                      Style="{StaticResource SettingsPageScroll}">
                             <ItemsControl x:Name="EmoteGroups" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>

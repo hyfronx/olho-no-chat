@@ -1,5 +1,4 @@
-﻿using OlhoNoChat.Atalhos;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -195,32 +194,34 @@ public partial class SettingsWindow : Window
     // would swallow it otherwise.
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == System.Windows.Input.Key.Escape && !EscapeBelongsToFocusedControl())
+        // Esc closes an open list, or clears a shortcut box that is waiting for keys
+        if (e.Key == System.Windows.Input.Key.Escape && !Janelas.JanelaComMoldura.EscPertenceAoControleComFoco())
         {
             e.Handled = true;
             Close();
         }
     }
 
-    // Esc closes an open list, or clears a shortcut box that is waiting for keys
-    internal static bool EscapeBelongsToFocusedControl()
+    // "Não procurar atualizações automaticamente" in the update window already saved the option off: the Geral switch
+    // follows, and it does not count as an unsaved change
+    public void ProcuraAutomaticaDesligada()
     {
-        var element = System.Windows.Input.Keyboard.FocusedElement as DependencyObject;
-        while (element != null)
-        {
-            switch (element)
-            {
-                case ComboBoxItem:
-                case ComboBox { IsDropDownOpen: true }:
-                case EditorDeAtalho { Gravando: true }:
-                    return true;
-            }
+        string before = CurrentState();
+        _generalSettingsPage.ProcuraAutomaticaDesligada();
+        string after = CurrentState();
+        if (_savedState == null || before == after)
+            return;
 
-            // Lists show their items in a popup, outside the window's visual tree
-            element = (element is System.Windows.Media.Visual ? System.Windows.Media.VisualTreeHelper.GetParent(element) : null)
-                      ?? LogicalTreeHelper.GetParent(element);
+        // Only the value that changed on screen goes into the saved state; other unsaved changes stay unsaved
+        string[] saved = _savedState.Split('\u001F'), was = before.Split('\u001F'), now = after.Split('\u001F');
+        if (saved.Length != now.Length)
+            return;
+        for (int i = 0; i < now.Length; i++)
+        {
+            if (was[i] != now[i])
+                saved[i] = now[i];
         }
-        return false;
+        _savedState = string.Join("\u001F", saved);
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)

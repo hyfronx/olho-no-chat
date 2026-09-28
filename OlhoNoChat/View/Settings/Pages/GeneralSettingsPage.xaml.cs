@@ -65,6 +65,12 @@ public partial class GeneralSettingsPage : UserControl
         }
     }
 
+    // The update window turned the automatic check off (already saved)
+    public void ProcuraAutomaticaDesligada()
+    {
+        this.cbCheckForUpdates.IsOn = false;
+    }
+
     private void btnCheckForUpdatesNow_Click(object sender, RoutedEventArgs e)
     {
         CheckForUpdateRequested?.Invoke();

@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using OlhoNoChat.Janelas.Filtros;
 
 namespace OlhoNoChat.View.Settings;
 
@@ -110,9 +111,8 @@ public partial class ChatSettingsPage : UserControl
 
     private void btOpenChatFilterSettings_Click(object sender, RoutedEventArgs e)
     {
-        ChatFilters chatFiltersWindow = new ChatFilters();
-        chatFiltersWindow.Owner = Window.GetWindow(this);
-        chatFiltersWindow.Saved += () => FiltersSaved?.Invoke();
-        chatFiltersWindow.ShowDialog();
+        var logica = new LogicaFiltros(App.Opcoes, App.ArquivoDeConfiguracoes.Gravar);
+        logica.Salvou += () => FiltersSaved?.Invoke();
+        new JanelaFiltros(logica) { Owner = Window.GetWindow(this) }.ShowDialog();
     }
 }

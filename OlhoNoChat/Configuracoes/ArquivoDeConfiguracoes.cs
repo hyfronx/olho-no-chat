@@ -20,7 +20,7 @@ namespace OlhoNoChat.Configuracoes;
 public sealed class ArquivoDeConfiguracoes
 {
     public const string NomeDoArquivo = "Configuracoes.json";
-    public const string PastaDosAntigos = "Configurações antigas (antes da 1.6.0)";
+    public const string PastaDosAntigos = "Configurações antigas (antes da 2.0.0)";
     public const string PastaComProblema = "Configurações com problema";
     public const string PastaAntesDeRestaurar = "Configurações antes de restaurar o padrão";
 

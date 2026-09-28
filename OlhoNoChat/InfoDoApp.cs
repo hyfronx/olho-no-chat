@@ -19,6 +19,15 @@ public static class InfoDoApp
 
     public const string EnderecoDoRepositorio = "https://github.com/hyfronx/olho-no-chat";
 
+#if DEBUG
+    /// <summary>
+    /// Os pacotes do teste de atualização local (ferramentas\teste_atualizacao_local.ps1): o app de teste instalado
+    /// procura versões novas só aqui, nunca no GitHub.
+    /// </summary>
+    public static string PastaDoTesteDeAtualizacao =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OncTesteDeAtualizacao-Pacotes");
+#endif
+
     // App "Olho no Chat" registrado em dev.twitch.tv. Não pode mudar: um acesso dado a outro Client ID é esquecido
     // na verificação, e todo mundo teria que conectar de novo.
     public const string TwitchClientId = "zrqsilh31pbdlfjb81onhulkvzytgh";

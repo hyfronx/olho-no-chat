@@ -56,11 +56,15 @@
         <Setter Property="Height" Value="44" />
     </Style>
 
+    <!-- The thin scroll bar of the new windows (Estilos/Rolagem.xaml), so every window looks the same -->
     <Style x:Key="SettingsPageScroll" TargetType="ScrollViewer">
+        <Style.Resources>
+            <ResourceDictionary Source="/OlhoNoChat;component/Estilos/Rolagem.xaml" />
+        </Style.Resources>
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="ui:ScrollViewerHelper.AutoHideScrollBars" Value="True" />
+        <Setter Property="Template" Value="{DynamicResource ModeloDaRolagem}" />
     </Style>
 
     <Style x:Key="SettingsPagePanel" TargetType="StackPanel">
@@ -301,6 +305,9 @@
 
     <!-- CSS editors (custom chat themes). Light background: the CSS colouring is made for it. -->
     <Style x:Key="SettingsCodeEditorBorder" TargetType="Border">
+        <Style.Resources>
+            <ResourceDictionary Source="/OlhoNoChat;component/Estilos/Rolagem.xaml" />
+        </Style.Resources>
         <Setter Property="BorderBrush" Value="{StaticResource SettingsCardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="10" />

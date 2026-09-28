@@ -32,6 +32,24 @@ internal static class JanelaDoWindows
         SetWindowPos(janela, HWND_TOPMOST, 0, 0, 0, 0, opcoes);
     }
 
+    /// <summary>
+    /// Põe a janela no centro da área útil do monitor onde está <paramref name="referencia"/> (o chat). Chamar
+    /// quando a janela já existe no Windows e ainda não apareceu.
+    /// </summary>
+    public static void CentralizarNoMonitorDe(IntPtr janela, IntPtr referencia)
+    {
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (!GetWindowRect(janela, out RECT tamanho)
+            || !GetMonitorInfo(MonitorFromWindow(referencia, MONITOR_DEFAULTTONEAREST), ref info))
+            return;
+
+        RECT area = info.rcWork;
+        int largura = tamanho.Right - tamanho.Left, altura = tamanho.Bottom - tamanho.Top;
+        int x = area.Left + (area.Right - area.Left - largura) / 2;
+        int y = area.Top + Math.Max(0, (area.Bottom - area.Top - altura) / 2);
+        SetWindowPos(janela, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+
     /// <summary>Dá o foco à janela, se o Windows deixar.</summary>
     public static bool DarFoco(IntPtr janela) => SetForegroundWindow(janela);
 

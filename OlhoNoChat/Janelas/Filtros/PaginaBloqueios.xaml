@@ -1,0 +1,80 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Filtros.PaginaBloqueios"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- Os estilos com nome vêm da janela (DynamicResource). DataContext = LogicaFiltros. -->
+    <UserControl.Resources>
+        <ctl:VisivelSe x:Key="VisivelSe" />
+
+        <!-- Um nome bloqueado, com o "×" que o tira só desta lista -->
+        <DataTemplate x:Key="FichaDoBloqueado">
+            <Border Style="{DynamicResource Ficha}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                    <Button Style="{DynamicResource BotaoDaFicha}"
+                            AutomationProperties.Name="{Binding StringFormat='Tirar {0} da lista'}"
+                            Command="{Binding DataContext.DesbloquearCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
+        <StackPanel Style="{DynamicResource PainelDaPagina}">
+            <TextBlock Text="Bloqueios" Style="{DynamicResource TituloDaPagina}" />
+            <TextBlock Text="As mensagens destas pessoas nunca aparecem no chat." Style="{DynamicResource SubtituloDaPagina}" />
+
+            <TextBlock Text="Pessoas bloqueadas" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <!-- Enter bloqueia (em vez de salvar a janela) -->
+                        <TextBox x:Name="caixaNovoBloqueado" ctl:CaixaDeTexto.TextoDeExemplo="Nome do usuário na Twitch"
+                                 AutomationProperties.Name="Nome do usuário para bloquear"
+                                 Text="{Binding NovoBloqueado, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding BloquearCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button x:Name="botaoBloquear" Grid.Column="1" Margin="8,0,0,0" MinWidth="110" AutomationProperties.Name="Bloquear"
+                                Command="{Binding BloquearCommand}" Click="BotaoBloquear_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE710;" Style="{DynamicResource Icone}" FontSize="12" />
+                                <TextBlock Text="Bloquear" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock x:Name="erroNovoBloqueado" Text="{Binding ErroNovoBloqueado}" Style="{DynamicResource Erro}" Margin="2,6,0,0"
+                               Visibility="{Binding ErroNovoBloqueado, Converter={StaticResource VisivelSe}}" />
+                    <ItemsControl x:Name="listaDeBloqueados" Margin="0,12,0,0" Focusable="False" AutomationProperties.Name="Pessoas bloqueadas"
+                                  ItemsSource="{Binding UsuariosBloqueados}" ItemTemplate="{StaticResource FichaDoBloqueado}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <TextBlock x:Name="bloqueadosVazia" Text="Ninguém bloqueado." Style="{DynamicResource Dica}" Margin="2,2,0,0"
+                               Visibility="{Binding BloqueadosVazia, Converter={StaticResource VisivelSe}}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{DynamicResource CartaoDeAviso}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
+                    <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
+                               Text="Para esconder todos os bots e comandos de uma vez, use &quot;Esconder bots e comandos&quot; na aba Chat das configurações." />
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

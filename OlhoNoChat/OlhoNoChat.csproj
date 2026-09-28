@@ -34,6 +34,7 @@
 	<!-- NuGet package dependencies -->
 	<ItemGroup>
 		<PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
 		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />

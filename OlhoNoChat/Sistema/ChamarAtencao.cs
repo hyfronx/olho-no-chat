@@ -16,6 +16,7 @@ namespace OlhoNoChat.Sistema;
 /// </summary>
 internal static class ChamarAtencao
 {
+    private static readonly Color LaranjaDaMoldura = Color.FromRgb(0xE8, 0x5D, 0x30);
     private static readonly Color CorDaPiscada = Color.FromRgb(0xFF, 0xE4, 0xD8);
     private static readonly TimeSpan DuracaoDaPiscada = TimeSpan.FromMilliseconds(340);
     private const int Piscadas = 3;
@@ -87,9 +88,10 @@ internal static class ChamarAtencao
     // contorno claro em volta da janela inteira. Devolve false para janelas sem essa moldura.
     private static bool PiscarMoldura(Window janela)
     {
-        if (janela.Content is not Grid moldura || moldura.Background is not SolidColorBrush pincel
-            || Application.Current.TryFindResource("SettingsAccentBrush") is not SolidColorBrush laranja
-            || (Color)pincel.GetAnimationBaseValue(SolidColorBrush.ColorProperty) != laranja.Color)
+        // Nas janelas novas (Janelas/JanelaComMoldura) a moldura é o "Moldura" do modelo; nas antigas, o painel principal
+        Grid? moldura = janela.Template?.FindName("Moldura", janela) as Grid ?? janela.Content as Grid;
+        if (moldura?.Background is not SolidColorBrush pincel
+            || (Color)pincel.GetAnimationBaseValue(SolidColorBrush.ColorProperty) != LaranjaDaMoldura)
             return false;
 
         if (pincel.IsFrozen)

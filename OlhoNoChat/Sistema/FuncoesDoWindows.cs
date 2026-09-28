@@ -136,6 +136,39 @@ internal static partial class FuncoesDoWindows
     [LibraryImport("user32.dll")]
     public static partial int SetWindowRgn(IntPtr janela, IntPtr regiao, [MarshalAs(UnmanagedType.Bool)] bool redesenhar);
 
+    // Posição das janelas e área útil do monitor (sem a barra de tarefas)
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    public const uint MONITOR_DEFAULTTONEAREST = 2;
+    public const uint SWP_NOZORDER = 0x0004;
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetWindowRect(IntPtr janela, out RECT retangulo);
+
+    [LibraryImport("user32.dll")]
+    public static partial IntPtr MonitorFromWindow(IntPtr janela, uint opcoes);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetMonitorInfoW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+
     // Teclado
     public const uint KEYEVENTF_KEYUP = 0x2;
 

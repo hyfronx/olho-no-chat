@@ -1,8 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using Velopack;
-using Velopack.Sources;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
 using MessageBox = System.Windows.MessageBox;
@@ -25,7 +23,7 @@ using OlhoNoChat.Inicio;
 using OlhoNoChat.Sistema;
 using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
-using OlhoNoChat.View;
+using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Configuracoes;
 
 /// <summary>
@@ -42,6 +40,10 @@ public partial class MainWindow : Window
     private readonly ListaDeEmotes _listaDeEmotes;
     private readonly ResgatesDePontos _resgates;
     private readonly AtalhosGlobais _atalhos;
+    private readonly ProcuraDeAtualizacoes _atualizacoes;
+
+    // Configurações aberta (só uma por vez: pedir de novo traz a aberta para a frente)
+    private SettingsWindow _janelaDeConfiguracoes;
 
     private WebView2 webView;
     private bool hasWebView2Runtime = false;
@@ -57,7 +59,8 @@ public partial class MainWindow : Window
     private Chat _currentChat = new WelcomeChat();
 
     public MainWindow(IServiceProvider serviceProvider, ILogger<MainWindow> logger, ContaDaTwitch conta,
-        AutorizacaoNoNavegador autorizacao, EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates)
+        AutorizacaoNoNavegador autorizacao, EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates,
+        ProcuraDeAtualizacoes atualizacoes)
     {
         InitializeComponent();
         SetupQuickPanels();
@@ -72,6 +75,10 @@ public partial class MainWindow : Window
         _resgates.Resgatado += MostrarResgate;
         _aviso.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
         _atalhos = new AtalhosGlobais(logger);
+        _atualizacoes = atualizacoes;
+        // "Atualizar agora": o Velopack fecha o app sem passar pelo Closing, então a posição vai para as opções antes
+        _atualizacoes.AntesDeReiniciar = () => App.Opcoes.Janela = PosicaoDaJanela.De(this);
+        _atualizacoes.ProcuraAutomaticaDesligada += () => _janelaDeConfiguracoes?.ProcuraAutomaticaDesligada();
         this.Closed += (s, e) =>
         {
             _atalhos.Dispose();
@@ -475,7 +482,7 @@ public partial class MainWindow : Window
 
     private void MenuItem_CheckForUpdates(object sender, RoutedEventArgs e)
     {
-        _ = CheckForUpdateAsync(notifyIfNoUpdate: true);
+        _ = _atualizacoes.ProcurarAsync(manual: true, dono: null);
     }
 
     private void btnHide_Click(object sender, RoutedEventArgs e)
@@ -671,14 +678,22 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Só uma janela de Configurações: pedir de novo (menu perto do relógio, /settings) traz a aberta para a frente
+        if (_janelaDeConfiguracoes != null)
+        {
+            _janelaDeConfiguracoes.Activate();
+            return;
+        }
+
         // Atalhos devolvidos ao Windows enquanto Configurações está aberta: a combinação pode ser gravada na caixa
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
         var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
+        _janelaDeConfiguracoes = settingsWindow;
 
         settingsWindow.CheckForUpdateRequested += () => {
-            _ = CheckForUpdateAsync(notifyIfNoUpdate: true, settingsWindow);
+            _ = _atualizacoes.ProcurarAsync(manual: true, dono: settingsWindow);
         };
 
         // What the open chat page was loaded with, to know if a save needs to load it again
@@ -707,6 +722,7 @@ public partial class MainWindow : Window
         finally
         {
             _settingsDialogOpen = false;
+            _janelaDeConfiguracoes = null;
         }
         TryShowWriteHint();
 
@@ -766,83 +782,13 @@ public partial class MainWindow : Window
         // Every time the app opens (it used to be once a day)
         if (App.Opcoes.ProcurarAtualizacoes)
         {
-            _ = CheckForUpdateAsync();
+            _ = _atualizacoes.ProcurarAsync(manual: false, dono: null);
         }
     }
 
     private void btnClose_Click(object sender, RoutedEventArgs e)
     {
         Close();
-    }
-
-    private async Task CheckForUpdateAsync(bool notifyIfNoUpdate = false, Window owner = null)
-    {
-#if DEBUG
-        var dialog = new UpdateDialog("1.1.0", "1.1.5");
-        dialog.Owner = owner;
-        dialog.ShowDialog();
-#else
-        _logger.LogInformation("Checking for updates...");
-
-        var mgr = new UpdateManager(new GithubSource(InfoDoApp.EnderecoDoRepositorio, null, false));
-
-        try
-        {
-            var newVersion = await mgr.CheckForUpdatesAsync();
-
-            if (newVersion == null)
-            {
-                _logger.LogInformation("No updates available.");
-                if (notifyIfNoUpdate)
-                {
-                    MessageBox.Show("Você já está com a versão mais recente!", "Sem atualizações", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                return; // no update available
-            }
-
-            string currentVersionStr = mgr.CurrentVersion?.ToString() ?? "0.0.0";
-            string newVersionStr = newVersion.TargetFullRelease.Version.ToString();
-
-            // Create and show the custom dialog
-            var dialog = new UpdateDialog(currentVersionStr, newVersionStr);
-            dialog.Owner = owner;
-
-            // ShowDialog() pauses execution until the window is closed
-            if (dialog.ShowDialog() == true)
-            {
-                // User clicked "Update Now"
-                _logger.LogInformation($"Downloading and applying update to version {newVersionStr}...");
-                await mgr.DownloadUpdatesAsync(newVersion);
-                mgr.ApplyUpdatesAndRestart(newVersion);
-            }
-            else
-            {
-                // User clicked "Later" or closed the window.
-                // Now, check if they want to disable future updates.
-                if (dialog.ShouldDisableUpdates)
-                {
-                    _logger.LogInformation("User has disabled automatic update checks.");
-                    App.Opcoes.ProcurarAtualizacoes = false;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking for updates (Outer Exception)");
-
-            if (ex.InnerException != null)
-            {
-                _logger.LogError(ex.InnerException, "INNER EXCEPTION DETAILS");
-            }
-
-            // The automatic check at startup fails silently (e.g. offline, or no release published yet).
-            if (notifyIfNoUpdate)
-            {
-                MessageBox.Show("Não foi possível procurar atualizações agora. Confira sua internet e tente de novo mais tarde.\n\nDetalhes: " + ex.Message,
-                    "Procurar atualizações", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-#endif
     }
 
     private void SetupBrowser()
