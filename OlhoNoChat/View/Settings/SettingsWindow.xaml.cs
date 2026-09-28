@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using OlhoNoChat.Atalhos;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -212,7 +213,7 @@ public partial class SettingsWindow : Window
             {
                 case ComboBoxItem:
                 case ComboBox { IsDropDownOpen: true }:
-                case HotkeyEditorControl { IsCapturing: true }:
+                case EditorDeAtalho { Gravando: true }:
                     return true;
             }
 
@@ -285,7 +286,7 @@ public partial class SettingsWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        AppWindowFrame.Apply(this); // own close button, no gray line around
+        Sistema.MolduraDaJanela.Aplicar(this); // own close button, no gray line around
 
         // Remember what the pages show once they have loaded the saved values
         Dispatcher.BeginInvoke(new Action(() => _savedState = CurrentState()), DispatcherPriority.ContextIdle);

@@ -315,7 +315,7 @@ public partial class MainWindow
     private void ShowWelcomePage()
     {
         _currentChat = new WelcomeChat();
-        string page = new Uri(LocalHtmlHelper.GetIndexHtmlPath()).AbsoluteUri;
+        string page = new Uri(InfoDoApp.PaginaDeBoasVindas).AbsoluteUri;
         NavigateToUrl(ChatTypeUsesChannel ? page + "?canal" : page);
     }
 }

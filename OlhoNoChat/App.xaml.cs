@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Shell;
 using System.Windows.Threading;
+using OlhoNoChat.Inicio;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.View.Settings;
 using Velopack;
@@ -19,6 +19,8 @@ namespace OlhoNoChat
     {
         public static readonly AppSettings Settings = new AppSettings();
         public static bool IsShuttingDown { get; set; } = false;
+
+        private InstanciaUnica _instanciaUnica;
 
         public App()
         {
@@ -42,28 +44,27 @@ namespace OlhoNoChat
 
                 Settings.Init();
 
-                // Try to become the IPC server. If it fails, another instance is already running.
-                if (!IpcManager.StartServer())
+                // Só uma cópia principal: uma cópia aberta depois manda os argumentos para a primeira
+                _instanciaUnica = InstanciaUnica.TentarSerAPrimeira(Dispatcher);
+                if (_instanciaUnica == null)
                 {
-                    // We are another instance. Always send arguments to the first instance.
-                    await IpcManager.SendArgumentsToFirstInstance(e.Args);
+                    await InstanciaUnica.EnviarParaAPrimeiraAsync(e.Args);
 
-                    // If it was a jump list action OR single-instance mode is on, we are done. Exit now.
+                    // Ação da barra de tarefas, ou "várias cópias" desligado: esta cópia fecha
                     if (e.Args.Length > 0 || !Settings.GeneralSettings.AllowMultipleInstances)
                     {
-                        // Immediately shut down this new instance.
                         Application.Current.Shutdown();
                         return;
                     }
-        
-                    // If we get here, it means:
-                    // 1. We are another instance.
-                    // 2. It was NOT a jump list action.
-                    // 3. Multi-instance IS allowed.
-                    // Therefore, we can proceed to launch a new full instance.
                 }
-
-                IpcManager.ArgumentsReceived += ProcessCommandLineArgsFromSecondInstance;
+                else
+                {
+                    _instanciaUnica.PedidoRecebido += comandos =>
+                    {
+                        if (Application.Current.MainWindow is MainWindow janela)
+                            janela.ExecutarComandos(comandos);
+                    };
+                }
 
                 // Hook the global unhandled exception handler
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -90,7 +91,7 @@ namespace OlhoNoChat
                 var mainWindow = services.BuildServiceProvider().GetRequiredService<MainWindow>();
 
                 // Let the main window process its own startup arguments
-                mainWindow.ProcessCommandLineArgs(e.Args);
+                mainWindow.ExecutarComandos(ArgumentosDoApp.Ler(e.Args));
                 mainWindow.Show();
 
                 // Every full instance sets up the jump list, so it stays right even after the first instance
@@ -99,7 +100,7 @@ namespace OlhoNoChat
                 {
                     try
                     {
-                        CreateJumpList();
+                        AcoesDaBarraDeTarefas.Montar(this);
                     }
                     catch (Exception ex)
                     {
@@ -124,49 +125,9 @@ namespace OlhoNoChat
             }
         }
 
-        private void CreateJumpList()
-        {
-            JumpList jumplist = new JumpList();
-
-            jumplist.JumpItems.Add(new JumpTask
-            {
-                Title = "Mostrar/esconder bordas",
-                CustomCategory = "Ações",
-                Arguments = "/toggleborders"
-            });
-
-            jumplist.JumpItems.Add(new JumpTask
-            {
-                Title = "Configurações",
-                CustomCategory = "Ações",
-                Arguments = "/settings"
-            });
-
-            jumplist.JumpItems.Add(new JumpTask
-            {
-                Title = "Restaurar posição da janela",
-                CustomCategory = "Ações",
-                Arguments = "/resetwindow"
-            });
-
-            jumplist.ShowFrequentCategory = false;
-            jumplist.ShowRecentCategory = false;
-
-            JumpList.SetJumpList(Application.Current, jumplist);
-        }
-
-        private void ProcessCommandLineArgsFromSecondInstance(string[] args)
-        {
-            // Find the running MainWindow and ask it to process the arguments.
-            if (Application.Current.MainWindow is MainWindow mw)
-            {
-                mw.ProcessCommandLineArgs(args);
-            }
-        }
-
         protected override void OnExit(ExitEventArgs e)
         {
-            IpcManager.StopServer();
+            _instanciaUnica?.Dispose();
             base.OnExit(e);
         }
 

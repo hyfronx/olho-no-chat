@@ -1,5 +1,6 @@
 namespace OlhoNoChat;
 
+using OlhoNoChat.Atalhos;
 using System.Windows.Input;
 
 /// <summary>
@@ -45,8 +46,8 @@ public partial class MainWindow
 
         _bordersHintPending = false;
 
-        Hotkey hotkey = App.Settings.GeneralSettings.ToggleBordersHotkey;
-        string howTo = hotkey != null && hotkey.Key != Key.None
+        Atalho hotkey = App.Settings.GeneralSettings.ToggleBordersHotkey;
+        string howTo = Atalho.Existe(hotkey)
             ? $"Para mostrar de novo: aperte {hotkey}, ou clique com o botão direito no ícone do Olho no Chat perto do relógio."
             : "Para mostrar de novo: clique com o botão direito no ícone do Olho no Chat perto do relógio.";
 

@@ -1,5 +1,6 @@
 namespace OlhoNoChat;
 
+using OlhoNoChat.Atalhos;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,7 +8,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NHotkey;
+using OlhoNoChat.Sistema;
 using OlhoNoChat.Twitch;
 
 /// <summary>
@@ -114,8 +115,8 @@ public partial class MainWindow
 
     private string WriteHintText()
     {
-        Hotkey hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
-        string inGame = hotkey != null && hotkey.Key != Key.None
+        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        string inGame = Atalho.Existe(hotkey)
             ? $"No jogo, aperte {hotkey} para abrir ou fechar a caixa de escrever."
             : "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.";
 
@@ -155,7 +156,7 @@ public partial class MainWindow
         if (show)
             tbChatMessage.ToolTip = $"Vai para o chat de {ChatChannel} como {_twitchAccount.DisplayName}";
 
-        Hotkey hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
         btnCloseChatBox.ToolTip = WithHotkey(_composing ? "Fechar a caixa e voltar para o jogo (Esc)." : "Fechar a caixa (Esc).", hotkey);
 
         // "Escrever" is lit while the box is open, and only offered where one can write
@@ -217,9 +218,8 @@ public partial class MainWindow
         this.overlay.SetValue(Grid.RowSpanProperty, rows);
     }
 
-    private void OnHotKeyWriteMessage(object sender, HotkeyEventArgs e)
+    private void OnHotKeyWriteMessage()
     {
-        e.Handled = true;
         if (!hasWebView2Runtime) return;
 
         // Pressed again closes the box; a box opened with "Escrever" while the game is in front gets the focus instead
@@ -253,14 +253,14 @@ public partial class MainWindow
     private void StartCompose()
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
-        IntPtr foreground = WindowHelper.GetForegroundWindow();
+        IntPtr foreground = JanelaDoWindows.JanelaEmFoco();
         _composeReturnWindow = foreground != hwnd ? foreground : IntPtr.Zero;
         _composing = true;
         _composingInTwitchBox = UseTwitchChatBox;
 
         // The window takes clicks and keys while the box is open
         if (_hiddenBorders)
-            WindowHelper.SetWindowExDefault(hwnd);
+            JanelaDoWindows.TornarClicavel(hwnd);
 
         if (_composingInTwitchBox)
         {
@@ -319,13 +319,13 @@ public partial class MainWindow
         {
             SetChatRowSpan(2);
             if (CurrentDisplayMode == WindowDisplayMode.Overlay)
-                WindowHelper.SetWindowExTransparent(new WindowInteropHelper(this).Handle);
+                JanelaDoWindows.DeixarCliqueAtravessar(new WindowInteropHelper(this).Handle);
         }
 
         UpdateChatInput();
 
         if (returnFocus && _composeReturnWindow != IntPtr.Zero)
-            WindowHelper.SetForegroundWindow(_composeReturnWindow);
+            JanelaDoWindows.DarFoco(_composeReturnWindow);
         _composeReturnWindow = IntPtr.Zero;
     }
 

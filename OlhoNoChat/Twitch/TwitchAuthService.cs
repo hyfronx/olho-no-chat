@@ -1,3 +1,4 @@
+using OlhoNoChat.Sistema;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
@@ -84,13 +85,13 @@ public class TwitchAuthService : ITwitchAuthService
     private static void LaunchBrowser(string state, string redirectUri)
     {
         string url = "https://id.twitch.tv/oauth2/authorize?response_type=token"
-            + "&client_id=" + AppInfo.TwitchClientId
+            + "&client_id=" + InfoDoApp.TwitchClientId
             + "&redirect_uri=" + Uri.EscapeDataString(redirectUri)
-            + "&scope=" + Uri.EscapeDataString(AppInfo.TwitchScopes)
+            + "&scope=" + Uri.EscapeDataString(InfoDoApp.PermissoesDaTwitch)
             + "&force_verify=true"
             + "&state=" + state;
 
-        ShellHelper.OpenUrl(url);
+        AbrirNoWindows.Site(url);
     }
 
     private async Task<string> ListenAsync(CancellationToken cancellationToken)

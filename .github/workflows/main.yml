@@ -25,11 +25,16 @@ jobs:
         with:
           global-json-file: global.json
 
-      # 3. Build application for release (publish restores the packages itself)
+      # 3. Automatic tests: a failing test stops here, and nothing is published
+      - name: Run tests
+        run: dotnet test OlhoNoChat.Testes/OlhoNoChat.Testes.csproj -c Release
+
+      # 4. Build application for release (publish restores the packages itself). Only the app project:
+      #    publishing the whole solution would put the test project inside the installer
       - name: Build and publish application
-        run: dotnet publish -c Release -o publish -r win-x64 --self-contained true
+        run: dotnet publish OlhoNoChat/OlhoNoChat.csproj -c Release -o publish -r win-x64 --self-contained true
         
-      # 4. Get the version number from the Git tag
+      # 5. Get the version number from the Git tag
       - name: Get version from tag
         id: get-version
         run: |
@@ -37,7 +42,7 @@ jobs:
             echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
-      # 5. Download, Pack, and Upload with Velopack
+      # 6. Download, Pack, and Upload with Velopack
       - name: Create and Upload Velopack Release
         run: |
           dotnet tool install -g vpk --version 0.0.1298

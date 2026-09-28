@@ -77,7 +77,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Title bar, with its own close button (see Helpers/AppWindowFrame.cs) -->
+        <!-- Title bar, with its own close button (see Sistema/MolduraDaJanela.cs) -->
         <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
             <ui:FontIcon Glyph="&#xE71C;" FontSize="16" Foreground="White" VerticalAlignment="Center" />
             <TextBlock Text="Filtros do chat" FontSize="15" FontWeight="SemiBold" Foreground="White"

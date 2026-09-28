@@ -2,7 +2,6 @@ namespace OlhoNoChat;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
-using NHotkey.Wpf;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
@@ -205,7 +204,7 @@ public partial class MainWindow
         _chatPageReloadTimer?.Stop(); // the new browser loads the chat itself
         if (!TryCountRecovery(_webViewRebuilds, out _))
         {
-            HotkeyManager.Current.IsEnabled = false; // the old chat can't be used anymore
+            _atalhos.Ligados = false; // the old chat can't be used anymore
             await Task.Yield(); // no dialog inside the WebView2 event
             MessageBox.Show("Erro grave: o navegador interno parou várias vezes seguidas. O app será fechado.",
                 "Falha na recuperação", MessageBoxButton.OK, MessageBoxImage.Stop);

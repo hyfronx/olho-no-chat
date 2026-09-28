@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using OlhoNoChat.Sistema;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using OlhoNoChat.Utils;
@@ -17,14 +18,14 @@ namespace OlhoNoChat.View.Settings
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
-            ShellHelper.OpenUrl(e.Uri.AbsoluteUri);
+            AbrirNoWindows.Site(e.Uri.AbsoluteUri);
             e.Handled = true;
         }
 
         private void Link_Click(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement { Tag: string url })
-                ShellHelper.OpenUrl(url);
+                AbrirNoWindows.Site(url);
         }
     }
 }

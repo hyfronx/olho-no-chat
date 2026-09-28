@@ -1,6 +1,6 @@
 namespace OlhoNoChat;
 
-using System.Runtime.InteropServices;
+using OlhoNoChat.Sistema;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -15,19 +15,6 @@ public partial class MainWindow
     private const double CornerGripSize = 16;
     private const int WM_NCHITTEST = 0x0084;
     private const int HTBOTTOMRIGHT = 17;
-    private const int RGN_DIFF = 4;
-
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateRectRgn(int left, int top, int right, int bottom);
-
-    [DllImport("gdi32.dll")]
-    private static extern int CombineRgn(IntPtr destination, IntPtr source1, IntPtr source2, int mode);
-
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr gdiObject);
-
-    [DllImport("user32.dll")]
-    private static extern int SetWindowRgn(IntPtr hwnd, IntPtr region, bool redraw);
 
     private bool _chatCornerCut = false;
 
@@ -70,7 +57,7 @@ public partial class MainWindow
         if (!cut)
         {
             if (_chatCornerCut)
-                SetWindowRgn(this.webView.Handle, IntPtr.Zero, true);
+                JanelaDoWindows.TirarRecorte(this.webView.Handle);
             _chatCornerCut = false;
             return;
         }
@@ -81,15 +68,7 @@ public partial class MainWindow
         int cutWidth = (int)Math.Ceiling((CornerGripSize - ResizeEdgeMargin.Right) * dpi.DpiScaleX);
         int cutHeight = (int)Math.Ceiling((CornerGripSize - ResizeEdgeMargin.Bottom) * dpi.DpiScaleY);
 
-        IntPtr region = CreateRectRgn(0, 0, width, height);
-        IntPtr corner = CreateRectRgn(width - cutWidth, height - cutHeight, width, height);
-        CombineRgn(region, region, corner, RGN_DIFF);
-        DeleteObject(corner);
-
-        // The window owns the region from here on
-        if (SetWindowRgn(this.webView.Handle, region, true) == 0)
-            DeleteObject(region);
-        else
+        if (JanelaDoWindows.RecortarCantoDeBaixo(this.webView.Handle, width, height, cutWidth, cutHeight))
             _chatCornerCut = true;
     }
 }

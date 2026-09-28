@@ -3,7 +3,7 @@
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
 
     <!-- Title bars of every window: the app draws its own buttons (the window's own ones are hidden,
-         see Helpers/AppWindowFrame.cs) so they look the same everywhere -->
+         see Sistema/MolduraDaJanela.cs) so they look the same everywhere -->
 
     <!-- Icons of the title bars: the rounder Windows 11 icons (Windows 10 has only the older ones) -->
     <FontFamily x:Key="TitleIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>

@@ -91,7 +91,7 @@ public class TwitchAccount
             response.EnsureSuccessStatusCode();
 
             var info = JsonNode.Parse(await response.Content.ReadAsStringAsync());
-            if ((string)info?["client_id"] != AppInfo.TwitchClientId)
+            if ((string)info?["client_id"] != InfoDoApp.TwitchClientId)
             {
                 _logger.LogInformation("Saved Twitch access belongs to another application; forgetting it.");
                 Forget();
@@ -160,7 +160,7 @@ public class TwitchAccount
                 {
                     var body = new FormUrlEncodedContent(new Dictionary<string, string>
                     {
-                        ["client_id"] = AppInfo.TwitchClientId,
+                        ["client_id"] = InfoDoApp.TwitchClientId,
                         ["token"] = token
                     });
                     using var response = await Http.PostAsync("https://id.twitch.tv/oauth2/revoke", body);
@@ -448,7 +448,7 @@ public class TwitchAccount
     {
         var request = new HttpRequestMessage(method, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Headers.Add("Client-Id", AppInfo.TwitchClientId);
+        request.Headers.Add("Client-Id", InfoDoApp.TwitchClientId);
         return request;
     }
 }

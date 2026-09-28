@@ -1,4 +1,5 @@
-﻿using Jot;
+﻿using OlhoNoChat.Atalhos;
+using Jot;
 using Jot.Storage;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -62,7 +63,7 @@ public class AppSettings
 
     public AppSettings()
     {
-        _userDataFolder = AppInfo.IsPortable ? Path.Combine(AppContext.BaseDirectory, "settings") : AppInfo.UserDataFolder;
+        _userDataFolder = InfoDoApp.EhPortatil ? Path.Combine(AppContext.BaseDirectory, "settings") : InfoDoApp.PastaDeDados;
 
         SetAsideSettingsOfOldVersions(_userDataFolder);
         Tracker = new Tracker(new JsonFileStore(_userDataFolder));
@@ -228,12 +229,12 @@ public class GeneralSettings
     public string DeviceName { get; set; } = string.Empty;
     public int DeviceID { get; set; } = -1;
     public string SoundClipsFolder { get; set; } = "Default";
-    public Hotkey ToggleBordersHotkey { get; set; } = new Hotkey(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);
-    public Hotkey ToggleInteractableHotkey { get; set; } = new Hotkey(Key.F7, ModifierKeys.Control | ModifierKeys.Alt);
+    public Atalho ToggleBordersHotkey { get; set; } = new Atalho(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);
+    public Atalho ToggleInteractableHotkey { get; set; } = new Atalho(Key.F7, ModifierKeys.Control | ModifierKeys.Alt);
     // "Sempre no topo" (pin of the title bar): the chat stays in front of the game and every other window.
     // Off: a normal window. BringToTopHotkey (named after the "Trazer para a frente" it used to be) switches it too.
     public bool AlwaysOnTop { get; set; } = true;
-    public Hotkey BringToTopHotkey { get; set; } = new Hotkey(Key.F8, ModifierKeys.Control | ModifierKeys.Alt);
-    public Hotkey WriteMessageHotkey { get; set; } = new Hotkey(Key.F11, ModifierKeys.Control | ModifierKeys.Alt); // F10: Alt+F10 is a common game-capture shortcut
+    public Atalho BringToTopHotkey { get; set; } = new Atalho(Key.F8, ModifierKeys.Control | ModifierKeys.Alt);
+    public Atalho WriteMessageHotkey { get; set; } = new Atalho(Key.F11, ModifierKeys.Control | ModifierKeys.Alt); // F10: Alt+F10 is a common game-capture shortcut
     public bool AllowMultipleInstances { get; set; } = false;
 }

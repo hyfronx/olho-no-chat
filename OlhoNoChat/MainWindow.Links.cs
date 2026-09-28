@@ -1,5 +1,6 @@
 namespace OlhoNoChat;
 
+using OlhoNoChat.Sistema;
 using Microsoft.Web.WebView2.Core;
 using OlhoNoChat.Utils;
 
@@ -22,7 +23,7 @@ public partial class MainWindow
             if (!_hiddenBorders && Uri.TryCreate(e.Uri, UriKind.Absolute, out Uri uri)
                 && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
             {
-                ShellHelper.OpenUrl(uri.AbsoluteUri);
+                AbrirNoWindows.Site(uri.AbsoluteUri);
             }
         };
     }

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:onc="clr-namespace:OlhoNoChat"
+             xmlns:atalhos="clr-namespace:OlhoNoChat.Atalhos"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              ui:ThemeManager.RequestedTheme="Dark"
              mc:Ignorable="d"
@@ -96,7 +97,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Mostrar/esconder as bordas" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
-                            <onc:HotkeyEditorControl x:Name="hotkeyInputToggleBorders" Grid.Column="1" Width="180" />
+                            <atalhos:EditorDeAtalho x:Name="hotkeyInputToggleBorders" Grid.Column="1" Width="180" />
                             <Button Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Name="btCaptureHotkeyToggleBorders" Content="Mudar atalho" Click="CaptureHotkey_Click" />
                         </Grid>
 
@@ -107,7 +108,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Modo rolagem (rolar o chat com o mouse)" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
-                            <onc:HotkeyEditorControl x:Name="hotkeyInputToggleInteractable" Grid.Column="1" Width="180" />
+                            <atalhos:EditorDeAtalho x:Name="hotkeyInputToggleInteractable" Grid.Column="1" Width="180" />
                             <Button Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Name="btCaptureHotkeyInteractable" Content="Mudar atalho" Click="CaptureHotkey_Click" />
                         </Grid>
 
@@ -118,7 +119,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Sempre no topo (ligar/desligar)" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" />
-                            <onc:HotkeyEditorControl x:Name="hotkeyInputBringToTop" Grid.Column="1" Width="180" />
+                            <atalhos:EditorDeAtalho x:Name="hotkeyInputBringToTop" Grid.Column="1" Width="180" />
                             <Button Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Name="btCaptureHotkeyBringToTop" Content="Mudar atalho" Click="CaptureHotkey_Click" />
                         </Grid>
 
@@ -129,7 +130,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Escrever no chat (conta da Twitch conectada)" Style="{StaticResource SettingsLabel}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                            <onc:HotkeyEditorControl x:Name="hotkeyInputWriteMessage" Grid.Column="1" Width="180" />
+                            <atalhos:EditorDeAtalho x:Name="hotkeyInputWriteMessage" Grid.Column="1" Width="180" />
                             <Button Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Name="btCaptureHotkeyWriteMessage" Content="Mudar atalho" Click="CaptureHotkey_Click" />
                         </Grid>
                     </StackPanel>
@@ -161,7 +162,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock VerticalAlignment="Center" Style="{StaticResource SettingsHint}" Margin="0" FontSize="13">
                             <Run Text="Versão atual:" />
-                            <Run Text="{x:Static onc:AppInfo.Version}" Foreground="White" />
+                            <Run Text="{x:Static onc:InfoDoApp.Versao}" Foreground="White" />
                         </TextBlock>
                         <Button Name="btnCheckForUpdatesNow" Grid.Column="1" Content="Procurar agora" MinWidth="130" Click="btnCheckForUpdatesNow_Click" />
                     </Grid>

@@ -68,7 +68,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Own close button (see Helpers/AppWindowFrame.cs) -->
+        <!-- Own close button (see Sistema/MolduraDaJanela.cs) -->
         <Button Style="{StaticResource TitleCloseButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
                 ToolTip="Fechar (Esc)" AutomationProperties.Name="Fechar a janela" Click="CloseButton_Click">
             <ui:FontIcon FontFamily="{StaticResource TitleIconFont}" Glyph="&#xE8BB;" FontSize="11" />

@@ -1,0 +1,8 @@
+<UserControl x:Class="OlhoNoChat.Atalhos.EditorDeAtalho"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Só mostra o atalho: não recebe foco nem aceita digitação enquanto não está gravando (ver o .cs), e não
+         tem menu do botão direito (colar, recortar etc. não fazem sentido aqui) -->
+    <TextBox x:Name="caixa" Focusable="False" IsReadOnly="True" IsReadOnlyCaretVisible="False" ContextMenuService.IsEnabled="False"
+             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" PreviewKeyDown="Caixa_PreviewKeyDown" />
+</UserControl>

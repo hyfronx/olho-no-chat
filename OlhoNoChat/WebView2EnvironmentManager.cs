@@ -19,7 +19,7 @@ public static class WebView2EnvironmentManager
                     + " --disable-features=Translate,msEdgeTranslate,OptimizationHints,AutofillServerCommunication,MediaRouter"
             };
 
-            string userDataFolder = AppInfo.UserDataFolder;
+            string userDataFolder = InfoDoApp.PastaDeDados;
             _environmentTask = CoreWebView2Environment.CreateAsync(null, userDataFolder, options);
         }
 

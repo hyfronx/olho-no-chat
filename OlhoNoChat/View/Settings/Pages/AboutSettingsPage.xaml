@@ -64,9 +64,9 @@
                                 Background="#33E85D30" BorderBrush="#99E85D30" BorderThickness="1">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Versão " Foreground="{StaticResource SettingsAccentLightBrush}" FontWeight="SemiBold" />
-                                <TextBlock x:Name="tbVersion" Text="{x:Static onc:AppInfo.Version}" Foreground="{StaticResource SettingsAccentLightBrush}" FontWeight="SemiBold" />
+                                <TextBlock x:Name="tbVersion" Text="{x:Static onc:InfoDoApp.Versao}" Foreground="{StaticResource SettingsAccentLightBrush}" FontWeight="SemiBold" />
                                 <TextBlock Text=" (portátil)" Foreground="{StaticResource SettingsAccentLightBrush}" FontWeight="SemiBold"
-                                           Visibility="{Binding Path=(onc:AppInfo.IsPortable), Converter={StaticResource BoolToVisibility}}" />
+                                           Visibility="{Binding Path=(onc:InfoDoApp.EhPortatil), Converter={StaticResource BoolToVisibility}}" />
                             </StackPanel>
                         </Border>
 

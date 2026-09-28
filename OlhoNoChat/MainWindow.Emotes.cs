@@ -1,7 +1,7 @@
 namespace OlhoNoChat;
 
 using System.Net;
-using System.Runtime.InteropServices;
+using OlhoNoChat.Sistema;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -284,22 +284,11 @@ public partial class MainWindow
         FocusMessageBox();
     }
 
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extraInfo);
-
     // Windows emoji panel (the same as Win + .): it writes in the focused box
     private void btnEmojiPanel_Click(object sender, RoutedEventArgs e)
     {
         CloseEmotePopup();
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            const byte VK_LWIN = 0x5B, VK_OEM_PERIOD = 0xBE;
-            const uint KEYEVENTF_KEYUP = 0x2;
-            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
-            keybd_event(VK_OEM_PERIOD, 0, 0, UIntPtr.Zero);
-            keybd_event(VK_OEM_PERIOD, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-        }), DispatcherPriority.Input);
+        Dispatcher.BeginInvoke(new Action(JanelaDoWindows.AbrirPainelDeEmojis), DispatcherPriority.Input);
     }
 
     // "Conectar de novo" in the list: the same as in the Twitch tab (the browser asks for the new permission)

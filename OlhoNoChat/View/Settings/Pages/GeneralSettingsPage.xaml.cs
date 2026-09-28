@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using OlhoNoChat.Atalhos;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace OlhoNoChat.View.Settings;
@@ -25,10 +26,10 @@ public partial class GeneralSettingsPage : UserControl
         this.cbCheckForUpdates.IsOn = App.Settings.GeneralSettings.CheckForUpdates;
         this.cbMultiInstance.IsOn = App.Settings.GeneralSettings.AllowMultipleInstances;
 
-        this.hotkeyInputToggleBorders.Hotkey = App.Settings.GeneralSettings.ToggleBordersHotkey;
-        this.hotkeyInputToggleInteractable.Hotkey = App.Settings.GeneralSettings.ToggleInteractableHotkey;
-        this.hotkeyInputBringToTop.Hotkey = App.Settings.GeneralSettings.BringToTopHotkey;
-        this.hotkeyInputWriteMessage.Hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        this.hotkeyInputToggleBorders.Atalho = App.Settings.GeneralSettings.ToggleBordersHotkey;
+        this.hotkeyInputToggleInteractable.Atalho = App.Settings.GeneralSettings.ToggleInteractableHotkey;
+        this.hotkeyInputBringToTop.Atalho = App.Settings.GeneralSettings.BringToTopHotkey;
+        this.hotkeyInputWriteMessage.Atalho = App.Settings.GeneralSettings.WriteMessageHotkey;
     }
 
     public void SaveValues()
@@ -40,26 +41,26 @@ public partial class GeneralSettingsPage : UserControl
         App.Settings.GeneralSettings.AllowMultipleInstances = this.cbMultiInstance.IsOn;
 
         // Hotkeys
-        App.Settings.GeneralSettings.ToggleBordersHotkey = hotkeyInputToggleBorders.Hotkey;
-        App.Settings.GeneralSettings.ToggleInteractableHotkey = hotkeyInputToggleInteractable.Hotkey;
-        App.Settings.GeneralSettings.BringToTopHotkey = hotkeyInputBringToTop.Hotkey;
-        App.Settings.GeneralSettings.WriteMessageHotkey = hotkeyInputWriteMessage.Hotkey;
+        App.Settings.GeneralSettings.ToggleBordersHotkey = hotkeyInputToggleBorders.Atalho;
+        App.Settings.GeneralSettings.ToggleInteractableHotkey = hotkeyInputToggleInteractable.Atalho;
+        App.Settings.GeneralSettings.BringToTopHotkey = hotkeyInputBringToTop.Atalho;
+        App.Settings.GeneralSettings.WriteMessageHotkey = hotkeyInputWriteMessage.Atalho;
     }
 
     // "Mudar atalho" / "Confirmar" of a hotkey row (its editor is in the same row)
     private void CaptureHotkey_Click(object sender, RoutedEventArgs e)
     {
         var button = (Button)sender;
-        var editor = ((Grid)button.Parent).Children.OfType<HotkeyEditorControl>().Single();
+        var editor = ((Grid)button.Parent).Children.OfType<EditorDeAtalho>().Single();
 
-        if (editor.IsCapturing)
+        if (editor.Gravando)
         {
-            editor.StopCapturing();
+            editor.PararDeGravar();
             button.Content = "Mudar atalho";
         }
         else
         {
-            editor.StartCapturing();
+            editor.ComecarAGravar();
             button.Content = "Confirmar";
         }
     }

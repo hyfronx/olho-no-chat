@@ -1,5 +1,6 @@
 namespace OlhoNoChat;
 
+using OlhoNoChat.Atalhos;
 using Microsoft.Web.WebView2.Core;
 using System.Windows;
 using System.Windows.Controls;
@@ -197,9 +198,9 @@ public partial class MainWindow
         this.BackgroundPanel.IsOpen = false;
     }
 
-    private static string WithHotkey(string text, Hotkey hotkey)
+    private static string WithHotkey(string text, Atalho hotkey)
     {
-        return hotkey != null && hotkey.Key != System.Windows.Input.Key.None
+        return Atalho.Existe(hotkey)
             ? $"{text}\nAtalho: {hotkey}"
             : text;
     }

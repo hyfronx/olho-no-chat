@@ -14,15 +14,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
-using NHotkey;
-using NHotkey.Wpf;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using OlhoNoChat.Atalhos;
 using OlhoNoChat.Helpers;
+using OlhoNoChat.Inicio;
+using OlhoNoChat.Sistema;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.Utils;
 using OlhoNoChat.View;
@@ -37,6 +38,7 @@ public partial class MainWindow : Window
     private readonly ILogger<MainWindow> _logger;
     private TwitchService _twitchService; // created once redemptions are turned on (see EnsureTwitchService)
     private readonly TwitchAccount _twitchAccount;
+    private readonly AtalhosGlobais _atalhos;
 
     private WebView2 webView;
     private bool hasWebView2Runtime = false;
@@ -59,6 +61,8 @@ public partial class MainWindow : Window
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _twitchAccount = twitchAccount ?? throw new ArgumentNullException(nameof(twitchAccount));
+        _atalhos = new AtalhosGlobais(logger);
+        this.Closed += (s, e) => _atalhos.Dispose();
 
         App.Settings.Tracker.Configure<MainWindow>()
             .Id(w => w.GetType().Name + "_State", null, false)
@@ -91,87 +95,17 @@ public partial class MainWindow : Window
             PushNewChatMessageDispatcherInvoke(payloadEvent.UserInput, payloadEvent.UserName, "#a1b3c4");
     }
 
+    // Os quatro atalhos globais, registrados de novo a cada salvamento (um atalho trocado deixa de valer na hora)
     private void SetupOrReplaceHotkeys()
     {
-        HotkeyManager.Current.Remove("ToggleBorders");
-        HotkeyManager.Current.Remove("ToggleInteraction");
-        HotkeyManager.Current.Remove("AlwaysOnTop");
-        HotkeyManager.Current.Remove("WriteMessage");
-        _hotkeysToRetry.Clear();
-
         var settings = App.Settings.GeneralSettings;
-        RegisterHotkey("ToggleBorders", settings.ToggleBordersHotkey, OnHotKeyToggleBorders);
-        RegisterHotkey("ToggleInteraction", settings.ToggleInteractableHotkey, OnHotKeyToggleInteraction);
-        RegisterHotkey("AlwaysOnTop", settings.BringToTopHotkey, OnHotKeyToggleAlwaysOnTop);
-        RegisterHotkey("WriteMessage", settings.WriteMessageHotkey, OnHotKeyWriteMessage);
+        _atalhos.Definir("MostrarEsconderBordas", settings.ToggleBordersHotkey, ToggleBorderVisibility);
+        _atalhos.Definir("ModoRolagem", settings.ToggleInteractableHotkey, ToggleInteractable);
+        _atalhos.Definir("SempreNoTopo", settings.BringToTopHotkey, ToggleAlwaysOnTop);
+        _atalhos.Definir("EscreverNoChat", settings.WriteMessageHotkey, OnHotKeyWriteMessage);
 
         UpdateHotkeyTooltips();
     }
-
-    // Keyboard shortcuts work for one program at a time. One that another program is using right now
-    // (e.g. a second Olho no Chat that was open first) is tried again every few seconds, so it starts
-    // working as soon as that program lets it go.
-    private static readonly TimeSpan HotkeyRetryInterval = TimeSpan.FromSeconds(5);
-    private readonly Dictionary<string, (Hotkey Hotkey, EventHandler<HotkeyEventArgs> Handler)> _hotkeysToRetry = new();
-    private DispatcherTimer _hotkeyRetryTimer;
-
-    private bool RegisterHotkey(string name, Hotkey hotkey, EventHandler<HotkeyEventArgs> handler)
-    {
-        if (hotkey == null || hotkey.Key == Key.None)
-            return false;
-
-        try
-        {
-            HotkeyManager.Current.AddOrReplace(name, hotkey.Key, hotkey.Modifiers, handler);
-            _hotkeysToRetry.Remove(name);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            if (!_hotkeysToRetry.ContainsKey(name))
-                _logger.LogWarning(ex, "Hotkey {Name} ({Hotkey}) is in use by another program; trying again every few seconds.", name, hotkey);
-            _hotkeysToRetry[name] = (hotkey, handler);
-
-            if (_hotkeyRetryTimer == null)
-            {
-                _hotkeyRetryTimer = new DispatcherTimer { Interval = HotkeyRetryInterval };
-                _hotkeyRetryTimer.Tick += (s, e) => RetryHotkeys();
-            }
-            _hotkeyRetryTimer.Start();
-            return false;
-        }
-    }
-
-    private void RetryHotkeys()
-    {
-        foreach (var (name, pending) in _hotkeysToRetry.ToList())
-        {
-            if (RegisterHotkey(name, pending.Hotkey, pending.Handler))
-                _logger.LogInformation("Hotkey {Name} ({Hotkey}) works now.", name, pending.Hotkey);
-        }
-
-        if (_hotkeysToRetry.Count == 0)
-            _hotkeyRetryTimer?.Stop();
-    }
-
-    private void OnHotKeyToggleInteraction(object sender, HotkeyEventArgs e)
-    {
-        ToggleInteractable();
-        e.Handled = true;
-    }
-
-    private void OnHotKeyToggleAlwaysOnTop(object sender, HotkeyEventArgs e)
-    {
-        ToggleAlwaysOnTop();
-        e.Handled = true;
-    }
-
-    private void OnHotKeyToggleBorders(object sender, HotkeyEventArgs e)
-    {
-        ToggleBorderVisibility();
-        e.Handled = true;
-    }
-
 
     private void CheckWebView2Timer_Tick(object sender, EventArgs e)
     {
@@ -303,7 +237,7 @@ public partial class MainWindow : Window
         webView.NavigationCompleted += webView_NavigationCompleted;
         webView.WebMessageReceived += webView_WebMessageReceived;
         webView.CoreWebView2.ProcessFailed += webView_CoreWebView2ProcessFailed;
-        webView.CoreWebView2.SetVirtualHostNameToFolderMapping(LocalHtmlHelper.ChatPageHost, LocalHtmlHelper.BrowserFolder,
+        webView.CoreWebView2.SetVirtualHostNameToFolderMapping(InfoDoApp.HostDasPaginas, InfoDoApp.PastaDasPaginas,
             CoreWebView2HostResourceAccessKind.DenyCors);
 
         ApplyLightweightWebViewSettings(webView.CoreWebView2);
@@ -315,28 +249,27 @@ public partial class MainWindow : Window
             SetupBrowser();
     }
 
-    public void ProcessCommandLineArgs(string[] args)
+    // Argumentos desta abertura, ou pedidos de uma cópia aberta depois (ver InstanciaUnica)
+    public void ExecutarComandos(IReadOnlyList<ComandoDoApp> comandos)
     {
-        // Check if the command is our special "show window" command
-        if (args.Length > 0 && args[0] == IpcManager.ShowWindowCommand) {
-            if (AlwaysOnTop)
-                ReassertTopMost();
-            else
-                ActivateChatWindow();
-            return;
-        }
-
-        foreach (var arg in args)
+        foreach (ComandoDoApp comando in comandos)
         {
-            switch (arg.ToLower())
+            switch (comando)
             {
-                case "/toggleborders":
+                case ComandoDoApp.MostrarJanela:
+                    // Com "Sempre no topo" só vem para a frente, sem tirar o foco do jogo
+                    if (AlwaysOnTop)
+                        ReassertTopMost();
+                    else
+                        ActivateChatWindow();
+                    break;
+                case ComandoDoApp.AlternarBordas:
                     ToggleBorderVisibility();
                     break;
-                case "/settings":
+                case ComandoDoApp.AbrirConfiguracoes:
                     ShowSettingsWindow();
                     break;
-                case "/resetwindow":
+                case ComandoDoApp.RestaurarPosicao:
                     ResetWindowAndOfferSettingsFolder();
                     break;
             }
@@ -371,9 +304,9 @@ public partial class MainWindow : Window
         CurrentDisplayMode = interactable ? WindowDisplayMode.Setup : WindowDisplayMode.Overlay;
         var hwnd = new WindowInteropHelper(this).Handle;
         if (interactable)
-            WindowHelper.SetWindowExDefault(hwnd);
+            JanelaDoWindows.TornarClicavel(hwnd);
         else
-            WindowHelper.SetWindowExTransparent(hwnd);
+            JanelaDoWindows.DeixarCliqueAtravessar(hwnd);
 
         ApplyBackgroundOpacity();
 
@@ -395,8 +328,8 @@ public partial class MainWindow : Window
             return;
 
         bool enabled = this.webView.Focusable;
-        Hotkey hotkey = App.Settings.GeneralSettings.ToggleInteractableHotkey;
-        string hotkeyText = hotkey != null && hotkey.Key != Key.None ? hotkey.ToString() : string.Empty;
+        Atalho hotkey = App.Settings.GeneralSettings.ToggleInteractableHotkey;
+        string hotkeyText = Atalho.Existe(hotkey) ? hotkey.ToString() : string.Empty;
 
         string mode = System.Text.Json.JsonSerializer.Serialize(new { enabled, banner = enabled && _hiddenBorders, hotkey = hotkeyText });
         _ = this.webView.CoreWebView2.ExecuteScriptAsync(
@@ -427,7 +360,7 @@ public partial class MainWindow : Window
         ApplyInteractable(App.Settings.GeneralSettings.AllowInteraction);
 
         // The title bar and the toolbar take clicks also when clicking the chat is off
-        WindowHelper.SetWindowExDefault(new WindowInteropHelper(this).Handle);
+        JanelaDoWindows.TornarClicavel(new WindowInteropHelper(this).Handle);
 
         UpdateChatInput();
         UpdateChannelBar();
@@ -512,7 +445,7 @@ public partial class MainWindow : Window
     private void SetChatAddress(string channel)
     {
         bool darkTheme = App.Settings.GeneralSettings.ThemeIndex != 0;
-        NavigateToUrl(LocalHtmlHelper.GetChatPageUrl(channel, darkTheme));
+        NavigateToUrl(InfoDoApp.EnderecoDoChatPadrao(channel, darkTheme));
     }
 
     private void ExitApplication()
@@ -682,7 +615,7 @@ public partial class MainWindow : Window
     private void OpenSettingsFolder()
     {
         string folderPath = (App.Settings.Tracker.Store as Jot.Storage.JsonFileStore).FolderPath;
-        ShellHelper.OpenFolder(folderPath);
+        AbrirNoWindows.Pasta(folderPath);
     }
 
     // The new-message sound of the "Padrão" chat, the only chat type that plays one. It follows the saved chat
@@ -712,12 +645,13 @@ public partial class MainWindow : Window
                 "Para usar o Olho no Chat, baixe e instale o WebView2 da Microsoft.\nDepois de instalar, abra o app de novo.",
                 "WebView2 necessário",
                 MessageBoxButton.OK, MessageBoxImage.Error);
-            ShellHelper.OpenUrl(WebView2InstallerUrl);
+            AbrirNoWindows.Site(WebView2InstallerUrl);
             return;
         }
 
-        // Disable hotkeys while settings window is open
-        HotkeyManager.Current.IsEnabled = false;
+        // Atalhos devolvidos ao Windows enquanto Configurações está aberta: a combinação pode ser gravada na caixa
+        // de atalho sem disparar a ação
+        _atalhos.Ligados = false;
 
         var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
 
@@ -755,7 +689,7 @@ public partial class MainWindow : Window
         TryShowWriteHint();
 
         // Changes that were not saved never reach App.Settings, so there is nothing to undo
-        HotkeyManager.Current.IsEnabled = true;
+        _atalhos.Ligados = true;
     }
 
     // Applies the settings just saved in the Settings (or Chat Filters) window
@@ -805,7 +739,7 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        AppWindowFrame.Apply(this); // own close button, no gray line around
+        Sistema.MolduraDaJanela.Aplicar(this); // own close button, no gray line around
 
         // Every time the app opens (it used to be once a day)
         if (App.Settings.GeneralSettings.CheckForUpdates)
@@ -828,7 +762,7 @@ public partial class MainWindow : Window
 #else
         _logger.LogInformation("Checking for updates...");
 
-        var mgr = new UpdateManager(new GithubSource(AppInfo.RepositoryUrl, null, false));
+        var mgr = new UpdateManager(new GithubSource(InfoDoApp.EnderecoDoRepositorio, null, false));
 
         try
         {

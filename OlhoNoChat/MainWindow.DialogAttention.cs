@@ -31,7 +31,7 @@ public partial class MainWindow
         int mouseMessage = (int)((value >> 16) & 0xFFFF);
 
         if (hitTest == HTERROR && mouseMessage is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN
-            && WindowAttention.CallAttentionToOpenDialog(hwnd))
+            && Sistema.ChamarAtencao.ParaAJanelaAberta(hwnd, typeof(MainWindow)))
         {
             // Handled here: no Windows error beep
             handled = true;

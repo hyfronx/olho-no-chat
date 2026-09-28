@@ -11,6 +11,8 @@
 		<AssemblyTitle>Olho no Chat</AssemblyTitle>
 		<Description>Mostra o chat da sua live por cima do jogo.</Description>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- As chamadas ao Windows usam [LibraryImport], que gera código unsafe -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<!-- Single file, but the native DLLs stay next to the exe (no IncludeNativeLibrariesForSelfExtract):
 		     the app is installed as a folder anyway, and nothing is extracted to %TEMP% on each new version -->
@@ -39,7 +41,6 @@
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
 		<PackageReference Include="ModernWpfUI" Version="0.9.6" />
 		<PackageReference Include="NAudio" Version="2.2.1" />
-		<PackageReference Include="NHotkey.Wpf" Version="3.0.0" />
 		<PackageReference Include="TwitchLib.EventSub.Core" Version="3.0.0-preview.58.b20c9f1" />
 		<PackageReference Include="TwitchLib.EventSub.Websockets" Version="0.7.0-preview.70.cd91499" />
 		<PackageReference Include="Velopack" Version="0.0.1298" />

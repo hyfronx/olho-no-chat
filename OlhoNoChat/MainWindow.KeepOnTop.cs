@@ -1,6 +1,6 @@
 namespace OlhoNoChat;
 
-using System.Runtime.InteropServices;
+using OlhoNoChat.Sistema;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
@@ -13,24 +13,10 @@ using System.Windows.Threading;
 /// </summary>
 public partial class MainWindow
 {
-    private delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module, WinEventProc callback, uint processId, uint threadId, uint flags);
-
-    [DllImport("user32.dll")]
-    private static extern bool UnhookWinEvent(IntPtr hook);
-
-    private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
-    private const uint WINEVENT_OUTOFCONTEXT = 0x0000;
-    private const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
-    private const long WS_EX_TOPMOST = 0x00000008;
-
     // Games may raise themselves a moment after they get the focus, so re-check a few times.
     private static readonly int[] ReassertDelaysMs = { 0, 150, 500, 1200, 2500 };
 
-    private WinEventProc _foregroundHookProc; // kept in a field so it isn't garbage collected
-    private IntPtr _foregroundHook = IntPtr.Zero;
+    private VigiaDeFoco _vigiaDeFoco;
     private DispatcherTimer _keepOnTopTimer;
     private bool _settingsDialogOpen = false;
 
@@ -38,14 +24,13 @@ public partial class MainWindow
 
     private void StartKeepOnTopGuard()
     {
-        _foregroundHookProc = OnForegroundChanged;
-        _foregroundHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
-            _foregroundHookProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+        _vigiaDeFoco = new VigiaDeFoco();
+        _vigiaDeFoco.OutroProgramaGanhouOFoco += ReassertTopMostBurst;
 
         _keepOnTopTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _keepOnTopTimer.Tick += (s, e) =>
         {
-            if (IsForegroundTopMostOtherApp())
+            if (JanelaDoWindows.FocoEmOutroProgramaSempreNaFrente())
                 ReassertTopMost();
         };
         ApplyAlwaysOnTop();
@@ -93,16 +78,8 @@ public partial class MainWindow
     private void StopKeepOnTopGuard()
     {
         _keepOnTopTimer?.Stop();
-        if (_foregroundHook != IntPtr.Zero)
-        {
-            UnhookWinEvent(_foregroundHook);
-            _foregroundHook = IntPtr.Zero;
-        }
-    }
-
-    private void OnForegroundChanged(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
-    {
-        ReassertTopMostBurst();
+        _vigiaDeFoco?.Dispose();
+        _vigiaDeFoco = null;
     }
 
     // Also after the chat changes (borders, scroll mode): a game may take the front back a moment later
@@ -120,19 +97,6 @@ public partial class MainWindow
         }
     }
 
-    private bool IsForegroundTopMostOtherApp()
-    {
-        IntPtr foreground = WindowHelper.GetForegroundWindow();
-        if (foreground == IntPtr.Zero)
-            return false;
-
-        WindowHelper.GetWindowThreadProcessId(foreground, out uint processId);
-        if (processId == (uint)Environment.ProcessId)
-            return false;
-
-        return (WindowHelper.GetWindowLongPtr(foreground, WindowHelper.GWL_EXSTYLE).ToInt64() & WS_EX_TOPMOST) != 0;
-    }
-
     // Moves the chat back to the front without activating it.
     private void ReassertTopMost()
     {
@@ -143,6 +107,6 @@ public partial class MainWindow
         if (hwnd == IntPtr.Zero || !this.IsVisible)
             return;
 
-        WindowHelper.SetWindowPosTopMost(hwnd);
+        JanelaDoWindows.ColocarNaFrente(hwnd);
     }
 }

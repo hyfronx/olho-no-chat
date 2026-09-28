@@ -1,3 +1,4 @@
+using OlhoNoChat.Atalhos;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
@@ -54,8 +55,8 @@ public partial class ConnectionSettingsPage : UserControl
 
     private void UpdateChatBoxHint()
     {
-        Hotkey hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
-        bool hasHotkey = hotkey != null && hotkey.Key != Key.None;
+        Atalho hotkey = App.Settings.GeneralSettings.WriteMessageHotkey;
+        bool hasHotkey = Atalho.Existe(hotkey);
         string inGame = hasHotkey
             ? $" No jogo, aperte {hotkey} para abrir ou fechar a caixa por cima do jogo."
             : string.Empty;
