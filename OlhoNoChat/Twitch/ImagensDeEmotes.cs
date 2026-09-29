@@ -52,8 +52,12 @@ public sealed partial class ImagensDeEmotes
             _ = Task.Run(ApagarOsSemUso);
 
         string arquivo = Arquivo(id, animado, escala);
-        // A mesma imagem pedida duas vezes ao mesmo tempo é baixada uma vez só
-        return _emAndamento.GetOrAdd(arquivo, _ => ObterDeVerdadeAsync(id, animado, escala, arquivo));
+        // A mesma imagem pedida duas vezes ao mesmo tempo é baixada uma vez só. Uma busca que terminou antes de entrar no
+        // dicionário (a remoção do fim dela veio antes) sai agora, senão ficaria lá para sempre (e uma falha nunca tentaria de novo)
+        Task<byte[]?> busca = _emAndamento.GetOrAdd(arquivo, _ => ObterDeVerdadeAsync(id, animado, escala, arquivo));
+        if (busca.IsCompleted)
+            _emAndamento.TryRemove(new KeyValuePair<string, Task<byte[]?>>(arquivo, busca));
+        return busca;
     }
 
     private async Task<byte[]?> ObterDeVerdadeAsync(string id, bool animado, string escala, string arquivo)

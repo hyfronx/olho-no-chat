@@ -109,7 +109,9 @@ public sealed partial class ListaDeEmotes
         string chave = Chave(canal);
         if (EstaPronta(canal))
             return Task.FromResult(_guardada!.Value.Lista);
-        if (_emAndamento is { } busca && busca.Chave == chave)
+        // Só uma busca que ainda não terminou é aproveitada: a que termina logo (sem conta, ou antes mesmo de ser
+        // guardada aqui) não pode ficar valendo depois que a lista vence
+        if (_emAndamento is { } busca && busca.Chave == chave && !busca.Busca.IsCompleted)
             return busca.Busca;
 
         Task<Lista> nova = BuscarNaTwitchAsync(canal, chave);
@@ -119,18 +121,10 @@ public sealed partial class ListaDeEmotes
 
     private async Task<Lista> BuscarNaTwitchAsync(string canal, string chave)
     {
-        try
-        {
-            Lista lista = await BuscarNaTwitchAsync(canal);
-            _guardada = (chave, _agora(), lista);
-            GravarNoDisco(ChaveNoDisco(canal), lista);
-            return lista;
-        }
-        finally
-        {
-            if (_emAndamento?.Chave == chave)
-                _emAndamento = null;
-        }
+        Lista lista = await BuscarNaTwitchAsync(canal);
+        _guardada = (chave, _agora(), lista);
+        GravarNoDisco(ChaveNoDisco(canal), lista);
+        return lista;
     }
 
     private async Task<Lista> BuscarNaTwitchAsync(string canal)

@@ -167,6 +167,21 @@ public sealed class ListaDeEmotesTestes : IDisposable
         Assert.Equal(4, twitch.PedidosPara("emotes/user").Count());
     }
 
+    // Sem conta a busca termina na hora (nada vai à Twitch): mesmo assim ela vence depois de 10 minutos
+    [Fact]
+    public async Task Buscar_BuscaQueTerminaNaHoraTambemVence()
+    {
+        var api = new ApiDaTwitch(new TwitchFalsa());
+        var conta = new ContaDaTwitch(api, new ContaSalvaNaMemoria(), NullLogger<ContaDaTwitch>.Instance);
+        DateTime atual = new(2026, 9, 28, 12, 0, 0, DateTimeKind.Utc);
+        var lista = new ListaDeEmotes(api, conta, NullLogger<ListaDeEmotes>.Instance, () => atual);
+
+        var primeira = await lista.BuscarAsync("meucanal");
+        Assert.True(primeira.SoGlobais);
+        atual += TimeSpan.FromMinutes(11);
+        Assert.NotSame(primeira, await lista.BuscarAsync("meucanal"));
+    }
+
     [Fact]
     public async Task Buscar_OutroCanalOuDescartarBuscaDeNovo()
     {

@@ -22,6 +22,8 @@ public sealed class ImagensDeEmotesTestes : IDisposable
         public readonly List<string> Pedidos = [];
         public HttpStatusCode Codigo = HttpStatusCode.OK;
         public TaskCompletionSource? Segurar;
+        // Responde sem esperar nada: a busca inteira termina antes de ObterAsync devolver
+        public bool NaHora;
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage pedido, CancellationToken cancelar)
         {
@@ -29,7 +31,8 @@ public sealed class ImagensDeEmotesTestes : IDisposable
                 Pedidos.Add(pedido.RequestUri!.ToString());
             if (Segurar != null)
                 await Segurar.Task;
-            await Task.Yield();
+            if (!NaHora)
+                await Task.Yield();
             return new HttpResponseMessage(Codigo) { Content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(pedido.RequestUri!.AbsolutePath)) };
         }
     }
@@ -97,6 +100,18 @@ public sealed class ImagensDeEmotesTestes : IDisposable
 
         Assert.Equal(await a, await b);
         Assert.Single(cdn.Pedidos);
+    }
+
+    [Fact]
+    public async Task Obter_FalhaQueTerminaNaHoraTentaDeNovoNaProximaVez()
+    {
+        var cdn = new CdnFalsa { NaHora = true, Codigo = HttpStatusCode.NotFound };
+        var imagens = Criar(cdn);
+        Assert.Null(await imagens.ObterAsync("25", animado: false, "1.0"));
+
+        cdn.Codigo = HttpStatusCode.OK;
+        Assert.NotNull(await imagens.ObterAsync("25", animado: false, "1.0"));
+        Assert.Equal(2, cdn.Pedidos.Count);
     }
 
     [Fact]
