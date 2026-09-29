@@ -11,6 +11,7 @@
 		<AssemblyTitle>Olho no Chat</AssemblyTitle>
 		<Description>Mostra o chat da sua live por cima do jogo.</Description>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 		<!-- As chamadas ao Windows usam [LibraryImport], que gera código unsafe -->
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
@@ -38,9 +39,9 @@
 		<PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
-		<PackageReference Include="NAudio" Version="2.2.1" />
-		<PackageReference Include="Velopack" Version="0.0.1298" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+		<PackageReference Include="NAudio" Version="3.1.0" />
+		<PackageReference Include="Velopack" Version="1.2.158" />
 	</ItemGroup>
 
 	<ItemGroup>

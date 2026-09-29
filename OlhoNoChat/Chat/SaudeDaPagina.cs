@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Chat;
 
 /// <summary>A conexão da página do Padrão com a Twitch, segundo <c>window.oncChat.health()</c>.</summary>

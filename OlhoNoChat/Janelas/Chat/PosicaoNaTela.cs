@@ -1,4 +1,3 @@
-#nullable enable
 using OlhoNoChat.Sistema;
 
 namespace OlhoNoChat.Janelas.Chat;

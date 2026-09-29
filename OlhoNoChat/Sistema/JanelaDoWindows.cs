@@ -1,4 +1,3 @@
-#nullable enable
 using System.Runtime.InteropServices;
 using static OlhoNoChat.Sistema.FuncoesDoWindows;
 

@@ -1,4 +1,3 @@
-#nullable enable
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
@@ -26,7 +25,7 @@ public static class Programa
     private static ServiceProvider? _servicos;
 
     [STAThread]
-    public static void Main(string[] argumentos)
+    public static void Main()
     {
         // Trata as chamadas do instalador (instalar, atualizar, desinstalar) e sai sozinho nesses casos
         VelopackApp.Build().Run();

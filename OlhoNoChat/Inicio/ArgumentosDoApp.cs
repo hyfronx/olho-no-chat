@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Inicio;
 
 /// <summary>O que uma abertura do .exe pede ao app (ações da barra de tarefas ou só abrir de novo).</summary>

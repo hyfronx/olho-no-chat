@@ -1,4 +1,3 @@
-#nullable enable
 using CommunityToolkit.Mvvm.ComponentModel;
 using OlhoNoChat.Atalhos;
 using OlhoNoChat.Chat;

@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Chat;
 
 /// <summary>Regras comuns aos tipos de chat.</summary>

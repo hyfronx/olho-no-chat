@@ -1,4 +1,3 @@
-#nullable enable
 using System.Windows.Controls;
 
 namespace OlhoNoChat.Janelas.Configuracoes;

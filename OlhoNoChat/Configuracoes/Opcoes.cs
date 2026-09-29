@@ -1,4 +1,3 @@
-#nullable enable
 using System.Windows.Input;
 using System.Windows.Media;
 using OlhoNoChat.Atalhos;

@@ -1,4 +1,3 @@
-#nullable enable
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace OlhoNoChat.Janelas.NovaVersao;

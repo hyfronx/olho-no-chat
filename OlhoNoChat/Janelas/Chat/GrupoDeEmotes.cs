@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Janelas.Chat;
 
 /// <summary>Um grupo da lista de emotes: o título laranja ("{canal} (este canal)", outro canal, "Globais da Twitch") e os emotes.</summary>

@@ -1,4 +1,3 @@
-#nullable enable
 using static OlhoNoChat.Sistema.FuncoesDoWindows;
 
 namespace OlhoNoChat.Sistema;

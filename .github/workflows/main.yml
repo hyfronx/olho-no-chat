@@ -45,7 +45,7 @@ jobs:
       # 6. Download, Pack, and Upload with Velopack
       - name: Create and Upload Velopack Release
         run: |
-          dotnet tool install -g vpk --version 0.0.1298
+          dotnet tool install -g vpk --version 1.2.158
           vpk download github --repoUrl https://github.com/${{ github.repository }}
           # Shortcut only in the Start menu (the default also puts one on the Desktop); no portable zip (the app
           # always keeps its settings in %AppData%\OlhoNoChat)
@@ -54,5 +54,3 @@ jobs:
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # vpk 0.0.1298 is built for .NET 9; this lets it run on a newer runtime
-          DOTNET_ROLL_FORWARD: Major

@@ -1,4 +1,3 @@
-#nullable enable
 using System.Diagnostics;
 using NAudio.Wave;
 
@@ -23,13 +22,12 @@ public sealed class TocadorDeAviso : IDisposable
     private readonly RegraQuandoTocar _quandoTocar = new();
     private readonly Func<DateTime> _agora;
 
-    private string? _arquivo;
     private float _volume = 1f;
     private int _idDaSaida = Padrao;
     private string _nomeDaSaida = NomeDaPadraoGravado;
 
     private AudioFileReader? _som;
-    private WaveOutEvent? _saida;
+    private WaveOut? _saida;
     private bool _falhou;
 
     public TocadorDeAviso() : this(() => DateTime.UtcNow) { }
@@ -76,7 +74,6 @@ public sealed class TocadorDeAviso : IDisposable
     {
         Soltar();
         _falhou = false;
-        _arquivo = arquivo;
         _volume = Math.Clamp(volume, 0f, 1f);
         _idDaSaida = idDaSaida;
         _nomeDaSaida = nomeDaSaida;
@@ -91,7 +88,6 @@ public sealed class TocadorDeAviso : IDisposable
         }
         catch (Exception ex)
         {
-            _arquivo = null;
             return ex;
         }
     }
@@ -145,7 +141,7 @@ public sealed class TocadorDeAviso : IDisposable
 
     private bool TentarAbrir(int id)
     {
-        var saida = new WaveOutEvent { DeviceNumber = id };
+        var saida = new WaveOut { DeviceNumber = id };
         try
         {
             saida.Init(_som);
@@ -176,11 +172,11 @@ public sealed class TocadorDeAviso : IDisposable
         if (arquivo == null)
             return;
         AudioFileReader? som = null;
-        WaveOutEvent? saida = null;
+        WaveOut? saida = null;
         try
         {
             som = new AudioFileReader(arquivo) { Volume = Math.Clamp(volume, 0f, 1f) };
-            saida = new WaveOutEvent { DeviceNumber = idDaSaida >= 0 && idDaSaida < WaveOut.DeviceCount ? idDaSaida : Padrao };
+            saida = new WaveOut { DeviceNumber = idDaSaida >= 0 && idDaSaida < WaveOut.DeviceCount ? idDaSaida : Padrao };
             saida.Init(som);
             var (somDaPrevia, saidaDaPrevia) = (som, saida);
             saida.PlaybackStopped += (s, e) =>

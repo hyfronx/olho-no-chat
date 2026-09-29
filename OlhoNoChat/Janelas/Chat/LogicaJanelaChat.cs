@@ -1,4 +1,3 @@
-#nullable enable
 using OlhoNoChat.Chat;
 using OlhoNoChat.Inicio;
 

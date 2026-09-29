@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Sistema;
 
 /// <summary>Um retângulo da tela, em pixels.</summary>

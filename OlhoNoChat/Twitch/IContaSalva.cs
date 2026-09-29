@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Twitch;
 
 /// <summary>O que fica gravado da conta da Twitch no arquivo de configurações.</summary>

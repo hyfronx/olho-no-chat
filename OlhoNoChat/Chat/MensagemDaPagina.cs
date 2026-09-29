@@ -1,4 +1,3 @@
-#nullable enable
 namespace OlhoNoChat.Chat;
 
 /// <summary>Os avisos que as páginas do chat mandam ao app (<see cref="ContratoComAPagina.LerMensagem"/>).</summary>

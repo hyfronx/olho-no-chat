@@ -1,4 +1,3 @@
-#nullable enable
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Twitch;
 

@@ -1,4 +1,3 @@
-#nullable enable
 using System.Windows;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;

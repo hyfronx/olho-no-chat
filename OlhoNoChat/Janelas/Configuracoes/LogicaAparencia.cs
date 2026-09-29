@@ -1,4 +1,3 @@
-#nullable enable
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using OlhoNoChat.Chat;
