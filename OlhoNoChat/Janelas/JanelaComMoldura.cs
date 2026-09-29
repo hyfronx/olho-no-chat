@@ -18,10 +18,6 @@ namespace OlhoNoChat.Janelas;
 /// "Fechar". "Salvar" grava sem fechar e mostra "✓ Salvo" por 2,5 s; Fechar, Esc, "×" e Alt+F4 perguntam antes de
 /// fechar se algo mudou. O visual está em Estilos/Controles.xaml (EstiloJanelaComMoldura).
 /// </summary>
-/// <remarks>
-/// As janelas filhas não podem trocar o <see cref="FrameworkElement.Resources"/> inteiro no XAML: os estilos do app
-/// entram nele aqui no construtor.
-/// </remarks>
 public abstract class JanelaComMoldura : Window
 {
     public static readonly DependencyProperty IconeProperty =
@@ -33,8 +29,6 @@ public abstract class JanelaComMoldura : Window
     public static readonly DependencyProperty LarguraDaNavegacaoProperty =
         DependencyProperty.Register(nameof(LarguraDaNavegacao), typeof(double), typeof(JanelaComMoldura), new PropertyMetadata(170.0));
 
-    private static readonly Uri EnderecoDosEstilos = new("/OlhoNoChat;component/Estilos/Controles.xaml", UriKind.Relative);
-
     private readonly DispatcherTimer _tempoDoSalvo = new() { Interval = TimeSpan.FromSeconds(2.5) };
     private DialogoNaJanela? _dialogo;
     private Button? _botaoSalvar;
@@ -42,7 +36,6 @@ public abstract class JanelaComMoldura : Window
 
     protected JanelaComMoldura()
     {
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = EnderecoDosEstilos });
         SetResourceReference(StyleProperty, "EstiloJanelaComMoldura");
         _tempoDoSalvo.Tick += (_, _) => MostrarSalvar();
         Loaded += (_, _) => MolduraDaJanela.Aplicar(this);

@@ -1,0 +1,56 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.CaixaDeEscrever"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles"
+             xmlns:chat="clr-namespace:OlhoNoChat.Janelas.Chat">
+    <!-- "Escrever no chat…" embaixo do chat. Numa linha própria da janela: a página do chat (WebView2) é desenhada por
+         cima de qualquer coisa que fique no lugar dela. -->
+    <Grid>
+        <Border x:Name="barraDaCaixa" Background="{StaticResource FundoDaFaixa}" BorderBrush="{StaticResource LinhaDaFaixa}"
+                BorderThickness="0,1,0,0" Padding="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <!-- O botão de emotes fica dentro da ponta direita da caixa, como na Twitch -->
+                <TextBox x:Name="caixaMensagem" MaxLength="500" MinHeight="32" FontSize="14" Padding="8,5,40,6"
+                         ctl:CaixaDeTexto.TextoDeExemplo="Escrever no chat…" AutomationProperties.Name="Escrever no chat"
+                         Text="{Binding Texto, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding DicaDaCaixa}"
+                         PreviewKeyDown="Mensagem_PreviewKeyDown" GotKeyboardFocus="Mensagem_GotKeyboardFocus" />
+                <Button x:Name="botaoEmotes" Width="32" Height="28" Margin="0,0,3,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center" Focusable="False"
+                        ToolTip="Emotes e emojis" AutomationProperties.Name="Emotes"
+                        PreviewMouseLeftButtonDown="Emotes_PreviewMouseLeftButtonDown" Click="Emotes_Click">
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE76E;" FontSize="17" Foreground="#D0D0D0" />
+                </Button>
+                <Button x:Name="botaoEnviar" Grid.Column="1" Margin="6,0,0,0" Width="38" Height="32" Padding="0"
+                        Style="{StaticResource BotaoPrincipal}" ToolTip="Enviar (Enter)" AutomationProperties.Name="Enviar mensagem"
+                        IsEnabled="{Binding PodeEnviar}" Click="Enviar_Click">
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE724;" FontSize="15" />
+                </Button>
+                <!-- Fecha a caixa (ela continua aberta depois de enviar) -->
+                <Button x:Name="botaoFecharCaixa" Grid.Column="2" Margin="4,0,0,0" Width="32" Height="32" Padding="0"
+                        Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center" Focusable="False"
+                        AutomationProperties.Name="Fechar a caixa" ToolTip="{Binding DicaDoFechar}" Click="Fechar_Click">
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE711;" FontSize="13" Foreground="{StaticResource TextoDaDica}" />
+                </Button>
+                <TextBlock x:Name="statusMensagem" Grid.Row="1" Grid.ColumnSpan="3" Margin="2,5,2,0" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{StaticResource ErroDaFaixa}" Text="{Binding Status}"
+                           Visibility="{Binding Status, Converter={StaticResource VisivelSe}}" />
+            </Grid>
+        </Border>
+
+        <!-- A lista de emotes: um Popup é uma janela à parte, então aparece por cima da página do chat -->
+        <Popup x:Name="painelDeEmotes" PlacementTarget="{Binding ElementName=barraDaCaixa}" Placement="Top" StaysOpen="False"
+               AllowsTransparency="True" PopupAnimation="Fade" Closed="PainelDeEmotes_Closed">
+            <chat:PainelDeEmotes x:Name="listaDeEmotes" Width="{Binding ActualWidth, ElementName=barraDaCaixa}" MinWidth="250"
+                                 Margin="0,0,0,4" />
+        </Popup>
+    </Grid>
+</UserControl>

@@ -9,9 +9,6 @@
         FontFamily="Segoe UI" FontSize="14" UseLayoutRounding="True"
         FocusManager.FocusedElement="{Binding ElementName=botaoAtualizar}">
     <!-- DataContext = LogicaNovaVersao. Sem a barra do Windows: o "×" é o do app, e o alto da janela arrasta. -->
-    <Window.Resources>
-        <ResourceDictionary Source="/OlhoNoChat;component/Estilos/Controles.xaml" />
-    </Window.Resources>
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="36" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>

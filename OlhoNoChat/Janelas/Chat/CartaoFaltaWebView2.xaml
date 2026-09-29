@@ -1,0 +1,21 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.CartaoFaltaWebView2"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Sem o WebView2 no Windows: cobre tudo embaixo da barra laranja -->
+    <Grid Background="#80000000">
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center" Background="#2D2D30" CornerRadius="8" MaxWidth="400" Padding="25">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="0" BlurRadius="15" Opacity="0.5" Color="Black" />
+            </Border.Effect>
+            <StackPanel>
+                <TextBlock Text="Falta um componente" Foreground="{StaticResource Texto}" FontSize="20" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock x:Name="textoFaltaWebView2" Foreground="#DDFFFFFF" FontSize="14" TextWrapping="Wrap" Margin="0,15,0,25"
+                           TextAlignment="Center"
+                           Text="Para mostrar o chat, o Olho no Chat precisa do WebView2, um componente gratuito da Microsoft. Depois de instalar, o app recarrega sozinho." />
+                <Button x:Name="botaoInstalarWebView2" Style="{StaticResource BotaoAzul}" Content="Baixar e instalar" HorizontalAlignment="Center"
+                        FontSize="15" FontWeight="Medium" Padding="20,10" Click="Instalar_Click" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

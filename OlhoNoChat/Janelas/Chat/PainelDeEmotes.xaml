@@ -1,0 +1,73 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.PainelDeEmotes"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- Os emotes que a conta conectada pode usar neste canal, acima da caixa de escrever -->
+    <Border Height="300" Background="{StaticResource FundoDaPagina}" BorderBrush="#4DFFFFFF" BorderThickness="1" CornerRadius="8">
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox x:Name="caixaProcurarEmote" MinHeight="30" FontSize="13" ctl:CaixaDeTexto.TextoDeExemplo="Procurar emote"
+                     AutomationProperties.Name="Procurar emote" TextChanged="Procurar_TextChanged" PreviewKeyDown="Procurar_PreviewKeyDown" />
+            <Button x:Name="botaoEmojis" Grid.Column="1" Margin="6,0,0,0" Height="30" MinHeight="30" Padding="10,0"
+                    ToolTip="Abre o painel de emojis do Windows (atalho do Windows: Win + ponto)"
+                    AutomationProperties.Name="Emojis" Click="Emojis_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xED54;" FontSize="14" />
+                    <TextBlock Text="Emojis" Margin="6,0,0,0" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- Acesso dado antes de a lista existir: só os emotes globais -->
+            <Border x:Name="avisoSoGlobais" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0" Padding="10,8" CornerRadius="6"
+                    Background="{StaticResource FundoDoCartaoDeAviso}" BorderBrush="{StaticResource BordaDoCartaoDeAviso}"
+                    BorderThickness="1" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="textoAvisoSoGlobais" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextoDoCartaoDeAviso}"
+                               Text="Mostrando só os emotes globais. Para ver os seus (do canal e de inscrições), conecte a conta de novo: a Twitch vai pedir uma permissão nova." />
+                    <Button x:Name="botaoConectarDeNovo" Margin="0,8,0,0" Height="28" MinHeight="28" Padding="12,0" HorizontalAlignment="Left"
+                            Style="{StaticResource BotaoPrincipal}" FontSize="12" Content="Conectar de novo" Click="ConectarDeNovo_Click" />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer x:Name="rolagemDosEmotes" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0" Style="{StaticResource PaginaComRolagem}">
+                <ItemsControl x:Name="gruposDeEmotes" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="{Binding Titulo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource LaranjaClaro}"
+                                           Margin="2,2,0,4" TextTrimming="CharacterEllipsis" />
+                                <ItemsControl ItemsSource="{Binding Emotes}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource BotaoDoEmote}" ToolTip="{Binding Nome}"
+                                                    AutomationProperties.Name="{Binding Nome}" Click="Emote_Click">
+                                                <Image Source="{Binding Imagem}" Width="28" Height="28" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock x:Name="statusEmotes" Grid.Row="2" Grid.ColumnSpan="2" Margin="4,16,4,0" FontSize="13" TextWrapping="Wrap"
+                       TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Foreground="{StaticResource TextoDaDica}" Visibility="Collapsed" />
+        </Grid>
+    </Border>
+</UserControl>

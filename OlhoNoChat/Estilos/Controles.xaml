@@ -4,9 +4,8 @@
                     xmlns:ctl="clr-namespace:OlhoNoChat.Controles"
                     xmlns:janelas="clr-namespace:OlhoNoChat.Janelas">
 
-    <!-- O visual dos controles das janelas novas. Entra só nos recursos de cada janela nova (os estilos sem nome
-         valem para todos os controles daquele tipo dentro dela): as janelas antigas continuam com o ModernWpf até
-         serem trocadas. -->
+    <!-- O visual dos controles de todas as janelas. Entra nos recursos do app (por JanelaDoChat.xaml, ver
+         Inicio/Programa): os estilos sem nome valem para todos os controles daquele tipo, em qualquer janela. -->
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Cores.xaml" />
@@ -894,9 +893,15 @@
                             <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1" Text="{TemplateBinding InputGestureText}" Margin="24,0,0,0"
                                        Foreground="{StaticResource TextoDaDica}" VerticalAlignment="Center" />
+                            <!-- Marca de ligado (menu do ícone perto do relógio: "Sempre no topo") -->
+                            <TextBlock x:Name="Marca" Grid.Column="1" Text="&#xE73E;" Style="{StaticResource Icone}" FontSize="12"
+                                       Margin="24,0,0,0" Foreground="{StaticResource LaranjaClaro}" Visibility="Collapsed" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Marca" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="Fundo" Property="Background" Value="{StaticResource FundoDoItemComMouse}" />
                         </Trigger>
@@ -904,6 +909,17 @@
                             <Setter Property="Foreground" Value="{StaticResource TextoDesativado}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A linha entre os grupos de itens de um menu -->
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="8,4" Background="{StaticResource BordaDaListaAberta}" SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

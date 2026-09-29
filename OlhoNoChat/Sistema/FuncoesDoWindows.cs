@@ -9,6 +9,18 @@ namespace OlhoNoChat.Sistema;
 /// </summary>
 internal static partial class FuncoesDoWindows
 {
+    // Estilo da janela
+    public const int GWL_STYLE = -16;
+    public const long WS_MAXIMIZEBOX = 0x00010000;
+    public const int WM_STYLECHANGING = 0x007C;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct STYLESTRUCT
+    {
+        public uint styleOld;
+        public uint styleNew;
+    }
+
     // Estilo estendido da janela
     public const int GWL_EXSTYLE = -20;
     public const long WS_EX_TRANSPARENT = 0x20;
@@ -155,7 +167,23 @@ internal static partial class FuncoesDoWindows
         public uint dwFlags;
     }
 
+    public const uint MONITOR_DEFAULTTOPRIMARY = 1;
     public const uint MONITOR_DEFAULTTONEAREST = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [LibraryImport("user32.dll")]
+    public static partial IntPtr MonitorFromPoint(POINT ponto, uint opcoes);
+
+    public delegate bool AoListarMonitor(IntPtr monitor, IntPtr dc, IntPtr retangulo, IntPtr parametro);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumDisplayMonitors(IntPtr dc, IntPtr recorte, AoListarMonitor aoListar, IntPtr parametro);
     public const uint SWP_NOZORDER = 0x0004;
 
     [LibraryImport("user32.dll")]

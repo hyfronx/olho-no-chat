@@ -50,6 +50,61 @@ internal static class JanelaDoWindows
         SetWindowPos(janela, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
 
+    /// <summary>A área útil (sem a barra de tarefas) de cada monitor, em pixels.</summary>
+    public static IReadOnlyList<Retangulo> AreasDosMonitores()
+    {
+        var areas = new List<Retangulo>();
+        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (monitor, _, _, _) =>
+        {
+            if (AreaDoMonitor(monitor) is Retangulo area)
+                areas.Add(area);
+            return true;
+        }, IntPtr.Zero);
+        return areas;
+    }
+
+    /// <summary>A área útil do monitor principal, em pixels.</summary>
+    public static Retangulo AreaDoMonitorPrincipal() =>
+        AreaDoMonitor(MonitorFromPoint(new POINT(), MONITOR_DEFAULTTOPRIMARY)) ?? new Retangulo(0, 0, 1280, 720);
+
+    private static Retangulo? AreaDoMonitor(IntPtr monitor)
+    {
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (!GetMonitorInfo(monitor, ref info))
+            return null;
+        return new Retangulo(info.rcWork.Left, info.rcWork.Top, info.rcWork.Right, info.rcWork.Bottom);
+    }
+
+    /// <summary>Onde a janela está, em pixels.</summary>
+    public static Retangulo? RetanguloDe(IntPtr janela) =>
+        GetWindowRect(janela, out RECT r) ? new Retangulo(r.Left, r.Top, r.Right, r.Bottom) : null;
+
+    /// <summary>Muda o lugar e o tamanho da janela (em pixels), sem mexer na ordem nem no foco.</summary>
+    public static void MoverPara(IntPtr janela, Retangulo lugar) =>
+        SetWindowPos(janela, IntPtr.Zero, lugar.Esquerda, lugar.Topo, lugar.Largura, lugar.Altura, SWP_NOZORDER | SWP_NOACTIVATE);
+
+    /// <summary>
+    /// A janela pode ser minimizada (pelo botão da barra de tarefas) mas nunca maximizada: tira o "maximizar" do estilo
+    /// sempre que ele mudar. Chamar no gancho de mensagens da janela; devolve true se a mensagem era a da troca de estilo.
+    /// </summary>
+    public static bool SemMaximizar(int mensagem, IntPtr wParam, IntPtr lParam)
+    {
+        if (mensagem != WM_STYLECHANGING || wParam.ToInt64() != GWL_STYLE)
+            return false;
+
+        var estilo = Marshal.PtrToStructure<STYLESTRUCT>(lParam);
+        estilo.styleNew &= ~(uint)WS_MAXIMIZEBOX;
+        Marshal.StructureToPtr(estilo, lParam, false);
+        return true;
+    }
+
+    /// <summary>Tira o "maximizar" do estilo que a janela já tem (o gancho de <see cref="SemMaximizar"/> cuida das próximas trocas).</summary>
+    public static void TirarMaximizar(IntPtr janela)
+    {
+        long estilo = GetWindowLongPtr(janela, GWL_STYLE).ToInt64();
+        SetWindowLongPtr(janela, GWL_STYLE, new IntPtr(estilo & ~WS_MAXIMIZEBOX));
+    }
+
     /// <summary>Dá o foco à janela, se o Windows deixar.</summary>
     public static bool DarFoco(IntPtr janela) => SetForegroundWindow(janela);
 

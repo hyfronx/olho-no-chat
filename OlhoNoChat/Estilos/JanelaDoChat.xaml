@@ -1,0 +1,277 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+
+    <!-- O visual da janela do chat: a barra laranja, os painéis de tamanho do texto e fundo, as faixas escuras (canal e
+         caixa de escrever) e a lista de emotes. Em cima dos estilos comuns das janelas (Controles.xaml). -->
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Controles.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <ctl:VisivelSe x:Key="VisivelSe" />
+
+    <!-- Os ícones das faixas escuras e da lista de emotes: os do Windows 10, mais finos que os da barra laranja -->
+    <Style x:Key="IconeDaFaixa" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+    </Style>
+
+    <!-- As faixas escuras dentro da moldura (faixa do canal e caixa de escrever) -->
+    <SolidColorBrush x:Key="FundoDaFaixa" Color="#F2141414" />
+    <SolidColorBrush x:Key="LinhaDaFaixa" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="ErroDaFaixa" Color="#FFB9A0" />
+
+    <!-- Botões da barra laranja com um painel embaixo: escurecidos enquanto o painel está aberto (Tag = "aberto") -->
+    <Style x:Key="BotaoDaBarraComPainel" TargetType="Button" BasedOn="{StaticResource BotaoDaBarra}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource BotaoDaBarraComMouse}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource BotaoDaBarraApertado}" />
+                        </Trigger>
+                        <Trigger Property="Tag" Value="aberto">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource BotaoDaBarraApertado}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Botões de ligar/desligar da barra ("Sempre no topo", "Escrever"): acesos (brancos, ícone laranja) quando ligados -->
+    <Style x:Key="BotaoDaBarraLigaDesliga" TargetType="ToggleButton" BasedOn="{StaticResource BotaoDaBarra}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource BotaoDaBarraComMouse}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource BotaoDaBarraApertado}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="White" />
+                            <Setter Property="Foreground" Value="{StaticResource Laranja}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Fundo" Property="Background" Value="#E6FFFFFF" />
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsPressed" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Fundo" Property="Background" Value="#CCFFFFFF" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Traço entre os grupos de botões da barra -->
+    <Style x:Key="SeparadorDaBarra" TargetType="Rectangle">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Margin" Value="4,0" />
+        <Setter Property="Fill" Value="#66FFFFFF" />
+    </Style>
+
+    <!-- "Fundo": um círculo com a metade da esquerda cheia (as fontes de ícones não têm um igual) -->
+    <ControlTemplate x:Key="IconeDoFundo" TargetType="ContentControl">
+        <Grid Width="16" Height="16">
+            <Ellipse Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4" />
+            <Path Data="M8,0 A8,8 0 0 0 8,16 Z" Fill="{TemplateBinding Foreground}" />
+        </Grid>
+    </ControlTemplate>
+
+    <!-- Alfinete com "Sempre no topo" ligado; alfinete riscado desligado -->
+    <Style x:Key="IconeSempreNoTopo" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
+        <Setter Property="Text" Value="&#xE77A;" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                <Setter Property="Text" Value="&#xE840;" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===== Painéis de tamanho do texto e fundo ===== -->
+
+    <Style x:Key="TrilhaDoDeslizanteDoPainel" TargetType="RepeatButton" BasedOn="{StaticResource TrilhaDoDeslizante}" />
+
+    <Style x:Key="PuxadorDoDeslizanteDoPainel" TargetType="Thumb">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Grid Background="Transparent">
+                        <Ellipse Fill="#454545" Stroke="#33FFFFFF" StrokeThickness="1" />
+                        <Ellipse x:Name="Miolo" Width="12" Height="12" Fill="{StaticResource LaranjaClaro}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Miolo" Property="Width" Value="14" />
+                            <Setter TargetName="Miolo" Property="Height" Value="14" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="Miolo" Property="Width" Value="10" />
+                            <Setter TargetName="Miolo" Property="Height" Value="10" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Trilho fino, laranja até a bolinha e cinza depois; clicar no trilho leva a bolinha para lá -->
+    <Style TargetType="ctl:ControleDeslizante">
+        <Setter Property="Height" Value="26" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="IsSnapToTickEnabled" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:ControleDeslizante">
+                    <Track x:Name="PART_Track">
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource TrilhaDoDeslizanteDoPainel}" Background="{StaticResource LaranjaClaro}"
+                                          Command="Slider.DecreaseLarge" />
+                        </Track.DecreaseRepeatButton>
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource TrilhaDoDeslizanteDoPainel}" Background="#4DFFFFFF"
+                                          Command="Slider.IncreaseLarge" />
+                        </Track.IncreaseRepeatButton>
+                        <Track.Thumb>
+                            <Thumb Style="{StaticResource PuxadorDoDeslizanteDoPainel}" />
+                        </Track.Thumb>
+                    </Track>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- O painel embaixo de um botão da barra (um Popup é uma janela à parte: aparece por cima da página do chat) -->
+    <Style x:Key="PainelRapido" TargetType="Border">
+        <Setter Property="Width" Value="240" />
+        <Setter Property="Padding" Value="14,10,14,8" />
+        <Setter Property="Background" Value="{StaticResource FundoDaPagina}" />
+        <Setter Property="BorderBrush" Value="#4DFFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="TextElement.Foreground" Value="{StaticResource Texto}" />
+        <Setter Property="TextElement.FontSize" Value="13" />
+    </Style>
+
+    <Style x:Key="LegendaDoPainel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ===== Faixas escuras ===== -->
+
+    <!-- Botão sem fundo: a faixa fechada inteira, um ícone ou um link dentro das faixas -->
+    <Style x:Key="BotaoPlano" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource Texto}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#1AFFFFFF" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#0DFFFFFF" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#1AFFFFFF" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- "Sair do canal": link cinza que fica branco com o mouse -->
+    <Style x:Key="BotaoLink" TargetType="Button" BasedOn="{StaticResource BotaoPlano}">
+        <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="4,1" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Texto}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- "Voltar ao padrão" dos painéis -->
+    <Style x:Key="BotaoVoltarAoPadrao" TargetType="Button" BasedOn="{StaticResource BotaoPlano}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Margin" Value="6,0,-4,0" />
+        <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <!-- Um emote da lista: o clique põe o nome na caixa de mensagem (o foco fica lá) -->
+    <Style x:Key="BotaoDoEmote" TargetType="Button" BasedOn="{StaticResource BotaoPlano}">
+        <Setter Property="Width" Value="38" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- "Baixar e instalar" do WebView2: o azul da Microsoft -->
+    <Style x:Key="BotaoAzul" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="#0078D4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#1A86D9" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#006CBE" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Fundo" Property="Opacity" Value="0.6" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

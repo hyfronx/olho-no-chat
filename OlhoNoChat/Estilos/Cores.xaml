@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- As cores do app. As janelas novas usam só estas (nada do ModernWpf). -->
+    <!-- As cores do app: todas as janelas usam só estas. -->
 
     <!-- Laranja do app: moldura, interruptores ligados, caixa com o foco, item escolhido, botão principal -->
     <Color x:Key="CorLaranja">#E85D30</Color>

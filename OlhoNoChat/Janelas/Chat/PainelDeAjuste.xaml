@@ -1,0 +1,26 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.PainelDeAjuste"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- O painel que abre embaixo de "Tamanho do texto" e de "Fundo": ícone, título, valor e "voltar ao padrão" em cima,
+         o controle deslizante e as legendas das pontas embaixo -->
+    <Border Style="{DynamicResource PainelRapido}" PreviewKeyDown="Painel_PreviewKeyDown">
+        <StackPanel>
+            <DockPanel Margin="0,0,0,4">
+                <Button x:Name="botaoPadrao" DockPanel.Dock="Right" Style="{DynamicResource BotaoVoltarAoPadrao}"
+                        AutomationProperties.Name="Voltar ao padrão" Click="BotaoPadrao_Click">
+                    <TextBlock Style="{DynamicResource Icone}" Text="&#xE7A7;" FontSize="12" />
+                </Button>
+                <TextBlock x:Name="valor" DockPanel.Dock="Right" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Foreground="{DynamicResource LaranjaClaro}" />
+                <ContentPresenter x:Name="icone" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="titulo" />
+            </DockPanel>
+            <ctl:ControleDeslizante x:Name="deslizante" ValueChanged="Deslizante_ValueChanged" />
+            <Grid>
+                <TextBlock x:Name="legendaMenor" Style="{DynamicResource LegendaDoPainel}" HorizontalAlignment="Left" />
+                <TextBlock x:Name="legendaMaior" Style="{DynamicResource LegendaDoPainel}" HorizontalAlignment="Right" />
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

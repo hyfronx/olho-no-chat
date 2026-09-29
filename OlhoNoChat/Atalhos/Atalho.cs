@@ -46,4 +46,7 @@ public sealed record Atalho
 
     /// <summary>Texto do atalho, ou "Nenhum".</summary>
     public static string TextoOuNenhum(Atalho? atalho) => Existe(atalho) ? atalho.ToString() : "Nenhum";
+
+    /// <summary>Uma dica com "Atalho: ..." na linha de baixo; sem atalho, só a dica.</summary>
+    public static string NaDica(string dica, Atalho? atalho) => Existe(atalho) ? $"{dica}\nAtalho: {atalho}" : dica;
 }

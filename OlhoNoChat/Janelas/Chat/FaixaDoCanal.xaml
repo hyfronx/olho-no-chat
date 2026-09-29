@@ -1,0 +1,77 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.FaixaDoCanal"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OlhoNoChat.Controles">
+    <!-- O canal do chat, embaixo da barra laranja. Numa linha própria da janela, como a caixa de escrever: a página do chat
+         (WebView2) é desenhada por cima de qualquer coisa que fique no lugar dela. -->
+    <Border Background="{StaticResource FundoDaFaixa}" BorderBrush="{StaticResource LinhaDaFaixa}" BorderThickness="0,0,0,1">
+        <Grid>
+            <!-- Fechada: só o canal; o clique abre a caixa do nome -->
+            <Button x:Name="botaoTrocarCanal" Style="{StaticResource BotaoPlano}" Height="30" Padding="10,0,10,0"
+                    AutomationProperties.Name="Trocar canal" ToolTip="{Binding DicaDaFaixa}"
+                    Visibility="{Binding EditorAberto, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" Click="TrocarCanal_Click">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE7F4;" FontSize="14" Foreground="{StaticResource LaranjaClaro}" />
+                    <!-- O nome e, logo depois dele, o ponto da conexão (verde / amarelo piscando / vermelho) -->
+                    <DockPanel Grid.Column="1" Margin="8,0,8,1" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Ellipse x:Name="pontoDeConexao" DockPanel.Dock="Right" Width="8" Height="8" Margin="7,1,0,0"
+                                 VerticalAlignment="Center" Visibility="Collapsed" />
+                        <TextBlock x:Name="textoCanal" Text="{Binding CanalSalvo}" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Texto}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE8AB;" FontSize="12" Foreground="{StaticResource LaranjaClaro}" />
+                        <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource LaranjaClaro}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
+            </Button>
+
+            <!-- Aberta: a caixa do nome. Sempre aberta enquanto não há canal. -->
+            <Grid x:Name="editorDoCanal" Margin="6,6,6,5" Visibility="{Binding EditorAberto, Converter={StaticResource VisivelSe}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBox x:Name="caixaCanal" MaxLength="300" MinHeight="32" FontSize="14"
+                         ctl:CaixaDeTexto.TextoDeExemplo="Nome do canal da Twitch" AutomationProperties.Name="Canal da Twitch"
+                         Text="{Binding Texto, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
+                <Button x:Name="botaoEntrar" Grid.Column="1" Margin="6,0,0,0" Height="32" MinWidth="0" Padding="12,0"
+                        Style="{StaticResource BotaoPrincipal}" Content="{Binding TextoDoBotao}" IsEnabled="{Binding PodeConfirmar}"
+                        Click="Entrar_Click" />
+                <Button x:Name="botaoCancelarCanal" Grid.Column="2" Margin="4,0,0,0" Width="32" Height="32" Padding="0"
+                        Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center"
+                        ToolTip="Fechar sem trocar (Esc)" AutomationProperties.Name="Cancelar"
+                        Visibility="{Binding TemCanal, Converter={StaticResource VisivelSe}}" Click="Cancelar_Click">
+                    <!-- Seta para cima: a faixa fecha de novo -->
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE70E;" FontSize="12" Foreground="{StaticResource TextoDaDica}" />
+                </Button>
+                <TextBlock x:Name="dicaCanal" Grid.Row="1" Margin="2,5,8,0" FontSize="12" TextWrapping="Wrap" Text="{Binding Dica}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DicaEhErro}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource ErroDaFaixa}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <Button x:Name="botaoSairDoCanal" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,3,0,0"
+                        Style="{StaticResource BotaoLink}" Content="Sair do canal" ToolTip="Para de mostrar o chat desse canal"
+                        Visibility="{Binding TemCanal, Converter={StaticResource VisivelSe}}" Click="SairDoCanal_Click" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

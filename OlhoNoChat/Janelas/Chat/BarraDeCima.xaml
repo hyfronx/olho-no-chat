@@ -1,0 +1,89 @@
+<UserControl x:Class="OlhoNoChat.Janelas.Chat.BarraDeCima"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:chat="clr-namespace:OlhoNoChat.Janelas.Chat">
+    <UserControl.Resources>
+        <Style x:Key="IconeDaBarra" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- A barra laranja (só com as bordas visíveis): arrastar move a janela; os botões só têm ícone, o nome fica na dica -->
+    <Grid x:Name="barra" Height="32" Background="{StaticResource Laranja}" MouseLeftButtonDown="Barra_MouseLeftButtonDown">
+        <Button x:Name="botaoFecharJanela" Style="{StaticResource BotaoFecharDaBarra}" HorizontalAlignment="Right" Margin="0,0,3,0"
+                ToolTip="Fechar o Olho no Chat" AutomationProperties.Name="Fechar" Click="Fechar_Click" />
+        <StackPanel Orientation="Horizontal" Margin="3,0,40,0" VerticalAlignment="Center">
+            <!-- Olho riscado -->
+            <Button x:Name="botaoOcultarBordas" Style="{StaticResource BotaoDaBarra}" AutomationProperties.Name="Ocultar bordas"
+                    Click="OcultarBordas_Click">
+                <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xED1A;" />
+            </Button>
+
+            <Rectangle Style="{StaticResource SeparadorDaBarra}" />
+
+            <!-- Abrem um painel com o controle deslizante; a rodinha em cima deles muda o valor na hora -->
+            <Button x:Name="botaoTamanhoDoTexto" Style="{StaticResource BotaoDaBarraComPainel}" AutomationProperties.Name="Tamanho do texto"
+                    PreviewMouseLeftButtonDown="BotaoDePainel_PreviewMouseLeftButtonDown" Click="BotaoDePainel_Click"
+                    PreviewMouseWheel="BotaoDePainel_PreviewMouseWheel" MouseLeave="BotaoDePainel_MouseLeave">
+                <Button.ToolTip>
+                    <ToolTip x:Name="dicaTamanhoDoTexto" />
+                </Button.ToolTip>
+                <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xE8D2;" />
+            </Button>
+            <Button x:Name="botaoFundo" Style="{StaticResource BotaoDaBarraComPainel}" AutomationProperties.Name="Fundo"
+                    PreviewMouseLeftButtonDown="BotaoDePainel_PreviewMouseLeftButtonDown" Click="BotaoDePainel_Click"
+                    PreviewMouseWheel="BotaoDePainel_PreviewMouseWheel" MouseLeave="BotaoDePainel_MouseLeave">
+                <Button.ToolTip>
+                    <ToolTip x:Name="dicaFundo" />
+                </Button.ToolTip>
+                <ContentControl Template="{StaticResource IconeDoFundo}" />
+            </Button>
+
+            <Rectangle Style="{StaticResource SeparadorDaBarra}" />
+
+            <!-- Aceso com o alfinete enquanto está ligado -->
+            <ToggleButton x:Name="botaoSempreNoTopo" Style="{StaticResource BotaoDaBarraLigaDesliga}" AutomationProperties.Name="Sempre no topo"
+                          Checked="SempreNoTopo_Mudou" Unchecked="SempreNoTopo_Mudou">
+                <TextBlock Style="{StaticResource IconeSempreNoTopo}" FontSize="20" />
+            </ToggleButton>
+            <Rectangle Style="{StaticResource SeparadorDaBarra}" />
+
+            <!-- Abre e fecha a caixa "Escrever no chat…": aceso enquanto ela está aberta -->
+            <ToggleButton x:Name="botaoEscrever" Style="{StaticResource BotaoDaBarraLigaDesliga}" AutomationProperties.Name="Escrever"
+                          Checked="Escrever_Mudou" Unchecked="Escrever_Mudou">
+                <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xE8BD;" />
+            </ToggleButton>
+            <!-- Some junto com o Escrever (tipos de chat sem canal) -->
+            <Rectangle Style="{StaticResource SeparadorDaBarra}" Visibility="{Binding Visibility, ElementName=botaoEscrever}" />
+
+            <!-- Abre as Configurações (botão esquerdo ou direito) -->
+            <Button x:Name="botaoConfiguracoes" Style="{StaticResource BotaoDaBarra}" ToolTip="Configurações"
+                    AutomationProperties.Name="Configurações" Click="Configuracoes_Click" MouseRightButtonUp="Configuracoes_Click">
+                <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xE713;" />
+            </Button>
+        </StackPanel>
+
+        <Popup x:Name="painelTamanhoDoTexto" PlacementTarget="{Binding ElementName=botaoTamanhoDoTexto}" Placement="Bottom"
+               VerticalOffset="4" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <chat:PainelDeAjuste x:Name="ajusteTamanhoDoTexto" Nome="TamanhoDoTexto" Titulo="Tamanho do texto"
+                                 Minimo="0.5" Maximo="2.5" Passo="0.05" PassoDoTeclado="0.1" PassoDaRodinha="0.1"
+                                 LegendaMenor="menor" LegendaMaior="maior">
+                <chat:PainelDeAjuste.Icone>
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE8D2;" FontSize="15" />
+                </chat:PainelDeAjuste.Icone>
+            </chat:PainelDeAjuste>
+        </Popup>
+
+        <Popup x:Name="painelFundo" PlacementTarget="{Binding ElementName=botaoFundo}" Placement="Bottom"
+               VerticalOffset="4" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <!-- Em porcentagem; gravado de 0 a 255 -->
+            <chat:PainelDeAjuste x:Name="ajusteFundo" Nome="Fundo" Titulo="Fundo do chat"
+                                 Minimo="0" Maximo="100" Passo="5" PassoDoTeclado="5" PassoDaRodinha="5"
+                                 LegendaMenor="transparente" LegendaMaior="escuro">
+                <chat:PainelDeAjuste.Icone>
+                    <ContentControl Template="{StaticResource IconeDoFundo}" />
+                </chat:PainelDeAjuste.Icone>
+            </chat:PainelDeAjuste>
+        </Popup>
+    </Grid>
+</UserControl>

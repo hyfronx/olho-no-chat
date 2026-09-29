@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
-		<StartupObject>OlhoNoChat.App</StartupObject>
+		<StartupObject>OlhoNoChat.Inicio.Programa</StartupObject>
 		<UseWPF>true</UseWPF>
 		<ApplicationIcon>olho_no_chat.ico</ApplicationIcon>
 		<AssemblyName>OlhoNoChat</AssemblyName>
@@ -35,11 +35,10 @@
 	<ItemGroup>
 		<PackageReference Include="AvalonEdit" Version="6.3.1.120" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+		<PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
-		<PackageReference Include="ModernWpfUI" Version="0.9.6" />
 		<PackageReference Include="NAudio" Version="2.2.1" />
 		<PackageReference Include="Velopack" Version="0.0.1298" />
 	</ItemGroup>
@@ -63,11 +62,6 @@
 		<Content Include="..\LICENSE" Link="LICENSE.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<ApplicationDefinition Remove="App.xaml" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Page Include="App.xaml" />
 	</ItemGroup>
 
 </Project>
