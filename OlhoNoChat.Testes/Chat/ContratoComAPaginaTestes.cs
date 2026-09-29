@@ -71,6 +71,16 @@ public sealed class ContratoComAPaginaTestes
     }
 
     [Fact]
+    public void BarrasDeRolagem_SemBordasUmEstiloQueEscondeTodasComBordasSai()
+    {
+        string esconde = ContratoComAPagina.BarrasDeRolagem(visiveis: false);
+        Assert.Contains("scrollbar-width: none !important;", esconde);
+        Assert.Contains("*::-webkit-scrollbar { display: none !important; }", esconde);
+        Assert.Contains("getElementById('onc-sem-rolagem')) return;", esconde); // posto uma vez só
+        Assert.Contains("getElementById('onc-sem-rolagem'); if (estilo) estilo.remove();", ContratoComAPagina.BarrasDeRolagem(visiveis: true));
+    }
+
+    [Fact]
     public void ModoRolagem_Exato()
     {
         Assert.Equal(

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
 using OlhoNoChat.Twitch;
@@ -5,9 +6,16 @@ using E = OlhoNoChat.Twitch.ListaDeEmotes.EmoteDaTwitch;
 
 namespace OlhoNoChat.Testes.Twitch;
 
-public class ListaDeEmotesTestes
+public sealed class ListaDeEmotesTestes : IDisposable
 {
     private static readonly Dictionary<string, string> SemNomes = [];
+    private readonly string _pasta = Path.Combine(Path.GetTempPath(), "OlhoNoChat.Testes", Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_pasta))
+            Directory.Delete(_pasta, recursive: true);
+    }
 
     [Fact]
     public void Agrupar_EsteCanalPrimeiroOsOutrosPeloNomeEOsGlobaisNoFim()
@@ -49,17 +57,20 @@ public class ListaDeEmotesTestes
     }
 
     private static (ListaDeEmotes Lista, TwitchFalsa Twitch, Action<TimeSpan> Avancar) Criar(
-        TwitchFalsa twitch, bool podeLerEmotes = true)
+        TwitchFalsa twitch, bool podeLerEmotes = true, string? pasta = null, bool verificar = true, string idDaConta = "121292674")
     {
         var agora = new DateTime(2026, 9, 28, 12, 0, 0, DateTimeKind.Utc);
         twitch.Quando("GET", "validate", HttpStatusCode.OK, podeLerEmotes
             ? Montar.ValidacaoOk
             : """{"client_id":"zrqsilh31pbdlfjb81onhulkvzytgh","login":"hyfronx","scopes":["user:write:chat"],"user_id":"121292674"}""");
         var api = new ApiDaTwitch(twitch);
-        var conta = new ContaDaTwitch(api, Montar.ContaConectada(), NullLogger<ContaDaTwitch>.Instance);
-        conta.VerificarAsync().GetAwaiter().GetResult();
+        var salva = Montar.ContaConectada();
+        salva.Id = idDaConta;
+        var conta = new ContaDaTwitch(api, salva, NullLogger<ContaDaTwitch>.Instance);
+        if (verificar)
+            conta.VerificarAsync().GetAwaiter().GetResult();
         DateTime atual = agora;
-        var lista = new ListaDeEmotes(api, conta, NullLogger<ListaDeEmotes>.Instance, () => atual);
+        var lista = new ListaDeEmotes(api, conta, NullLogger<ListaDeEmotes>.Instance, () => atual, pasta);
         return (lista, twitch, tempo => atual += tempo);
     }
 
@@ -67,7 +78,7 @@ public class ListaDeEmotesTestes
         .Quando("GET", "users?login=meucanal", HttpStatusCode.OK, """{"data":[{"id":"99"}]}""")
         .Quando("GET", "users?id=", HttpStatusCode.OK, """{"data":[{"id":"99","display_name":"MeuCanal"},{"id":"50","display_name":"Outro"}]}""")
         .Quando("GET", "emotes/user", HttpStatusCode.OK,
-            """{"data":[{"id":"1","name":"meuHype","emote_type":"subscriptions","owner_id":"99"},{"id":"2","name":":)","emote_type":"smilies","owner_id":"0"}],"pagination":{"cursor":"PAG2"}}""")
+            """{"data":[{"id":"1","name":"meuHype","emote_type":"subscriptions","owner_id":"99","format":["static","animated"]},{"id":"2","name":":)","emote_type":"smilies","owner_id":"0"}],"pagination":{"cursor":"PAG2"}}""")
         .Quando("GET", "after=PAG2", HttpStatusCode.OK,
             """{"data":[{"id":"3","name":"outroLol","emote_type":"follower","owner_id":"50"},{"id":"4","name":"Kappa","emote_type":"globals","owner_id":"0"}],"pagination":{}}""")
         .Quando("GET", "emotes/global", HttpStatusCode.OK,
@@ -186,5 +197,67 @@ public class ListaDeEmotesTestes
 
         Assert.Same(await a, await b);
         Assert.Single(twitch.PedidosPara("users?login=meucanal"));
+    }
+
+    [Fact]
+    public async Task Buscar_MarcaOsQueTemVersaoAnimada()
+    {
+        var (lista, _, _) = Criar(TwitchComEmotes());
+        var emotes = (await lista.BuscarAsync("meucanal")).Grupos.SelectMany(g => g.Emotes).ToList();
+        Assert.True(emotes.Single(e => e.Nome == "meuHype").Animado);
+        Assert.False(emotes.Single(e => e.Nome == "outroLol").Animado);
+    }
+
+    [Fact]
+    public async Task UltimaConhecida_FicaNoDiscoParaAProximaVezAntesDeConferirOAcesso()
+    {
+        var (primeira, _, _) = Criar(TwitchComEmotes(), pasta: _pasta);
+        Assert.Null(primeira.UltimaConhecida("meucanal"));
+        var buscada = await primeira.BuscarAsync("meucanal");
+        Assert.Same(buscada, primeira.UltimaConhecida("meucanal"));
+        Assert.True(File.Exists(Path.Combine(_pasta, ListaDeEmotes.ArquivoDaUltimaLista)));
+
+        // Outra execução do app: a conta ainda não foi conferida (a permissão é desconhecida) e nada foi pedido à Twitch
+        var (segunda, twitch, _) = Criar(TwitchComEmotes(), pasta: _pasta, verificar: false);
+        var guardada = segunda.UltimaConhecida("MeuCanal");
+        Assert.NotNull(guardada);
+        Assert.Equal(buscada.Assinatura, guardada.Assinatura);
+        Assert.True(guardada.Grupos.SelectMany(g => g.Emotes).Single(e => e.Nome == "meuHype").Animado);
+        Assert.False(segunda.EstaPronta("meucanal")); // a guardada não conta como buscada: a Twitch é consultada de novo
+        Assert.Empty(twitch.PedidosPara("emotes/user"));
+    }
+
+    [Fact]
+    public async Task UltimaConhecida_SoDaMesmaContaEDoMesmoCanal()
+    {
+        var (primeira, _, _) = Criar(TwitchComEmotes(), pasta: _pasta);
+        await primeira.BuscarAsync("meucanal");
+
+        var (outroCanal, _, _) = Criar(TwitchComEmotes(), pasta: _pasta);
+        Assert.Null(outroCanal.UltimaConhecida("outro"));
+        var (outraConta, _, _) = Criar(TwitchComEmotes(), pasta: _pasta, verificar: false, idDaConta: "555");
+        Assert.Null(outraConta.UltimaConhecida("meucanal"));
+    }
+
+    [Fact]
+    public void UltimaConhecida_ArquivoEstragadoEIgnorado()
+    {
+        Directory.CreateDirectory(_pasta);
+        File.WriteAllText(Path.Combine(_pasta, ListaDeEmotes.ArquivoDaUltimaLista), "{ isto nao e json");
+        var (lista, _, _) = Criar(TwitchComEmotes(), pasta: _pasta);
+        Assert.Null(lista.UltimaConhecida("meucanal"));
+    }
+
+    [Fact]
+    public void Assinatura_MudaComOsEmotes()
+    {
+        var a = new ListaDeEmotes.Lista([new ListaDeEmotes.Grupo("G", [new ListaDeEmotes.Emote("1", "a")])], false);
+        var igual = new ListaDeEmotes.Lista([new ListaDeEmotes.Grupo("G", [new ListaDeEmotes.Emote("1", "a")])], false);
+        var animado = new ListaDeEmotes.Lista([new ListaDeEmotes.Grupo("G", [new ListaDeEmotes.Emote("1", "a", Animado: true)])], false);
+        var outroNome = new ListaDeEmotes.Lista([new ListaDeEmotes.Grupo("G", [new ListaDeEmotes.Emote("1", "b")])], false);
+        Assert.Equal(a.Assinatura, igual.Assinatura);
+        Assert.NotEqual(a.Assinatura, animado.Assinatura);
+        Assert.NotEqual(a.Assinatura, outroNome.Assinatura);
+        Assert.NotEqual(a.Assinatura, (a with { SoGlobais = true }).Assinatura);
     }
 }

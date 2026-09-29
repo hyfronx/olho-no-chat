@@ -94,6 +94,8 @@ public sealed class ImportacaoDoArquivoAntigoTestes
 
         var iguais = typeof(Opcoes).GetProperties()
             .Where(p => p.Name != nameof(Opcoes.Versao))
+            // Nasceram depois do arquivo antigo: ficam com o padrão
+            .Where(p => p.Name is not (nameof(Opcoes.EsconderTituloDoChat) or nameof(Opcoes.EsconderPlacarDoTopo) or nameof(Opcoes.EsconderDestaques)))
             .Where(p => JsonSerializer.Serialize(p.GetValue(convertidas), ArquivoDeConfiguracoes.Formato)
                         == JsonSerializer.Serialize(p.GetValue(padrao), ArquivoDeConfiguracoes.Formato))
             .Select(p => p.Name)

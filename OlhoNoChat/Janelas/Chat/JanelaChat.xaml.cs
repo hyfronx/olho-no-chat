@@ -47,7 +47,7 @@ public partial class JanelaChat : Window
     private bool _fechando;
 
     public JanelaChat(ILogger<JanelaChat> log, ArquivoDeConfiguracoes arquivo, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao,
-        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ResgatesDePontos resgates, ProcuraDeAtualizacoes atualizacoes,
+        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ResgatesDePontos resgates, ProcuraDeAtualizacoes atualizacoes,
         IconeDaBandeja bandeja)
     {
         InitializeComponent();
@@ -66,7 +66,7 @@ public partial class JanelaChat : Window
         _caixa = new LogicaCaixaDeEscrever(() => Opcoes, () => _conta.EstaConectada, () => _conta.PodeEnviar, () => _conta.NomeMostrado,
             envio.EnviarAsync);
         caixaDeEscrever.Logica = _caixa;
-        caixaDeEscrever.Ligar(listaDeEmotes, conta, autorizacao, log);
+        caixaDeEscrever.Ligar(listaDeEmotes, imagensDeEmotes, conta, autorizacao, log);
         caixaDeEscrever.FecharPedido += () => FecharCaixa(devolverFoco: true);
         caixaDeEscrever.Enviada += () =>
         {
@@ -277,9 +277,10 @@ public partial class JanelaChat : Window
         grade.Clip = recorte;
     }
 
-    // A rolagem e os links do Padrão acompanham as bordas e o modo rolagem
+    // As barras de rolagem (qualquer página), e a rolagem e os links do Padrão, acompanham as bordas e o modo rolagem
     private void AtualizarPagina()
     {
+        _navegador.Executar(ContratoComAPagina.BarrasDeRolagem(_logica.BordasVisiveis));
         if (_navegador.Pagina is not ChatPadrao)
             return;
 

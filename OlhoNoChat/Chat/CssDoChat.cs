@@ -113,6 +113,14 @@ public static class CssDoChat
             ? PadraoDoChatOficial + "\n" + MensagensDoChatOficial(opcoes)
             : opcoes.CssDoChatOficial);
 
+        // As partes da página da Twitch que a pessoa escolheu esconder (aba Chat), com qualquer aparência
+        if (opcoes.EsconderTituloDoChat)
+            css.Append($"\n{TituloDoChat} {{ display: none !important; }}");
+        if (opcoes.EsconderPlacarDoTopo)
+            css.Append($"\n{PlacarDoTopo} {{ display: none !important; }}");
+        if (opcoes.EsconderDestaques)
+            css.Append($"\n{DestaquesDoChat} {{ display: none !important; }}");
+
         // Uma caixa de digitar por vez: a da Twitch só enquanto a escrita está aberta (o app põe "onc-writing" no body)
         css.Append(opcoes.CaixaDaTwitch
             ? "\nbody:not(.onc-writing) .chat-input { display: none !important; }"
@@ -125,6 +133,18 @@ public static class CssDoChat
 
         return css.ToString();
     }
+
+    // Conferidos na página em 29/09/2026 (a Twitch põe "display: flex !important" no título: sem o !important não some)
+    public const string TituloDoChat = ".stream-chat .stream-chat-header";
+
+    // A faixa gira entre os placares (presentes, bits com o botão de Cheer, clipes): é o bloco do chat que tem as partes dos
+    // placares. O fim dos nomes das classes muda a cada versão da Twitch, por isso o "contém"; o texto dos botões depende do
+    // idioma e não serve
+    public const string PlacarDoTopo =
+        """.chat-room__content > div:has([class*="channelLeaderboard"], [class*="bitsLeaderboard"], [data-testid="leaderboard-top-three-entry"])""";
+
+    // Cada destaque (enquete, palpite, hype train, mensagem fixada, drop) é um cartão da pilha de destaques
+    public const string DestaquesDoChat = ".community-highlight-stack__card, .community-highlight";
 
     // Cada mensagem da Twitch é um ".chat-line__message", com a FrankerFaceZ ou sem ela
     private static string MensagensDoChatOficial(Opcoes opcoes)
@@ -182,11 +202,6 @@ public static class CssDoChat
         body, p, span, div, a, h1, h2, h3 {
             text-shadow: -1px -1px 0 rgba(0, 0, 0, .85), 1px -1px 0 rgba(0, 0, 0, .85), -1px 1px 0 rgba(0, 0, 0, .85), 1px 1px 0 rgba(0, 0, 0, .85);
         }
-
-        /* Sem o cabeçalho do chat e o placar de quem mais deu presentes */
-        .stream-chat .stream-chat-header { display: none; background-color: transparent !important; color: white !important; }
-        .tw-z-default { display: none; }
-        div:has(> div > div[aria-label="Expand Top Gifters Leaderboard"]) { display: none !important; }
 
         .chat-line__timestamp { color: gray !important; }
         #chat-room-header-label { color: #cacaca !important; }

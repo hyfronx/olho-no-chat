@@ -125,10 +125,36 @@ public sealed class CssDoChatTestes
 
         Assert.StartsWith("body { color: red; }", css);
         Assert.DoesNotContain(".chat-line__message {", css);
-        Assert.DoesNotContain("stream-chat-header", css);
+        Assert.DoesNotContain(CssDoChat.PadraoDoChatOficial, css);
 
         opcoes.CssDoChatOficial = string.Empty;
+        opcoes.EsconderPlacarDoTopo = false;
+        opcoes.EsconderTituloDoChat = false;
         Assert.StartsWith("\n.chat-input", CssDoChat.DoChatOficial(opcoes));
+    }
+
+    [Fact]
+    public void ChatOficial_PartesDaPaginaEscondidasComQualquerAparencia()
+    {
+        static string Regra(string seletor) => seletor + " { display: none !important; }";
+        // Padrão: título e placar somem, os destaques ficam
+        string padrao = CssDoChat.DoChatOficial(new Opcoes());
+        Assert.Contains(Regra(CssDoChat.TituloDoChat), padrao);
+        Assert.Contains(Regra(CssDoChat.PlacarDoTopo), padrao);
+        Assert.DoesNotContain(Regra(CssDoChat.DestaquesDoChat), padrao);
+
+        string proprio = CssDoChat.DoChatOficial(new Opcoes { AparenciaPadraoNoChatOficial = false, CssDoChatOficial = "x { }", EsconderDestaques = true });
+        Assert.Contains(Regra(CssDoChat.TituloDoChat), proprio);
+        Assert.Contains(Regra(CssDoChat.PlacarDoTopo), proprio);
+        Assert.Contains(Regra(CssDoChat.DestaquesDoChat), proprio);
+
+        string nenhum = CssDoChat.DoChatOficial(new Opcoes { EsconderTituloDoChat = false, EsconderPlacarDoTopo = false });
+        Assert.DoesNotContain(CssDoChat.TituloDoChat, nenhum);
+        Assert.DoesNotContain(CssDoChat.PlacarDoTopo, nenhum);
+        Assert.DoesNotContain("stream-chat-header", CssDoChat.PadraoDoChatOficial);
+        // Pelas partes do placar, sem depender do idioma da página (o texto dos botões muda)
+        Assert.DoesNotContain("aria-label", CssDoChat.PlacarDoTopo);
+        Assert.Contains("[class*=\"channelLeaderboard\"]", CssDoChat.PlacarDoTopo);
     }
 
     [Fact]
@@ -151,6 +177,9 @@ public sealed class CssDoChatTestes
         Assert.DoesNotContain("chat-room__notifcations", CssDoChat.PadraoDoChatOficial);
         Assert.DoesNotContain("chat-wysiwyg-input__box", CssDoChat.PadraoDoChatOficial);
         Assert.DoesNotContain("marquee-animation", CssDoChat.PadraoDoChatOficial);
+        // Conferido em 29/09/2026: o placar tem opção própria; ".tw-z-default" não existe mais na página
+        Assert.DoesNotContain("Expand Top Gifters", CssDoChat.PadraoDoChatOficial);
+        Assert.DoesNotContain("tw-z-default", CssDoChat.PadraoDoChatOficial);
     }
 
     [Fact]

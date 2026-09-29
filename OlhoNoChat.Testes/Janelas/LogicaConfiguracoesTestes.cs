@@ -64,6 +64,9 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         c.Chat.MenuDeEmotesDoBetterTtv = false;
         c.Chat.Emotes7tv = false;
         c.Chat.FrankerFaceZ = false;
+        c.Chat.EsconderTituloDoChat = false;
+        c.Chat.EsconderPlacarDoTopo = false;
+        c.Chat.EsconderDestaques = true;
         c.Chat.EnderecoPersonalizado = "https://exemplo.invalid/chat";
         c.Aparencia.Tema = "0";
         c.Aparencia.CssDoTemaNenhum = "#chat_box { color: red; }";
@@ -182,6 +185,9 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         // Os dos outros tipos ficam como estavam
         Assert.True(o.BetterTtv);
         Assert.True(o.FrankerFaceZ);
+        Assert.True(o.EsconderTituloDoChat);
+        Assert.True(o.EsconderPlacarDoTopo);
+        Assert.False(o.EsconderDestaques);
         Assert.True(o.AparenciaPadraoNoChatOficial);
         Assert.Equal("", o.CssDoChatOficial);
         Assert.Equal("", o.CssDoEnderecoPersonalizado);
@@ -214,6 +220,9 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.False(o.MenuDeEmotesDoBetterTtv);
         Assert.False(o.Emotes7tv);
         Assert.False(o.FrankerFaceZ);
+        Assert.False(o.EsconderTituloDoChat);
+        Assert.False(o.EsconderPlacarDoTopo);
+        Assert.True(o.EsconderDestaques);
         Assert.Equal("#A8DCFF", o.CorDoTexto);
         Assert.Equal("soft", o.ContornoDasLetras);
         Assert.Equal("Arial", o.Fonte);

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,7 +119,11 @@ public static class Programa
         servicos.AddSingleton<ContaDaTwitch>();
         servicos.AddSingleton<AutorizacaoNoNavegador>();
         servicos.AddSingleton<EnvioDeMensagem>();
-        servicos.AddSingleton<ListaDeEmotes>();
+        // A última lista de emotes e as imagens ficam guardadas numa pasta dos dados do app
+        string pastaDosEmotes = Path.Combine(InfoDoApp.PastaDeDados, "Emotes");
+        servicos.AddSingleton(sp => new ListaDeEmotes(sp.GetRequiredService<ApiDaTwitch>(), sp.GetRequiredService<ContaDaTwitch>(),
+            sp.GetRequiredService<ILogger<ListaDeEmotes>>(), pastaDosEmotes));
+        servicos.AddSingleton(sp => new ImagensDeEmotes(pastaDosEmotes, sp.GetRequiredService<ILogger<ImagensDeEmotes>>()));
         servicos.AddSingleton<ResgatesDePontos>();
         servicos.AddSingleton(sp => new ProcuraDeAtualizacoes(sp.GetRequiredService<ILogger<ProcuraDeAtualizacoes>>(),
             () => arquivo.Opcoes, arquivo.Gravar));

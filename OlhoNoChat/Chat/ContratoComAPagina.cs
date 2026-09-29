@@ -133,6 +133,24 @@ public static class ContratoComAPagina
         return $"window.oncScrollModeWanted = {modo}; if (window.oncSetScrollMode) window.oncSetScrollMode(window.oncScrollModeWanted);";
     }
 
+    public const string IdDoEstiloSemRolagem = "onc-sem-rolagem";
+
+    /// <summary>
+    /// Sem as bordas, nenhuma barra de rolagem aparece, em qualquer página (a da Twitch, a do Padrão no modo rolagem, a de
+    /// um endereço personalizado): um estilo à parte, posto e tirado. A rodinha do mouse continua rolando.
+    /// </summary>
+    public static string BarrasDeRolagem(bool visiveis) => visiveis
+        ? $"(function () {{ var estilo = document.getElementById('{IdDoEstiloSemRolagem}'); if (estilo) estilo.remove(); }})();"
+        : $$"""
+            (function () {
+                if (document.getElementById('{{IdDoEstiloSemRolagem}}')) return;
+                var estilo = document.createElement('style');
+                estilo.id = '{{IdDoEstiloSemRolagem}}';
+                estilo.textContent = '* { scrollbar-width: none !important; } *::-webkit-scrollbar { display: none !important; }';
+                (document.head || document.documentElement).appendChild(estilo);
+            })();
+            """;
+
     /// <summary>Os links do Padrão só são clicáveis com as bordas visíveis.</summary>
     public static string LinksClicaveis(bool clicaveis) =>
         $"document.body && document.body.classList.toggle('onc-links-on', {(clicaveis ? "true" : "false")});";

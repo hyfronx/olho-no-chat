@@ -52,11 +52,11 @@ public partial class CaixaDeEscrever : UserControl
         }
     }
 
-    public void Ligar(ListaDeEmotes lista, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao, ILogger log)
+    public void Ligar(ListaDeEmotes lista, ImagensDeEmotes imagens, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao, ILogger log)
     {
         _conta = conta;
         _autorizacao = autorizacao;
-        listaDeEmotes.Ligar(lista, conta, log);
+        listaDeEmotes.Ligar(lista, imagens, conta, log);
     }
 
     public bool EmotesAbertos => painelDeEmotes.IsOpen;

@@ -97,8 +97,8 @@ public class AvisosNoChatTestes
     {
         IReadOnlyList<GrupoDeEmotes> grupos =
         [
-            new("hyfronx (este canal)", [new("1", "hyfLol", "1.0", 0), new("2", "hyfOi", "1.0", 0)]),
-            new("Globais da Twitch", [new("3", "Kappa", "1.0", 0), new("4", "LUL", "1.0", 0)]),
+            new("hyfronx (este canal)", [Emote("1", "hyfLol"), Emote("2", "hyfOi")]),
+            new("Globais da Twitch", [Emote("3", "Kappa"), Emote("4", "LUL")]),
         ];
 
         Assert.Same(grupos, GrupoDeEmotes.Filtrar(grupos, "  "));
@@ -106,5 +106,28 @@ public class AvisosNoChatTestes
         Assert.Single(achados);
         Assert.Equal(["hyfLol"], achados[0].Emotes.Select(e => e.Nome));
         Assert.Empty(GrupoDeEmotes.Filtrar(grupos, "nada"));
+    }
+
+    private static EmoteNaLista Emote(string id, string nome) => new(id, nome, animado: false, "1.0", 0, imagens: null);
+
+    [Fact]
+    public void GrupoDeEmotes_EmLinhasPoeOTituloEOsEmotesNoMaximoNPorLinha()
+    {
+        IReadOnlyList<GrupoDeEmotes> grupos =
+        [
+            new("A", [Emote("1", "a1"), Emote("2", "a2"), Emote("3", "a3"), Emote("4", "a4"), Emote("5", "a5")]),
+            new("B", [Emote("6", "b1")]),
+        ];
+
+        IReadOnlyList<object> linhas = GrupoDeEmotes.EmLinhas(grupos, 2);
+
+        Assert.Equal(6, linhas.Count);
+        Assert.Equal(new TituloDoGrupo("A", Primeiro: true), linhas[0]);
+        Assert.Equal(["a1", "a2"], Assert.IsType<LinhaDeEmotes>(linhas[1]).Emotes.Select(e => e.Nome));
+        Assert.Equal(["a5"], Assert.IsType<LinhaDeEmotes>(linhas[3]).Emotes.Select(e => e.Nome));
+        Assert.Equal(new TituloDoGrupo("B", Primeiro: false), linhas[4]);
+        Assert.Single(Assert.IsType<LinhaDeEmotes>(linhas[5]).Emotes);
+        // Largura menor que um emote: um por linha
+        Assert.Equal(8, GrupoDeEmotes.EmLinhas(grupos, 0).Count);
     }
 }

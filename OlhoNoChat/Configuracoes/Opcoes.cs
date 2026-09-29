@@ -45,6 +45,13 @@ public sealed class Opcoes
     public bool Emotes7tv { get; set; } = true;
     public bool MenuDeEmotesDoBetterTtv { get; set; } = true;
     public bool FrankerFaceZ { get; set; } = true;
+    // Partes da página do "Chat oficial da Twitch" que podem sumir
+    /// <summary>O título "Chat da live" em cima do chat.</summary>
+    public bool EsconderTituloDoChat { get; set; } = true;
+    /// <summary>A faixa que passa no topo (placar de presentes, bits, clipes e o botão de Cheer).</summary>
+    public bool EsconderPlacarDoTopo { get; set; } = true;
+    /// <summary>Os destaques por cima das mensagens (enquetes, palpites, hype train, mensagem fixada, drops).</summary>
+    public bool EsconderDestaques { get; set; } = false;
 
     // Aparência
     public int Tema { get; set; } = TemaPadrao;

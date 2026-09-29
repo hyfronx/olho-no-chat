@@ -12,17 +12,27 @@ namespace OlhoNoChat.Janelas.Chat;
 /// A lista de emotes da caixa de escrever: os que a conta conectada pode usar neste canal (do canal, das inscrições e os
 /// globais), com a busca, o botão do painel de emojis do Windows e, para acessos antigos sem a permissão de ler os
 /// emotes, o aviso com "Conectar de novo". A Twitch manda a lista em muitas páginas pequenas: ela começa a carregar
-/// quando a caixa de mensagem ganha o foco e fica guardada 10 minutos (<see cref="ListaDeEmotes"/>).
+/// quando a caixa de mensagem ganha o foco e fica guardada 10 minutos (<see cref="ListaDeEmotes"/>). Enquanto isso, a
+/// última lista conhecida (guardada no disco) já aparece, e só é refeita se a da Twitch vier diferente. As imagens vêm de
+/// <see cref="ImagensDeEmotes"/> (guardadas no disco); os emotes animados se mexem enquanto a lista está aberta.
 /// </summary>
 public partial class PainelDeEmotes : UserControl
 {
     private readonly DispatcherTimer _esperaDaBusca = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private ListaDeEmotes? _listaDeEmotes;
+    private ImagensDeEmotes? _imagens;
     private ContaDaTwitch? _conta;
     private ILogger? _log;
     private IReadOnlyList<GrupoDeEmotes>? _grupos;
-    private ListaDeEmotes.Lista? _deOnde; // a lista de que os grupos foram montados
+    private string? _assinatura; // da lista de que os grupos foram montados
+    private string? _canalDosGrupos;
     private bool _soGlobais;
+    private IReadOnlyList<GrupoDeEmotes> _mostrados = []; // os grupos na tela (com a busca)
+    private int _colunas;
+
+    // Um botão de emote (BotaoDoEmote) e a barra de rolagem fina (Rolagem.xaml)
+    private const double LarguraDoEmote = 38;
+    private const double LarguraDaRolagem = 12;
 
     public PainelDeEmotes()
     {
@@ -44,9 +54,10 @@ public partial class PainelDeEmotes : UserControl
     /// <summary>Esc na busca.</summary>
     public event Action? FecharPedido;
 
-    public void Ligar(ListaDeEmotes listaDeEmotes, ContaDaTwitch conta, ILogger log)
+    public void Ligar(ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagens, ContaDaTwitch conta, ILogger log)
     {
         _listaDeEmotes = listaDeEmotes;
+        _imagens = imagens;
         _conta = conta;
         _log = log;
     }
@@ -58,6 +69,7 @@ public partial class PainelDeEmotes : UserControl
     public void Descartar()
     {
         _grupos = null; // solta as imagens
+        _assinatura = null;
         _listaDeEmotes?.Descartar();
     }
 
@@ -76,50 +88,102 @@ public partial class PainelDeEmotes : UserControl
         if (_listaDeEmotes == null || _conta == null)
             return;
 
+        if (_canalDosGrupos != canal)
+        {
+            _grupos = null;
+            _assinatura = null;
+        }
+        // Enquanto a Twitch responde: a última lista conhecida (da memória ou do disco) ou "Carregando"
+        bool mostrandoAConhecida = false;
         if (!_listaDeEmotes.EstaPronta(canal) || _grupos == null)
         {
-            gruposDeEmotes.ItemsSource = null;
-            avisoSoGlobais.Visibility = Visibility.Collapsed;
-            MostrarStatus("Carregando emotes…");
+            if (_listaDeEmotes.UltimaConhecida(canal) is { } conhecida)
+            {
+                mostrandoAConhecida = true;
+                if (Montar(conhecida, canal))
+                    MostrarEmotes();
+            }
+            else
+            {
+                gruposDeEmotes.ItemsSource = null;
+                avisoSoGlobais.Visibility = Visibility.Collapsed;
+                MostrarStatus("Carregando emotes…");
+            }
         }
         try
         {
             await _conta.VerificarUmaVezAsync();
             ListaDeEmotes.Lista lista = await _listaDeEmotes.BuscarAsync(canal);
-            if (_grupos == null || !ReferenceEquals(lista, _deOnde))
-            {
-                // Em telas com escala maior, a imagem do dobro do tamanho, guardada do tamanho mostrado (nítida)
-                double escala = VisualTreeHelper.GetDpi(this).DpiScaleX;
-                string arquivo = escala > 1.2 ? "2.0" : "1.0";
-                int largura = escala > 1.2 && escala < 2.0 ? (int)Math.Ceiling(28 * escala) : 0;
-                _grupos = lista.Grupos
-                    .Select(g => new GrupoDeEmotes(g.Titulo, g.Emotes.Select(e => new EmoteNaLista(e.Id, e.Nome, arquivo, largura)).ToList()))
-                    .ToList();
-                _deOnde = lista;
-                _soGlobais = lista.SoGlobais;
-            }
-            MostrarEmotes();
+            // A nova só é mostrada se mudou (sem voltar a rolagem para o começo quem já está olhando a lista)
+            if (Montar(lista, canal))
+                MostrarEmotes(voltarAoComeco: !mostrandoAConhecida);
+            else if (!mostrandoAConhecida)
+                MostrarEmotes();
         }
         catch (Exception ex)
         {
             _log?.LogWarning(ex, "Não deu para carregar os emotes.");
-            MostrarStatus("Não foi possível carregar os emotes. Confira sua internet e tente de novo.");
+            if (!mostrandoAConhecida)
+                MostrarStatus("Não foi possível carregar os emotes. Confira sua internet e tente de novo.");
         }
     }
 
-    private void MostrarEmotes()
+    // Monta os grupos da lista, se ela for diferente da que está montada (os emotes que já estavam são aproveitados, com as
+    // imagens). Devolve se mudou.
+    private bool Montar(ListaDeEmotes.Lista lista, string canal)
+    {
+        string assinatura = lista.Assinatura;
+        if (_grupos != null && assinatura == _assinatura)
+            return false;
+
+        // Em telas com escala maior, a imagem do dobro do tamanho, guardada do tamanho mostrado (nítida)
+        double escala = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        string arquivo = escala > 1.2 ? "2.0" : "1.0";
+        int largura = escala > 1.2 && escala < 2.0 ? (int)Math.Ceiling(28 * escala) : 0;
+        var existentes = new Dictionary<string, EmoteNaLista>();
+        foreach (EmoteNaLista e in _grupos?.SelectMany(g => g.Emotes) ?? [])
+            existentes.TryAdd(e.Id + "|" + e.Nome + "|" + e.Animado, e);
+        _grupos = lista.Grupos
+            .Select(g => new GrupoDeEmotes(g.Titulo, g.Emotes
+                .Select(e => existentes.GetValueOrDefault(e.Id + "|" + e.Nome + "|" + e.Animado)
+                             ?? new EmoteNaLista(e.Id, e.Nome, e.Animado, arquivo, largura, _imagens))
+                .ToList()))
+            .ToList();
+        _assinatura = assinatura;
+        _canalDosGrupos = canal;
+        _soGlobais = lista.SoGlobais;
+        return true;
+    }
+
+    private void MostrarEmotes(bool voltarAoComeco = true)
     {
         if (_grupos == null)
             return;
 
         string busca = caixaProcurarEmote.Text.Trim();
-        IReadOnlyList<GrupoDeEmotes> grupos = GrupoDeEmotes.Filtrar(_grupos, busca);
-        gruposDeEmotes.ItemsSource = grupos;
-        rolagemDosEmotes.ScrollToTop();
+        _mostrados = GrupoDeEmotes.Filtrar(_grupos, busca);
+        _colunas = Colunas();
+        gruposDeEmotes.ItemsSource = GrupoDeEmotes.EmLinhas(_mostrados, _colunas);
+        if (voltarAoComeco)
+            (gruposDeEmotes.Template?.FindName("rolagemDosEmotes", gruposDeEmotes) as ScrollViewer)?.ScrollToTop();
         avisoSoGlobais.Visibility = _soGlobais ? Visibility.Visible : Visibility.Collapsed;
-        MostrarStatus(grupos.Count > 0 ? null
+        MostrarStatus(_mostrados.Count > 0 ? null
             : busca.Length > 0 ? $"Nenhum emote com \"{busca}\"."
             : "Nenhum emote para mostrar.");
+    }
+
+    // Quantos emotes cabem numa linha (antes de a lista aparecer pela primeira vez, pela largura pedida ao painel)
+    private int Colunas()
+    {
+        double largura = gruposDeEmotes.ActualWidth > 0 ? gruposDeEmotes.ActualWidth : (double.IsNaN(Width) ? ActualWidth : Width) - 18;
+        return Math.Max(1, (int)((largura - LarguraDaRolagem) / LarguraDoEmote));
+    }
+
+    // Janela mais larga ou mais estreita: as linhas são refeitas se cabe outro número de emotes
+    private void Grupos_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_grupos != null && e.WidthChanged && Colunas() != _colunas)
+            MostrarEmotes(voltarAoComeco: false);
     }
 
     private void MostrarStatus(string? texto)
@@ -150,7 +214,7 @@ public partial class PainelDeEmotes : UserControl
                 _esperaDaBusca.Stop();
                 MostrarEmotes();
             }
-            EmoteNaLista? primeiro = (gruposDeEmotes.ItemsSource as IEnumerable<GrupoDeEmotes>)?.SelectMany(g => g.Emotes).FirstOrDefault();
+            EmoteNaLista? primeiro = _mostrados.SelectMany(g => g.Emotes).FirstOrDefault();
             if (primeiro != null)
                 EmoteEscolhido?.Invoke(primeiro.Nome);
         }

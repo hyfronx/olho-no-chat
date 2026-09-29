@@ -60,6 +60,15 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private bool _frankerFaceZ;
 
+    [ObservableProperty]
+    private bool _esconderTituloDoChat;
+
+    [ObservableProperty]
+    private bool _esconderPlacarDoTopo;
+
+    [ObservableProperty]
+    private bool _esconderDestaques;
+
     // Endereço personalizado
     [ObservableProperty]
     private string _enderecoPersonalizado = string.Empty;
@@ -79,6 +88,9 @@ public sealed partial class LogicaChat : LogicaDaPagina
         MenuDeEmotesDoBetterTtv = opcoes.MenuDeEmotesDoBetterTtv;
         Emotes7tv = opcoes.Emotes7tv;
         FrankerFaceZ = opcoes.FrankerFaceZ;
+        EsconderTituloDoChat = opcoes.EsconderTituloDoChat;
+        EsconderPlacarDoTopo = opcoes.EsconderPlacarDoTopo;
+        EsconderDestaques = opcoes.EsconderDestaques;
         // A caixa só mostra o endereço quando ele é o do tipo salvo
         EnderecoPersonalizado = opcoes.TipoDeChat == (int)Tipos.EnderecoPersonalizado ? opcoes.EnderecoPersonalizado : string.Empty;
     }
@@ -100,6 +112,9 @@ public sealed partial class LogicaChat : LogicaDaPagina
                 opcoes.MenuDeEmotesDoBetterTtv = MenuDeEmotesDoBetterTtv;
                 opcoes.Emotes7tv = Emotes7tv;
                 opcoes.FrankerFaceZ = FrankerFaceZ;
+                opcoes.EsconderTituloDoChat = EsconderTituloDoChat;
+                opcoes.EsconderPlacarDoTopo = EsconderPlacarDoTopo;
+                opcoes.EsconderDestaques = EsconderDestaques;
                 break;
             case Tipos.EnderecoPersonalizado:
                 opcoes.EnderecoPersonalizado = EnderecoPersonalizado;
@@ -119,6 +134,9 @@ public sealed partial class LogicaChat : LogicaDaPagina
         estado["Chat.MenuDeEmotesDoBetterTtv"] = MenuDeEmotesDoBetterTtv.ToString();
         estado["Chat.Emotes7tv"] = Emotes7tv.ToString();
         estado["Chat.FrankerFaceZ"] = FrankerFaceZ.ToString();
+        estado["Chat.EsconderTituloDoChat"] = EsconderTituloDoChat.ToString();
+        estado["Chat.EsconderPlacarDoTopo"] = EsconderPlacarDoTopo.ToString();
+        estado["Chat.EsconderDestaques"] = EsconderDestaques.ToString();
         estado["Chat.EnderecoPersonalizado"] = EnderecoPersonalizado;
     }
 

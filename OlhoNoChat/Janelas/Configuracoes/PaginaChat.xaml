@@ -138,6 +138,57 @@
 
             <!-- Chat oficial da Twitch -->
             <StackPanel x:Name="painelChatOficial" Visibility="{Binding ComChatOficial, Converter={StaticResource VisivelSe}}">
+                <!-- Partes da página da Twitch que podem sumir (só com este tipo de chat) -->
+                <TextBlock Text="Página da Twitch" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE8A1;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder o título &quot;Chat da live&quot;" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="A linha com o título e o botão de usuários, em cima do chat." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderTitulo" Grid.Column="2" IsChecked="{Binding EsconderTituloDoChat}"
+                                             AutomationProperties.Name="Esconder o título &quot;Chat da live&quot;" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xEB95;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder o placar do topo" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="A faixa que fica passando em cima das mensagens, com quem mais deu inscrições de presente, bits e clipes, e o botão de Cheer." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderPlacar" Grid.Column="2" IsChecked="{Binding EsconderPlacarDoTopo}"
+                                             AutomationProperties.Name="Esconder o placar do topo" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xEC24;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Esconder os destaques" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Os avisos que a Twitch põe por cima das mensagens: enquetes, palpites, hype train, mensagem fixada e drops." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorEsconderDestaques" Grid.Column="2" IsChecked="{Binding EsconderDestaques}"
+                                             AutomationProperties.Name="Esconder os destaques" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <TextBlock Text="Extensões de emotes" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
                     <StackPanel>

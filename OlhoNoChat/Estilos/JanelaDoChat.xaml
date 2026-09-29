@@ -92,12 +92,18 @@
         <Setter Property="Fill" Value="#66FFFFFF" />
     </Style>
 
-    <!-- "Fundo": um círculo com a metade da esquerda cheia (as fontes de ícones não têm um igual) -->
+    <!-- "Fundo": um quadrado com três barras, da cheia à fraca (a opacidade diminuindo; as fontes de ícones não têm um igual) -->
     <ControlTemplate x:Key="IconeDoFundo" TargetType="ContentControl">
-        <Grid Width="16" Height="16">
-            <Ellipse Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4" />
-            <Path Data="M8,0 A8,8 0 0 0 8,16 Z" Fill="{TemplateBinding Foreground}" />
-        </Grid>
+        <!-- Desenhado em 16 e mostrado em 20: o quadrado fica da altura dos ícones de fonte da barra (a engrenagem, o olho) -->
+        <Viewbox Width="20" Height="20">
+            <Canvas Width="16" Height="16">
+                <Rectangle Canvas.Left="0.6" Canvas.Top="0.6" Width="14.8" Height="14.8" RadiusX="3" RadiusY="3"
+                           Stroke="{TemplateBinding Foreground}" StrokeThickness="1.15" />
+                <Rectangle Canvas.Left="2.7" Canvas.Top="2.9" Width="3" Height="10.2" RadiusX="0.8" RadiusY="0.8" Fill="{TemplateBinding Foreground}" />
+                <Rectangle Canvas.Left="6.5" Canvas.Top="2.9" Width="3" Height="10.2" RadiusX="0.8" RadiusY="0.8" Fill="{TemplateBinding Foreground}" Opacity="0.6" />
+                <Rectangle Canvas.Left="10.3" Canvas.Top="2.9" Width="3" Height="10.2" RadiusX="0.8" RadiusY="0.8" Fill="{TemplateBinding Foreground}" Opacity="0.25" />
+            </Canvas>
+        </Viewbox>
     </ControlTemplate>
 
     <!-- Alfinete com "Sempre no topo" ligado; alfinete riscado desligado -->
