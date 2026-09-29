@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="OlhoNoChat/OlhoNoChat.csproj" />
+  <Project Path="OlhoNoChat.Testes/OlhoNoChat.Testes.csproj" />
+</Solution>

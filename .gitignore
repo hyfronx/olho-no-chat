@@ -1,16 +1,16 @@
-# Build output
+# Saída da compilação e dos pacotes
 [Bb]in/
 [Oo]bj/
 publish/
 releases/
 
-# Local copies of each installer
+# Cópias locais dos instaladores
 instaladores/
 
-# Personal notes (not part of the app)
+# Anotações pessoais (não fazem parte do app)
 COMO-LANCAR-VERSAO.md
 
-# Editors
+# Editores
 .vs/
 .vscode/
 .idea/

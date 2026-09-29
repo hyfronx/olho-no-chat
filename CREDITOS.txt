@@ -1,0 +1,38 @@
+Olho no Chat - créditos
+=======================
+
+Sons de nova mensagem (pasta assets)
+------------------------------------
+
+Todos os sons que vêm com o app são do Notification Sounds (https://notificationsounds.com),
+com a licença Creative Commons Atribuição 4.0 Internacional (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/deed.pt-br
+
+Mudança feita: convertidos de MP3 para WAV (o som é o mesmo). O nome do arquivo é o nome do som.
+
+  base.wav                  "Base"                  https://notificationsounds.com/message-tones/base-403
+  coins.wav                 "Coins!"                https://notificationsounds.com/notification-sounds/coins-497
+  intuition.wav             "Intuition"             https://notificationsounds.com/notification-sounds/intuition-561
+  job-done.wav              "Job done"              https://notificationsounds.com/notification-sounds/job-done-501
+  knob.wav                  "Knob"                  https://notificationsounds.com/message-tones/knob-458
+  pull-out.wav              "Pull out"              https://notificationsounds.com/notification-sounds/pull-out-551
+  shoot-em.wav              "Shoot 'em"             https://notificationsounds.com/message-tones/shoot-em-402
+  suppressed.wav            "Suppressed"            https://notificationsounds.com/notification-sounds/suppressed-437
+  unsure.wav                "Unsure"                https://notificationsounds.com/notification-sounds/unsure-566
+  wind-up.wav               "Wind up 1"             https://notificationsounds.com/message-tones/wind-up-1-534
+  you-wouldnt-believe.wav   "You wouldn't believe"  https://notificationsounds.com/notification-sounds/you-wouldnt-believe-510
+  your-turn.wav             "Your turn"             https://notificationsounds.com/message-tones/your-turn-491
+
+
+Bibliotecas usadas no app
+-------------------------
+
+  .NET 10 e Microsoft.Extensions   MIT            https://github.com/dotnet/runtime
+  AvalonEdit                       MIT            https://github.com/icsharpcode/AvalonEdit
+  CommunityToolkit.Mvvm            MIT            https://github.com/CommunityToolkit/dotnet
+  H.NotifyIcon                     MIT            https://github.com/HavenDV/H.NotifyIcon
+  Microsoft WebView2 SDK           BSD 3-Clause   https://aka.ms/webview
+  NAudio                           MIT            https://github.com/naudio/NAudio
+  Velopack                         MIT            https://github.com/velopack/velopack
+
+O texto completo de cada licença está no endereço de cada biblioteca.

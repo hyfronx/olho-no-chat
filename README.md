@@ -24,11 +24,16 @@ O jogo precisa estar em modo **janela** ou **tela cheia sem bordas** para o chat
 
 ## Recursos
 
-- Reconexão automática: se o chat parar de receber mensagens, o app recarrega sozinho.
-- Escrever no chat sem sair do jogo (precisa conectar a conta da Twitch).
+- Reconexão automática: se a conexão do chat cair ou a página travar, o app conecta de novo sozinho.
+- Escrever no chat sem sair do jogo (precisa conectar a conta da Twitch), com a lista dos seus emotes (os animados se mexem). A lista fica guardada no computador e abre na hora.
 - Resgates de pontos do canal no chat Padrão (opcional, precisa conectar a conta da Twitch).
 - Filtros e destaques por usuário, moderadores e VIPs.
+- No **Chat oficial da Twitch**, opções para esconder partes da página da Twitch: o título "Chat da live", o placar do topo e os destaques (enquetes, palpites, hype train, mensagem fixada e drops). Ficam em **Configurações > Chat > Página da Twitch**.
+
+## Créditos
+
+Os sons de nova mensagem são do [Notification Sounds](https://notificationsounds.com), com a licença [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.pt-br) (convertidos de MP3 para WAV). O link de cada som está em [CREDITOS.txt](CREDITOS.txt), que também vai junto com o app instalado.
 
 ## Licença
 
-Distribuído sob a [GNU GPL v3](LICENSE).
+Copyright © 2026 Hyfronx. Distribuído sob a [GNU GPL v3](LICENSE): qualquer pessoa pode usar, estudar, mudar e distribuir o Olho no Chat, e quem distribuir uma versão modificada precisa publicar o código dela com a mesma licença.

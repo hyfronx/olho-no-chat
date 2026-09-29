@@ -1,56 +1,57 @@
-name: Create Velopack Release
+# Publica uma versão nova do Olho no Chat quando uma tag "vX.Y.Z" chega ao GitHub.
+# Enviar só commits para a main não publica nada. O número da versão vem da tag (v2.0.0 -> 2.0.0).
+name: Publicar versão
 
-# This workflow runs when a new tag is pushed that starts with 'v'
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
 
 jobs:
-  build-and-pack:
-    # Use the latest Windows runner
+  publicar:
     runs-on: windows-latest
-    # To allow github to upload the release files
     permissions:
-      contents: write
+      contents: write   # criar a release e enviar os arquivos dela
+    env:
+      VPK_VERSAO: 1.2.161   # sempre a mesma versão do pacote Velopack do app (OlhoNoChat.csproj)
 
     steps:
-      # 1. Check out the code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Baixar o código
+        uses: actions/checkout@v7
 
-      # 2. Set up the .NET SDK on the runner
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Instalar o SDK do .NET (versão do global.json)
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      # 3. Automatic tests: a failing test stops here, and nothing is published
-      - name: Run tests
-        run: dotnet test OlhoNoChat.Testes/OlhoNoChat.Testes.csproj -c Release
+      # Um teste que falha para tudo aqui, e nada é publicado
+      - name: Rodar os testes
+        run: dotnet test OlhoNoChat.slnx -c Release
 
-      # 4. Build application for release (publish restores the packages itself). Only the app project:
-      #    publishing the whole solution would put the test project inside the installer
-      - name: Build and publish application
-        run: dotnet publish OlhoNoChat/OlhoNoChat.csproj -c Release -o publish -r win-x64 --self-contained true
-        
-      # 5. Get the version number from the Git tag
-      - name: Get version from tag
-        id: get-version
-        run: |
-            $version = "${{ github.ref_name }}".Substring(1)
-            echo "version=$version" >> $env:GITHUB_OUTPUT
-        shell: pwsh
+      # Só o projeto do app: a solução inteira levaria o projeto de testes para o instalador
+      - name: Compilar o app
+        run: dotnet publish OlhoNoChat/OlhoNoChat.csproj -c Release -r win-x64 --self-contained true -o publish
 
-      # 6. Download, Pack, and Upload with Velopack
-      - name: Create and Upload Velopack Release
-        run: |
-          dotnet tool install -g vpk --version 1.2.158
-          vpk download github --repoUrl https://github.com/${{ github.repository }}
-          # Shortcut only in the Start menu (the default also puts one on the Desktop); no portable zip (the app
-          # always keeps its settings in %AppData%\OlhoNoChat)
-          vpk pack -u OlhoNoChat --packTitle "Olho no Chat" --packAuthors "Hyfronx" -v ${{ steps.get-version.outputs.version }} --packDir publish --mainExe OlhoNoChat.exe --icon OlhoNoChat/olho_no_chat.ico --shortcuts StartMenuRoot --noPortable
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "Olho no Chat v${{ steps.get-version.outputs.version }}" --tag ${{ github.ref_name }} --token ${{ secrets.GITHUB_TOKEN }}
+      - name: Empacotar e publicar com o Velopack
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $tag = '${{ github.ref_name }}'
+          $versao = $tag.TrimStart('v')
+          $repo = 'https://github.com/${{ github.repository }}'
+
+          dotnet tool install --global vpk --version $env:VPK_VERSAO
+
+          # A última versão publicada serve de base para o pacote delta (a atualização pequena)
+          vpk download github --repoUrl $repo --token $env:GITHUB_TOKEN
+
+          # Atalho só no menu Iniciar (sem área de trabalho) e sem o zip portátil: as configurações
+          # ficam sempre em %AppData%\OlhoNoChat
+          vpk pack --packId OlhoNoChat --packVersion $versao --packTitle 'Olho no Chat' --packAuthors 'Hyfronx' `
+            --packDir publish --mainExe OlhoNoChat.exe --icon OlhoNoChat/olho_no_chat.ico `
+            --shortcuts StartMenuRoot --noPortable
+
+          vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish `
+            --releaseName "Olho no Chat v$versao" --tag $tag

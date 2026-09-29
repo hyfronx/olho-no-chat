@@ -99,6 +99,25 @@
                     <TextBlock Grid.Column="2" Text="&#xE8A7;" Style="{DynamicResource Icone}" FontSize="14" Margin="0,0,4,0" />
                 </Grid>
             </Button>
+
+            <TextBlock Text="Créditos" Style="{DynamicResource TituloDaSecao}" />
+            <Border x:Name="cartaoCreditos" Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE767;" Style="{DynamicResource IconeDoCartao}" VerticalAlignment="Top" Margin="2,2,16,0" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Sons de nova mensagem" Style="{DynamicResource Rotulo}" />
+                        <TextBlock x:Name="textoCreditoDosSons" Style="{DynamicResource Dica}">
+                            <Run Text="Do" />
+                            <Hyperlink Command="{Binding AbrirSiteDosSonsCommand}"><Run Text="notificationsounds.com" /></Hyperlink><Run Text=", com a licença" />
+                            <Hyperlink Command="{Binding AbrirLicencaDosSonsCommand}"><Run Text="CC BY 4.0" /></Hyperlink><Run Text=". O link de cada som está no arquivo CREDITOS.txt, na pasta do app." />
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

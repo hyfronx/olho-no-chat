@@ -140,4 +140,17 @@ public class SomTestes
             Assert.False(TocadorDeAviso.SaidaAindaExiste(saidas[1].Id, "Outro aparelho"));
         }
     }
+
+    // A licença dos sons (CC BY 4.0) exige crédito: um som novo na pasta assets precisa de uma linha no CREDITOS.txt
+    [Fact]
+    public void Creditos_TodoSomQueVemComOAppTemCreditoELink()
+    {
+        string pasta = AppContext.BaseDirectory;
+        string[] linhas = File.ReadAllLines(Path.Combine(pasta, "CREDITOS.txt"));
+        string[] sons = Directory.GetFiles(Path.Combine(pasta, "assets"), "*.wav").Select(Path.GetFileName).OfType<string>().ToArray();
+
+        Assert.NotEmpty(sons);
+        foreach (string som in sons)
+            Assert.Contains(linhas, l => l.TrimStart().StartsWith(som + " ") && l.Contains("https://notificationsounds.com/"));
+    }
 }

@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
+# Texto: o git descobre sozinho quais arquivos são texto e guarda todos com LF no repositório
 * text=auto
+
+# Sons e imagens: sempre binários (nunca mexer no fim de linha nem mostrar diferença de texto)
+*.wav binary
+*.png binary
+*.ico binary

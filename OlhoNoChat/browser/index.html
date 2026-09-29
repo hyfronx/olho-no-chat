@@ -43,8 +43,8 @@
         <div>Para mostrar as bordas de novo, clique com o botão direito no ícone do Olho no Chat na barra de tarefas ou perto do relógio.</div>
     </div>
 <script>
-    // "?canal": the channel strip is right above this page (see MainWindow.ChannelBar.cs);
-    // otherwise the arrow points to the gear of the title bar
+    // Com "?canal" a faixa do canal está logo acima desta página (Janelas/Chat/FaixaDoCanal);
+    // sem ele, a seta aponta para a engrenagem da barra de cima
     var inStrip = location.search.indexOf('canal') >= 0;
     document.getElementById(inStrip ? 'where-settings' : 'where-channel').style.display = 'none';
 </script>

@@ -1,29 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- O app: janelas WPF no .NET 10, só para Windows 64 bits -->
 	<PropertyGroup>
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
-		<StartupObject>OlhoNoChat.Inicio.Programa</StartupObject>
 		<UseWPF>true</UseWPF>
-		<ApplicationIcon>olho_no_chat.ico</ApplicationIcon>
+		<StartupObject>OlhoNoChat.Inicio.Programa</StartupObject>
 		<AssemblyName>OlhoNoChat</AssemblyName>
 		<Product>Olho no Chat</Product>
 		<AssemblyTitle>Olho no Chat</AssemblyTitle>
 		<Description>Mostra o chat da sua live por cima do jogo.</Description>
+		<ApplicationIcon>olho_no_chat.ico</ApplicationIcon>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<!-- As chamadas ao Windows usam [LibraryImport], que gera código unsafe -->
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-		<!-- Single file, but the native DLLs stay next to the exe (no IncludeNativeLibrariesForSelfExtract):
-		     the app is installed as a folder anyway, and nothing is extracted to %TEMP% on each new version -->
-		<PublishSingleFile>true</PublishSingleFile>
-		<SelfContained>true</SelfContained>
+	<!-- Publicação: um .exe com o .NET dentro. As DLLs nativas ficam ao lado dele (sem extrair nada para o %TEMP% a
+	     cada versão nova); o app já é instalado como uma pasta mesmo -->
+	<PropertyGroup>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<!-- WebView2Loader.dll already goes next to the exe; skip the package's extra runtimes\win-x64\native copy -->
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<!-- O WebView2Loader.dll já vai ao lado do .exe: dispensa a cópia extra em runtimes\win-x64\native -->
 		<WebView2NeverCopyLoaderDllToOutputDirectory>true</WebView2NeverCopyLoaderDllToOutputDirectory>
-
-		<!-- Keep the package small: only Portuguese framework resources, no XML docs from packages -->
+		<!-- Pacote menor: só os textos do .NET em português e nenhum XML de documentação dos pacotes -->
 		<SatelliteResourceLanguages>pt-BR</SatelliteResourceLanguages>
 		<AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
 	</PropertyGroup>
@@ -32,7 +34,7 @@
 		<DebugType>none</DebugType>
 	</PropertyGroup>
 
-	<!-- NuGet package dependencies -->
+	<!-- Bibliotecas (todas com licença MIT ou parecida) -->
 	<ItemGroup>
 		<PackageReference Include="AvalonEdit" Version="6.3.1.120" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -41,28 +43,24 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
 		<PackageReference Include="NAudio" Version="3.1.0" />
-		<PackageReference Include="Velopack" Version="1.2.158" />
+		<PackageReference Include="Velopack" Version="1.2.161" />
 	</ItemGroup>
 
+	<!-- Imagens dentro do .exe. O ícone também é o ApplicationIcon e o do instalador; as janelas o usam como
+	     /icons/olho_no_chat.ico -->
 	<ItemGroup>
-		<None Remove="assets\images\olho_no_chat_256.png" />
-		<Resource Include="assets\images\olho_no_chat_256.png" />
-		<!-- The app icon file (also ApplicationIcon and vpk's icon), used by the windows as /icons/olho_no_chat.ico -->
 		<None Remove="olho_no_chat.ico" />
 		<Resource Include="olho_no_chat.ico" Link="icons\olho_no_chat.ico" />
+		<None Remove="assets\images\olho_no_chat_256.png" />
+		<Resource Include="assets\images\olho_no_chat_256.png" />
 	</ItemGroup>
 
-	<!-- content files that need to be copied to the output directory -->
+	<!-- Arquivos que vão soltos na pasta do app: sons, páginas do chat, a licença e os créditos -->
 	<ItemGroup>
-		<Content Include="assets\*.wav">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-		<Content Include="browser\*.*">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-		<Content Include="..\LICENSE" Link="LICENSE.txt">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
+		<Content Include="assets\*.wav" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="browser\*.*" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\CREDITOS.txt" Link="CREDITOS.txt" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 </Project>
