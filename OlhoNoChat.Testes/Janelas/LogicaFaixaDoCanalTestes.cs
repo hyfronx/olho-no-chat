@@ -40,7 +40,6 @@ public class LogicaFaixaDoCanalTestes
 
         Assert.False(logica.EditorAberto);
         Assert.Equal("hyfronx", logica.CanalSalvo);
-        Assert.Equal("Trocar", logica.TextoDoBotao);
         Assert.Equal("Clique para trocar de canal.", logica.DicaDaFaixa);
     }
 
@@ -52,7 +51,6 @@ public class LogicaFaixaDoCanalTestes
 
         Assert.True(logica.EditorAberto);
         Assert.False(logica.TemCanal);
-        Assert.Equal("Entrar no chat", logica.TextoDoBotao);
         logica.Esc();
         Assert.True(logica.EditorAberto); // sem canal, o Esc só volta a dica
     }
@@ -199,7 +197,7 @@ public class LogicaFaixaDoCanalTestes
 
         Assert.Equal([""], _trocas);
         Assert.True(logica.EditorAberto);
-        Assert.Equal("Entrar no chat", logica.TextoDoBotao);
+        Assert.False(logica.TemCanal);
     }
 
     [Fact]

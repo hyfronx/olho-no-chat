@@ -782,6 +782,14 @@
     const YOUTUBE_ROLE_COLORS = { owner: '#FFD600', moderator: '#5E84F1', member: '#2BA640' };
     const YOUTUBE_ROLE_BADGES = { owner: 'broadcaster/1', moderator: 'moderator/1' };
 
+    // YouTube has no name colors: one of the default colors from the whole name (the first letter alone gives the
+    // same color to everyone named alike, and YouTube names are often alike)
+    function youTubeColor(login) {
+        let hash = 0;
+        for (const c of login) hash = (hash * 31 + c.codePointAt(0)) >>> 0;
+        return DEFAULT_COLORS[hash % DEFAULT_COLORS.length];
+    }
+
     function onYouTubeMessage(m) {
         const login = String(m.login || m.name || '').toLowerCase();
         const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
@@ -792,7 +800,7 @@
             platform: 'youtube',
             login,
             name: m.name || login,
-            color: userColor(login || '?', YOUTUBE_ROLE_COLORS[m.role] || ''),
+            color: userColor(login || '?', YOUTUBE_ROLE_COLORS[m.role] || youTubeColor(login)),
             action: false,
             parts: m.parts || [],
             superchat: m.superchat || null,

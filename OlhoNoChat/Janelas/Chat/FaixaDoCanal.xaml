@@ -88,7 +88,7 @@
                          ctl:CaixaDeTexto.TextoDeExemplo="Nome do canal da Twitch" AutomationProperties.Name="Canal da Twitch"
                          Text="{Binding Texto, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
                 <Button x:Name="botaoEntrar" Grid.Column="2" Margin="6,0,0,0" Height="32" MinWidth="0" Padding="12,0"
-                        Style="{StaticResource BotaoPrincipal}" Content="{Binding TextoDoBotao}" IsEnabled="{Binding PodeConfirmar}"
+                        Style="{StaticResource BotaoPrincipal}" Content="Conectar" IsEnabled="{Binding PodeConfirmar}"
                         Click="Entrar_Click" />
                 <Button x:Name="botaoCancelarCanal" Grid.Column="3" Margin="4,0,0,0" Width="32" Height="32" Padding="0"
                         Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center"

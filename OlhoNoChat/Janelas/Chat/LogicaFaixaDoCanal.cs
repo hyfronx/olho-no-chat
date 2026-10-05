@@ -76,8 +76,6 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     /// <summary>A caixa do nome está aberta: sempre sem canal, ou quando a pessoa clicou na faixa.</summary>
     public bool EditorAberto => !TemCanal || _editorPedido;
 
-    public string TextoDoBotao => TemCanal ? "Trocar" : "Entrar no chat";
-
     [ObservableProperty]
     private string _texto;
 
@@ -205,7 +203,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
             MostrarDica(null);
     }
 
-    /// <summary>"Entrar no chat" / "Trocar", ou Enter na caixa.</summary>
+    /// <summary>"Conectar", ou Enter na caixa.</summary>
     public async Task ConfirmarAsync()
     {
         if (Procurando)
@@ -306,7 +304,6 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     {
         OnPropertyChanged(nameof(TemCanal));
         OnPropertyChanged(nameof(EditorAberto));
-        OnPropertyChanged(nameof(TextoDoBotao));
         OnPropertyChanged(nameof(CanalSalvo));
         OnPropertyChanged(nameof(ComYouTube));
         OnPropertyChanged(nameof(YouTubeSalvo));
