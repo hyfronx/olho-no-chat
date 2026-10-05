@@ -398,7 +398,9 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
         }
         Assert.False(File.Exists(Novo));
 
-        Thread.Sleep(800);
+        // Grava meio segundo depois da última mudança; num computador lento (o robô do GitHub) pode levar mais
+        for (int espera = 0; espera < 5000 && !File.Exists(Novo); espera += 50)
+            Thread.Sleep(50);
 
         Assert.Equal(5, ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.Fundo);
     }
