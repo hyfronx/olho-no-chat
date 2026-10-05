@@ -27,12 +27,50 @@
                         <TextBlock Text="Como o chat aparece. Se estiver em dúvida, use o Padrão." Style="{DynamicResource Dica}" />
                     </StackPanel>
                     <ComboBox x:Name="listaTipoDeChat" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
-                              AutomationProperties.Name="Tipo de chat" SelectedIndex="{Binding TipoDeChat}">
+                              AutomationProperties.Name="Tipo de chat" SelectedIndex="{Binding TipoDeChat}"
+                              IsEnabled="{Binding PodeEscolherOTipo}">
                         <ComboBoxItem Content="Padrão (recomendado)" />
                         <ComboBoxItem Content="Chat oficial da Twitch" />
                         <ComboBoxItem Content="Endereço personalizado" />
                     </ComboBox>
                 </Grid>
+            </Border>
+
+            <!-- Chat Multiplataforma: o chat de uma live do YouTube junto com o da Twitch (só no Padrão) -->
+            <Border Style="{DynamicResource Cartao}" Margin="0,4,0,4">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Chat Multiplataforma" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Style="{DynamicResource Dica}"
+                                       Text="Mostra também o chat da sua live no YouTube, junto com o da Twitch, com o ícone de cada plataforma. É só para ler: enquanto estiver ligado, escrever no chat, os resgates e os outros tipos de chat ficam desligados. O canal do YouTube se escolhe na faixa em cima do chat." />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorMultiplataforma" Grid.Column="2" IsChecked="{Binding ChatMultiplataforma}"
+                                         AutomationProperties.Name="Chat Multiplataforma" />
+                    </Grid>
+                    <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                    <!-- Desbotada com o Chat Multiplataforma desligado -->
+                    <Grid x:Name="linhaHistoricoDoYouTube" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}"
+                          IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Mostrar as mensagens de antes de conectar" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Style="{DynamicResource Dica}"
+                                       Text="Ao entrar no chat de uma live, o YouTube manda junto as últimas mensagens que já tinham sido enviadas. Desligado, só aparecem as mensagens novas." />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorHistoricoDoYouTube" Grid.Column="1" IsChecked="{Binding MostrarHistoricoDoYouTube}"
+                                         AutomationProperties.Name="Mostrar as mensagens de antes de conectar" />
+                    </Grid>
+                </StackPanel>
             </Border>
 
             <!-- Padrão -->

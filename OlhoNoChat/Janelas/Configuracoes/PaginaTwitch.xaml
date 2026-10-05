@@ -64,64 +64,80 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Escrever no chat" Style="{DynamicResource TituloDaSecao}" />
-            <Border Style="{DynamicResource Cartao}">
+            <!-- Chat Multiplataforma ligado na aba Chat: o que vem abaixo fica desligado (a conta continua conectada) -->
+            <Border x:Name="avisoMultiplataforma" Style="{DynamicResource CartaoDeAviso}" Margin="0,10,0,0"
+                    Visibility="{Binding MultiplataformaNaTela, Converter={StaticResource VisivelSe}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="&#xE8BD;" Style="{DynamicResource IconeDoCartao}" />
-                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                        <TextBlock Text="Caixa de digitar" Style="{DynamicResource Rotulo}" />
-                        <TextBlock x:Name="dicaCaixaDeDigitar" Text="{Binding DicaDaCaixa}" Style="{DynamicResource Dica}" />
-                    </StackPanel>
-                    <ComboBox x:Name="listaCaixaDeDigitar" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
-                              AutomationProperties.Name="Caixa de digitar" SelectedIndex="{Binding CaixaDeDigitar}">
-                        <ComboBoxItem Content="Do Olho no Chat" />
-                        <ComboBoxItem Content="Da própria Twitch" />
-                    </ComboBox>
-                </Grid>
-            </Border>
-            <Border Style="{DynamicResource Cartao}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="&#xE724;" Style="{DynamicResource IconeDoCartao}" />
-                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                        <TextBlock Text="Fechar a caixa depois de enviar" Style="{DynamicResource Rotulo}" />
-                        <TextBlock x:Name="dicaFecharDepoisDeEnviar" Text="{Binding DicaDeFecharDepoisDeEnviar}" Style="{DynamicResource Dica}" />
-                    </StackPanel>
-                    <ctl:Interruptor x:Name="interruptorFecharDepoisDeEnviar" Grid.Column="2" IsChecked="{Binding FecharCaixaDepoisDeEnviar}"
-                                     AutomationProperties.Name="Fechar a caixa depois de enviar" />
+                    <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
+                    <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
+                               Text="O Chat Multiplataforma está ligado (Configurações > Chat): escrever no chat e os resgates ficam desligados para não misturar as plataformas. A sua conta continua conectada." />
                 </Grid>
             </Border>
 
-            <TextBlock Text="Resgates de pontos do canal" Style="{DynamicResource TituloDaSecao}" />
-            <Border Style="{DynamicResource Cartao}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="&#xE734;" Style="{DynamicResource IconeDoCartao}" />
-                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                        <TextBlock Text="Mostrar os resgates no chat" Style="{DynamicResource Rotulo}" />
-                        <TextBlock Style="{DynamicResource Dica}"
-                                   Text="Só os resgates do canal da conta conectada, quando o chat aberto é o desse canal. Aparecem apenas no chat Padrão." />
-                        <!-- Quando a Twitch recusa (por exemplo, canal sem pontos de canal) -->
-                        <TextBlock x:Name="problemaDosResgates" Text="{Binding ProblemaDosResgates}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
-                                   Visibility="{Binding ProblemaDosResgates, Converter={StaticResource VisivelSe}}" />
-                    </StackPanel>
-                    <ctl:Interruptor x:Name="interruptorResgates" Grid.Column="2" IsChecked="{Binding MostrarResgates}"
-                                     AutomationProperties.Name="Mostrar os resgates no chat" />
-                </Grid>
-            </Border>
+            <StackPanel x:Name="recursosDaTwitch" IsEnabled="{Binding SemMultiplataforma}">
+                <TextBlock Text="Escrever no chat" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE8BD;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Caixa de digitar" Style="{DynamicResource Rotulo}" />
+                            <TextBlock x:Name="dicaCaixaDeDigitar" Text="{Binding DicaDaCaixa}" Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <ComboBox x:Name="listaCaixaDeDigitar" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
+                                  AutomationProperties.Name="Caixa de digitar" SelectedIndex="{Binding CaixaDeDigitar}">
+                            <ComboBoxItem Content="Do Olho no Chat" />
+                            <ComboBoxItem Content="Da própria Twitch" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+                <Border Style="{DynamicResource Cartao}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE724;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Fechar a caixa depois de enviar" Style="{DynamicResource Rotulo}" />
+                            <TextBlock x:Name="dicaFecharDepoisDeEnviar" Text="{Binding DicaDeFecharDepoisDeEnviar}" Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorFecharDepoisDeEnviar" Grid.Column="2" IsChecked="{Binding FecharCaixaDepoisDeEnviar}"
+                                         AutomationProperties.Name="Fechar a caixa depois de enviar" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="Resgates de pontos do canal" Style="{DynamicResource TituloDaSecao}" />
+                <Border Style="{DynamicResource Cartao}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE734;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Mostrar os resgates no chat" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Style="{DynamicResource Dica}"
+                                       Text="Só os resgates do canal da conta conectada, quando o chat aberto é o desse canal. Aparecem apenas no chat Padrão." />
+                            <!-- Quando a Twitch recusa (por exemplo, canal sem pontos de canal) -->
+                            <TextBlock x:Name="problemaDosResgates" Text="{Binding ProblemaDosResgates}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
+                                       Visibility="{Binding ProblemaDosResgates, Converter={StaticResource VisivelSe}}" />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorResgates" Grid.Column="2" IsChecked="{Binding MostrarResgates}"
+                                         AutomationProperties.Name="Mostrar os resgates no chat" />
+                    </Grid>
+                </Border>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

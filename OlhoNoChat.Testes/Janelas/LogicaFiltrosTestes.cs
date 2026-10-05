@@ -28,6 +28,10 @@ public class LogicaFiltrosTestes
     [InlineData("twitch.tv/NovoUsuario", "NovoUsuario")]
     [InlineData("https://www.twitch.tv/NovoUsuario/videos", "NovoUsuario")]
     [InlineData("  twitch.tv/popout/NovoUsuario/chat  ", "NovoUsuario")]
+    // O @ do YouTube (Chat Multiplataforma): com . ou -, ou o link do canal
+    [InlineData("@Fatima-aslam-vlogs", "Fatima-aslam-vlogs")]
+    [InlineData("meu.canal", "meu.canal")]
+    [InlineData("https://www.youtube.com/@Outro.Canal/live", "Outro.Canal")]
     public void Adicionar_TiraONomeDoTextoGuardaAsMaiusculasELimpaACaixa(string digitado, string nome)
     {
         var logica = Nova(new Opcoes());

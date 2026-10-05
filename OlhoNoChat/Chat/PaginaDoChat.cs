@@ -62,7 +62,8 @@ public abstract class PaginaDoChat
     /// </summary>
     public static PaginaDoChat DasOpcoes(Opcoes opcoes)
     {
-        TipoDeChat tipo = TiposDeChat.Ler(opcoes.TipoDeChat);
+        // O Chat Multiplataforma só existe no Padrão
+        TipoDeChat tipo = opcoes.ChatMultiplataforma ? TipoDeChat.Padrao : TiposDeChat.Ler(opcoes.TipoDeChat);
         string canal = CanalSalvo(opcoes);
 
         if (TiposDeChat.UsaCanal(tipo))

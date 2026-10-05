@@ -49,14 +49,17 @@ public sealed class LogicaConfiguracoes
     // Trocar o tipo na lista muda na hora o que as abas mostram
     private void ChatMudou(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(LogicaChat.TipoDeChat))
+        if (e.PropertyName is nameof(LogicaChat.TipoDeChat) or nameof(LogicaChat.ChatMultiplataforma))
             MostrarTipo();
     }
 
     private void MostrarTipo()
     {
         foreach (LogicaDaPagina pagina in Paginas)
+        {
             pagina.TipoNaTela = Chat.Tipo;
+            pagina.MultiplataformaNaTela = Chat.ChatMultiplataforma;
+        }
     }
 
     // O tipo primeiro: ele decide o que as outras abas mostram

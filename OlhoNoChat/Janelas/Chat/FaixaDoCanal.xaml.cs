@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Janelas.Chat;
 
@@ -17,6 +18,7 @@ public partial class FaixaDoCanal : UserControl
     private static readonly SolidColorBrush Amarelo = Pincel(0xF5, 0xC5, 0x18);
     private static readonly SolidColorBrush Verde = Pincel(0x3B, 0xD1, 0x6F);
     private static readonly SolidColorBrush Vermelho = Pincel(0xF0, 0x4A, 0x4A);
+    private static readonly SolidColorBrush Cinza = Pincel(0x8A, 0x8A, 0x8A);
 
     private LogicaFaixaDoCanal? _logica;
     private bool _piscando;
@@ -36,6 +38,7 @@ public partial class FaixaDoCanal : UserControl
             {
                 _logica.PropertyChanged -= LogicaMudou;
                 _logica.PedirFoco -= Focar;
+                _logica.PedirFocoNoYouTube -= FocarNoYouTube;
             }
             _logica = value;
             DataContext = value;
@@ -43,6 +46,7 @@ public partial class FaixaDoCanal : UserControl
             {
                 value.PropertyChanged += LogicaMudou;
                 value.PedirFoco += Focar;
+                value.PedirFocoNoYouTube += FocarNoYouTube;
             }
             MostrarPonto();
         }
@@ -57,12 +61,22 @@ public partial class FaixaDoCanal : UserControl
 
     private void LogicaMudou(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(LogicaFaixaDoCanal.Conexao) or nameof(LogicaFaixaDoCanal.EditorAberto))
+        if (e.PropertyName is nameof(LogicaFaixaDoCanal.Conexao) or nameof(LogicaFaixaDoCanal.EditorAberto)
+            or nameof(LogicaFaixaDoCanal.ConexaoDoYouTube))
             MostrarPonto();
     }
 
     private void MostrarPonto()
     {
+        // O do YouTube não pisca: amarelo procurando, verde lendo, cinza esperando a live, vermelho com problema
+        pontoDoYouTube.Fill = (_logica?.ConexaoDoYouTube ?? EstadoDoYouTube.Desligado) switch
+        {
+            EstadoDoYouTube.Procurando => Amarelo,
+            EstadoDoYouTube.Conectado => Verde,
+            EstadoDoYouTube.CanalNaoExiste or EstadoDoYouTube.SemConexao => Vermelho,
+            _ => Cinza,
+        };
+
         EstadoDaConexao estado = _logica?.Conexao ?? EstadoDaConexao.Nenhum;
         Brush? cor = estado switch
         {
@@ -102,6 +116,16 @@ public partial class FaixaDoCanal : UserControl
             Keyboard.Focus(caixaCanal);
             if (selecionarTudo)
                 caixaCanal.SelectAll();
+        });
+    }
+
+    private void FocarNoYouTube()
+    {
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+        {
+            caixaYouTube.Focus();
+            Keyboard.Focus(caixaYouTube);
+            caixaYouTube.SelectAll();
         });
     }
 

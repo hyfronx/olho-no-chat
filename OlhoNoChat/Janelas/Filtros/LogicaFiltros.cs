@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Twitch;
+using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Janelas.Filtros;
 
@@ -130,14 +131,23 @@ public sealed partial class LogicaFiltros : ObservableObject
     [RelayCommand]
     private void Desbloquear(string nome) => UsuariosBloqueados.Remove(nome);
 
-    // Aceita "nome", "@nome", "twitch.tv/nome" ou o link do canal. O nome entra com as maiúsculas digitadas.
+    // Aceita "nome", "@nome", "twitch.tv/nome" ou o link do canal. O nome entra com as maiúsculas digitadas. No Chat
+    // Multiplataforma os filtros valem também para o YouTube: um @ do YouTube com . ou - (que a Twitch não tem) ou o link
+    // youtube.com/@nome também vale.
     private static bool Adicionar(string digitado, ObservableCollection<string> lista, out string? erro)
     {
         string nome = NomesDaTwitch.Extrair(digitado);
+        bool doYouTube = false;
+        bool jeitoDoYouTube = nome.IndexOfAny(['.', '-']) >= 0 || digitado.Contains("youtube.com", StringComparison.OrdinalIgnoreCase);
+        if (jeitoDoYouTube && CanalDoYouTube.Ler(digitado) is { Tipo: TipoDeCanalDoYouTube.Arroba } canal)
+        {
+            nome = canal.Valor;
+            doYouTube = true;
+        }
 
         if (nome.Length == 0)
             erro = "Digite o nome do usuário.";
-        else if (!NomesDaTwitch.EhValido(nome))
+        else if (!doYouTube && !NomesDaTwitch.EhValido(nome))
             erro = NomesDaTwitch.DicaNomeInvalido;
         else if (lista.Any(u => string.Equals(u, nome, StringComparison.OrdinalIgnoreCase)))
             erro = nome + " já está na lista.";

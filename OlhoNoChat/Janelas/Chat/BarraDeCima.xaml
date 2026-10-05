@@ -48,13 +48,61 @@
             </ToggleButton>
             <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
+            <!-- Chat Multiplataforma (Twitch + YouTube) ou só a Twitch: os logos coloridos das duas plataformas (diferente do
+                 balão do Escrever). Só Twitch: o do YouTube fica apagado; ligado: os dois acesos no fundo branco. -->
+            <ToggleButton x:Name="botaoMultiplataforma" Style="{StaticResource BotaoDaBarraLigaDesliga}" Width="48"
+                          AutomationProperties.Name="Chat Multiplataforma" Checked="Multiplataforma_Mudou" Unchecked="Multiplataforma_Mudou">
+                <Canvas Width="38" Height="18">
+                    <!-- Twitch -->
+                    <Path Fill="White" Data="M3,3 H14 V9 L11,12 H8 L6,14 V12 H3 Z" />
+                    <Path Fill="#9146FF" Data="M3,1 L1,4 V15 H5 V18 L8,15 H11 L16,10 V1 Z M14,9 L11,12 H8 L6,14 V12 H3 V3 H14 Z" />
+                    <Path Fill="#9146FF" Data="M10,5 H11.5 V8.5 H10 Z M6.8,5 H8.3 V8.5 H6.8 Z" />
+                    <!-- YouTube -->
+                    <Grid Canvas.Left="21" Canvas.Top="3.5" Width="17" Height="12">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="0.45" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                        <Setter Property="Opacity" Value="1" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Border CornerRadius="3.5">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="White" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                            <Setter Property="Background" Value="#FF0000" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <Path Data="M6.8,3.2 V8.8 L11.6,6 Z">
+                            <Path.Style>
+                                <Style TargetType="Path">
+                                    <Setter Property="Fill" Value="{StaticResource Laranja}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                            <Setter Property="Fill" Value="White" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Path.Style>
+                        </Path>
+                    </Grid>
+                </Canvas>
+            </ToggleButton>
+
             <!-- Abre e fecha a caixa "Escrever no chat…": aceso enquanto ela está aberta -->
             <ToggleButton x:Name="botaoEscrever" Style="{StaticResource BotaoDaBarraLigaDesliga}" AutomationProperties.Name="Escrever"
                           Checked="Escrever_Mudou" Unchecked="Escrever_Mudou">
                 <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xE8BD;" />
             </ToggleButton>
-            <!-- Some junto com o Escrever (tipos de chat sem canal) -->
-            <Rectangle Style="{StaticResource SeparadorDaBarra}" Visibility="{Binding Visibility, ElementName=botaoEscrever}" />
+            <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
             <!-- Abre as Configurações (botão esquerdo ou direito) -->
             <Button x:Name="botaoConfiguracoes" Style="{StaticResource BotaoDaBarra}" ToolTip="Configurações"

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Chat;
 
@@ -39,6 +40,8 @@ public static class ContratoComAPagina
             // "vips" é a lista de usuários dos filtros, apesar do nome
             vips = opcoes.ListaDeUsuarios.Select(nome => nome.ToLowerInvariant()),
             blockList = opcoes.UsuariosBloqueados.Select(nome => nome.ToLowerInvariant()),
+            // Chat Multiplataforma: cada mensagem mostra o ícone da plataforma
+            multiplatform = opcoes.ChatMultiplataforma,
         });
     }
 
@@ -82,6 +85,22 @@ public static class ContratoComAPagina
     public static string AdicionarAcao(string nome, string cor, string texto) =>
         $"window.oncChat && window.oncChat.addAction({JsonSerializer.Serialize(nome)}, {JsonSerializer.Serialize(cor)}, " +
         $"{JsonSerializer.Serialize(texto)});";
+
+    /// <summary>Uma mensagem do chat do YouTube (Chat Multiplataforma).</summary>
+    public static string AdicionarDoYouTube(MensagemParaAPagina mensagem)
+    {
+        string json = JsonSerializer.Serialize(new
+        {
+            id = mensagem.Id,
+            login = mensagem.Login,
+            name = mensagem.Nome,
+            role = mensagem.Papel,
+            parts = mensagem.Partes,
+            superchat = mensagem.SuperChat is { } sc ? new { amount = sc.Valor, color = sc.Cor } : null,
+            notice = mensagem.Aviso,
+        });
+        return $"window.oncChat && window.oncChat.addYouTube && window.oncChat.addYouTube({json});";
+    }
 
     /// <summary>Para a vigia: a saúde da conexão da página com a Twitch.</summary>
     public const string PerguntarSaude = """

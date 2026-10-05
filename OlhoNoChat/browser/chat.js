@@ -25,7 +25,7 @@
     let settings = {
         fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
-        vips: [], blockList: []
+        vips: [], blockList: [], multiplatform: false
     };
     let started = false;
     let socket = null;
@@ -320,7 +320,8 @@
 
     // The "Filtros" of the app: blocked users, "only the listed users" (plus all VIPs / Mods, from the
     // badges tag "vip/1,subscriber/12") and their highlight. Also decides if the new-message sound rings.
-    function showLine(line, badges) {
+    // The badges shown can differ from the ones filtered (a YouTube moderator counts as a Mod, without a Twitch badge).
+    function showLine(line, badges, shownBadges = badges) {
         if (settings.blockList.includes(line.login)) return;
 
         const isListed = settings.vips.includes(line.login);
@@ -331,7 +332,7 @@
 
         if (settings.allowedUsersOnly && !allowed) return;
         line.highlight = settings.highlightUsers && allowed ? 'highlight' + byBadge : '';
-        line.badges = badges;
+        line.badges = shownBadges;
 
         // The app decides if it rings (not while the sound is playing, "Quando tocar")
         if (settings.playSound && ((!settings.highlightUsers && !settings.allowedUsersOnly) || allowed))
@@ -580,6 +581,11 @@
         linkify(message);
 
         div.append(time);
+        // Chat Multiplataforma: where the message came from (hidden by CSS while it is off, see showPlatforms)
+        const platform = document.createElement('span');
+        platform.className = 'onc-platform ' + (line.platform || 'twitch');
+        platform.title = line.platform === 'youtube' ? 'YouTube' : 'Twitch';
+        div.append(platform);
         if (line.sourceRoom) {
             const source = document.createElement('span');
             source.className = 'onc-source';
@@ -597,11 +603,27 @@
             div.append(badges);
         }
         div.append(nick);
-        if (!line.action) {
+        // YouTube: a new member, a milestone or a gift ("virou membro do canal!"), then the message if there is one
+        if (line.notice) {
+            const notice = document.createElement('span');
+            notice.className = 'onc-notice';
+            notice.textContent = line.notice;
+            div.classList.add('onc-member-line');
+            div.append(' ', notice);
+        } else if (!line.action) {
             const colon = document.createElement('span');
             colon.className = 'colon';
             colon.textContent = ':';
             div.append(colon);
+        }
+        // YouTube Super Chat: the amount in its color before the message
+        if (line.superchat) {
+            const amount = document.createElement('span');
+            amount.className = 'onc-superchat-amount';
+            amount.textContent = line.superchat.amount;
+            div.classList.add('onc-superchat');
+            div.style.setProperty('--superchat-color', line.superchat.color);
+            message.prepend(amount, ' ');
         }
         div.append(' ', message);
 
@@ -751,12 +773,45 @@
         }
     }, 1000);
 
+    // --- YouTube (Chat Multiplataforma) -------------------------------------------------------------
+    // The app reads the chat of a YouTube live (YouTube/LeitorDoYouTube.cs) and sends each message here
+    // (ContratoComAPagina.AdicionarDoYouTube). It goes through the same filters and sound as the Twitch ones: the
+    // filter lists hold the YouTube @ (without the @), the owner counts as the broadcaster and moderators as Mods.
+
+    // The name colors YouTube itself uses for the owner, moderators and members
+    const YOUTUBE_ROLE_COLORS = { owner: '#FFD600', moderator: '#5E84F1', member: '#2BA640' };
+    const YOUTUBE_ROLE_BADGES = { owner: 'broadcaster/1', moderator: 'moderator/1' };
+
+    function onYouTubeMessage(m) {
+        const login = String(m.login || m.name || '').toLowerCase();
+        const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
+        if (settings.hideBots && !m.superchat && !m.notice && (text[0] === '!' || /bot$/.test(login))) return;
+
+        showLine({
+            id: 'yt-' + m.id,
+            platform: 'youtube',
+            login,
+            name: m.name || login,
+            color: userColor(login || '?', YOUTUBE_ROLE_COLORS[m.role] || ''),
+            action: false,
+            parts: m.parts || [],
+            superchat: m.superchat || null,
+            notice: m.notice || ''
+        }, YOUTUBE_ROLE_BADGES[m.role] || '', '');
+    }
+
+    // The platform icons only while the Chat Multiplataforma is on (also on the lines already shown)
+    function showPlatforms() {
+        document.body.classList.toggle('onc-multi', !!settings.multiplatform);
+    }
+
     // --- Used by the app -----------------------------------------------------------------------------
 
     window.oncChat = {
         start(newSettings) {
             Object.assign(settings, newSettings);
             showOrHideGifs();
+            showPlatforms();
             if (started || !channel) return;
             started = true;
             connect();
@@ -766,7 +821,15 @@
         apply(newSettings) {
             Object.assign(settings, newSettings);
             showOrHideGifs();
+            showPlatforms();
             if (settings.hideOtherChannels) removeLines('.onc-other-channel');
+            if (!settings.multiplatform) removeLines('.chat_line[data-id^="yt-"]');
+        },
+
+        // A message of the YouTube chat (Chat Multiplataforma)
+        addYouTube(message) {
+            if (!started || !settings.multiplatform) return;
+            onYouTubeMessage(message);
         },
 
         // A line from the app in the user's color, like a /me message (channel point redemptions)

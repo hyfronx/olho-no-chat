@@ -680,4 +680,48 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Opcoes lidas = ArquivoDeConfiguracoes.DeJson("""{ "Versao": 1, "Canal": "abc", "PermitirCliqueComBordas": false }""");
         Assert.Equal("abc", lidas.Canal);
     }
+
+    // --- Chat Multiplataforma --------------------------------------------------------------------------------
+
+    [Fact]
+    public void Multiplataforma_EscolheOPadraoETravaALista_EAvisaAsAbas()
+    {
+        LogicaConfiguracoes c = Abrir(o => o.TipoDeChat = (int)TipoDeChat.ChatOficial);
+        Assert.True(c.Chat.PodeEscolherOTipo);
+        Assert.False(c.Twitch.MultiplataformaNaTela);
+
+        c.Chat.ChatMultiplataforma = true;
+
+        Assert.Equal(TipoDeChat.Padrao, c.Chat.Tipo);
+        Assert.False(c.Chat.PodeEscolherOTipo);
+        Assert.True(c.Twitch.MultiplataformaNaTela);
+        Assert.False(c.Twitch.SemMultiplataforma);
+        Assert.True(c.Som.ComPadrao);
+        Assert.True(c.TemMudancas);
+    }
+
+    [Fact]
+    public void Multiplataforma_SalvaEVoltaAoAbrir()
+    {
+        LogicaConfiguracoes c = Abrir();
+        Assert.False(c.Chat.MostrarHistoricoDoYouTube); // desligado no começo
+        c.Chat.ChatMultiplataforma = true;
+        c.Chat.MostrarHistoricoDoYouTube = true;
+        c.Salvar();
+
+        Opcoes gravadas = Gravadas();
+        Assert.True(gravadas.ChatMultiplataforma);
+        Assert.True(gravadas.MostrarHistoricoDoYouTube);
+        Assert.Equal((int)TipoDeChat.Padrao, gravadas.TipoDeChat);
+
+        LogicaConfiguracoes outra = Abrir();
+        Assert.True(outra.Chat.ChatMultiplataforma);
+        Assert.True(outra.Twitch.MultiplataformaNaTela);
+        Assert.False(outra.TemMudancas);
+
+        outra.Chat.ChatMultiplataforma = false;
+        Assert.True(outra.Chat.PodeEscolherOTipo);
+        outra.Salvar();
+        Assert.False(Gravadas().ChatMultiplataforma);
+    }
 }

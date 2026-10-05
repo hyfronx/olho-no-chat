@@ -71,14 +71,20 @@ public sealed partial class LogicaCaixaDeEscrever : ObservableObject
 
     public bool TipoTemCanal => TiposDeChat.UsaCanal(Tipo);
 
+    /// <summary>No Chat Multiplataforma o chat é só para ler: sem botão Escrever e sem caixa.</summary>
+    private bool SoLeitura => _opcoes().ChatMultiplataforma;
+
+    /// <summary>O botão Escrever aparece: um chat de canal, fora do Chat Multiplataforma.</summary>
+    public bool BotaoEscreverNaTela => TipoTemCanal && !SoLeitura;
+
     /// <summary>O canal do chat na tela, para onde as mensagens vão ("" nos tipos sem canal).</summary>
     public string Canal => TipoTemCanal ? PaginaDoChat.CanalSalvo(_opcoes()) : string.Empty;
 
     /// <summary>A caixa da própria Twitch foi escolhida (só existe no chat oficial).</summary>
-    public bool UsaCaixaDaTwitch => Tipo == TipoDeChat.ChatOficial && _opcoes().CaixaDaTwitch;
+    public bool UsaCaixaDaTwitch => Tipo == TipoDeChat.ChatOficial && _opcoes().CaixaDaTwitch && !SoLeitura;
 
-    /// <summary>A caixa do app pode ser usada: conta conectada que pode escrever e um canal.</summary>
-    public bool CaixaDoAppDisponivel => !UsaCaixaDaTwitch && _contaConectada() && _contaPodeEnviar() && Canal.Length > 0;
+    /// <summary>A caixa do app pode ser usada: conta conectada que pode escrever e um canal, fora do Chat Multiplataforma.</summary>
+    public bool CaixaDoAppDisponivel => !UsaCaixaDaTwitch && !SoLeitura && _contaConectada() && _contaPodeEnviar() && Canal.Length > 0;
 
     /// <summary>A caixa da Twitch pode ser usada: a página do chat oficial está aberta (não a de boas-vindas).</summary>
     public bool CaixaDaTwitchDisponivel(bool paginaDoChatOficialAberta) =>
@@ -169,7 +175,8 @@ public sealed partial class LogicaCaixaDeEscrever : ObservableObject
 
     /// <summary>Por que não dá para escrever, na ordem em que a pessoa precisa resolver.</summary>
     public string TextoQueNaoDa =>
-        !TipoTemCanal ? "Para escrever no chat, escolha o tipo de chat \"Padrão\" ou \"Chat oficial da Twitch\" em Configurações > Chat."
+        SoLeitura ? ChatMultiplataforma.TextoSemEscrever
+        : !TipoTemCanal ? "Para escrever no chat, escolha o tipo de chat \"Padrão\" ou \"Chat oficial da Twitch\" em Configurações > Chat."
         : Canal.Length == 0 ? "Para escrever no chat, escolha o canal na faixa de cima do chat."
         : !_contaConectada() ? "Para escrever no chat, conecte sua conta da Twitch em Configurações > Twitch."
         : "Para escrever no chat, conecte sua conta de novo em Configurações > Twitch: a Twitch precisa dar a permissão de escrever.";
@@ -180,7 +187,7 @@ public sealed partial class LogicaCaixaDeEscrever : ObservableObject
     /// </summary>
     public string? TextoQueDa(bool bordasVisiveis)
     {
-        if (!TipoTemCanal || Canal.Length == 0)
+        if (!BotaoEscreverNaTela || Canal.Length == 0)
             return null;
 
         string noJogo = Atalho.Existe(AtalhoEscrever)

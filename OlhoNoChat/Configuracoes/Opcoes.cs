@@ -33,6 +33,15 @@ public sealed class Opcoes
     public string Canal { get; set; } = string.Empty;
     /// <summary>0 = Padrão, 1 = Chat oficial da Twitch, 2 = Endereço personalizado (<see cref="Tipos"/>).</summary>
     public int TipoDeChat { get; set; } = (int)Tipos.Padrao;
+    /// <summary>
+    /// "Chat Multiplataforma": o chat de uma live do YouTube junto com o da Twitch, só no Padrão. Ligado, os recursos só
+    /// da Twitch ficam desligados (escrever, emotes da conta, resgates, outros tipos de chat).
+    /// </summary>
+    public bool ChatMultiplataforma { get; set; } = false;
+    /// <summary>"@nome", "UC…" ou "youtu.be/id" (<see cref="YouTube.CanalDoYouTube"/>); trocado na faixa do canal.</summary>
+    public string CanalDoYouTube { get; set; } = string.Empty;
+    /// <summary>Ao entrar no chat de uma live, mostrar também as últimas mensagens que o YouTube manda (as de antes).</summary>
+    public bool MostrarHistoricoDoYouTube { get; set; } = false;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Do jeito que foi digitado na aba Chat.</summary>
@@ -129,12 +138,16 @@ public sealed class Opcoes
             Tema = TemaPadrao;
         // O 3 era o jCyan, removido
         TipoDeChat = (int)TiposDeChat.Ler(TipoDeChat);
+        // O Chat Multiplataforma só existe no Padrão
+        if (ChatMultiplataforma)
+            TipoDeChat = (int)Tipos.Padrao;
         if (TamanhoDoTexto <= 0 || double.IsNaN(TamanhoDoTexto))
             TamanhoDoTexto = TamanhoDoTextoPadrao;
         if (float.IsNaN(Volume))
             Volume = padrao.Volume;
 
         Canal ??= padrao.Canal;
+        CanalDoYouTube ??= padrao.CanalDoYouTube;
         EnderecoPersonalizado ??= padrao.EnderecoPersonalizado;
         SegundosParaApagar ??= padrao.SegundosParaApagar;
         CssDoTemaNenhum ??= padrao.CssDoTemaNenhum;
@@ -157,12 +170,13 @@ public sealed class Opcoes
     }
 
     /// <summary>
-    /// "Restaurar tudo para o padrão": as opções da primeira instalação, menos o que não é opção: o canal, a conta da
+    /// "Restaurar tudo para o padrão": as opções da primeira instalação, menos o que não é opção: os canais, a conta da
     /// Twitch, as listas de nomes dos filtros e a posição da janela.
     /// </summary>
     public Opcoes RestauradasParaOPadrao() => new()
     {
         Canal = Canal,
+        CanalDoYouTube = CanalDoYouTube,
         Conta = Conta,
         ListaDeUsuarios = ListaDeUsuarios,
         UsuariosBloqueados = UsuariosBloqueados,

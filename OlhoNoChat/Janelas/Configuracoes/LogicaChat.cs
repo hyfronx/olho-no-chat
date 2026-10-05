@@ -30,6 +30,23 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private int _tipoDeChat;
 
+    /// <summary>Chat Multiplataforma (Twitch + YouTube): só existe no Padrão, então ligar escolhe o Padrão e trava a lista.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PodeEscolherOTipo))]
+    private bool _chatMultiplataforma;
+
+    public bool PodeEscolherOTipo => !ChatMultiplataforma;
+
+    /// <summary>Ao conectar no chat de uma live, mostrar também as mensagens de antes (desligado no começo).</summary>
+    [ObservableProperty]
+    private bool _mostrarHistoricoDoYouTube;
+
+    partial void OnChatMultiplataformaChanged(bool value)
+    {
+        if (value)
+            TipoDeChat = (int)Tipos.Padrao;
+    }
+
     // Padrão
     [ObservableProperty]
     private bool _apagarMensagensAntigas;
@@ -79,6 +96,8 @@ public sealed partial class LogicaChat : LogicaDaPagina
     public override void Carregar(Opcoes opcoes)
     {
         TipoDeChat = (int)TiposDeChat.Ler(opcoes.TipoDeChat);
+        ChatMultiplataforma = opcoes.ChatMultiplataforma;
+        MostrarHistoricoDoYouTube = opcoes.MostrarHistoricoDoYouTube;
         ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
         SegundosParaApagar = opcoes.SegundosParaApagar;
         EsconderBots = opcoes.EsconderBots;
@@ -97,6 +116,8 @@ public sealed partial class LogicaChat : LogicaDaPagina
 
     public override void Gravar(Opcoes opcoes)
     {
+        opcoes.ChatMultiplataforma = ChatMultiplataforma && TipoNaTela == Tipos.Padrao;
+        opcoes.MostrarHistoricoDoYouTube = MostrarHistoricoDoYouTube;
         switch (TipoNaTela)
         {
             case Tipos.Padrao:
@@ -125,6 +146,8 @@ public sealed partial class LogicaChat : LogicaDaPagina
     public override void Estado(IDictionary<string, string> estado)
     {
         estado["Chat.TipoDeChat"] = TipoDeChat.ToString();
+        estado["Chat.ChatMultiplataforma"] = ChatMultiplataforma.ToString();
+        estado["Chat.MostrarHistoricoDoYouTube"] = MostrarHistoricoDoYouTube.ToString();
         estado["Chat.ApagarMensagensAntigas"] = ApagarMensagensAntigas.ToString();
         estado["Chat.SegundosParaApagar"] = SegundosParaApagar;
         estado["Chat.EsconderBots"] = EsconderBots.ToString();

@@ -12,6 +12,7 @@ using OlhoNoChat.Sistema;
 using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.Atalhos;
+using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Janelas.Chat;
 
@@ -31,6 +32,7 @@ public partial class JanelaChat : Window
     private readonly ContaDaTwitch _conta;
     private readonly AutorizacaoNoNavegador _autorizacao;
     private readonly ResgatesDePontos _resgates;
+    private readonly LeitorDoYouTube _youTube;
     private readonly ProcuraDeAtualizacoes _atualizacoes;
     private readonly IconeDaBandeja _bandeja;
     private readonly LogicaJanelaChat _logica = new();
@@ -47,8 +49,8 @@ public partial class JanelaChat : Window
     private bool _fechando;
 
     public JanelaChat(ILogger<JanelaChat> log, ArquivoDeConfiguracoes arquivo, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao,
-        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ResgatesDePontos resgates, ProcuraDeAtualizacoes atualizacoes,
-        IconeDaBandeja bandeja)
+        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ResgatesDePontos resgates, LeitorDoYouTube youTube,
+        ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja)
     {
         InitializeComponent();
 
@@ -57,6 +59,7 @@ public partial class JanelaChat : Window
         _conta = conta;
         _autorizacao = autorizacao;
         _resgates = resgates;
+        _youTube = youTube;
         _atualizacoes = atualizacoes;
         _bandeja = bandeja;
         _atalhos = new AtalhosGlobais(log);
@@ -87,6 +90,7 @@ public partial class JanelaChat : Window
         LigarBandeja();
         LigarNavegador();
         _resgates.Resgatado += resgate => Dispatcher.InvokeAsync(() => MostrarResgate(resgate));
+        LigarYouTube();
         _som.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
         _conta.Mudou += () => Dispatcher.BeginInvoke(ContaMudou);
         // "Atualizar agora": o Velopack fecha o app sem passar pelo Closing, então a posição vai para as opções antes
@@ -119,6 +123,7 @@ public partial class JanelaChat : Window
         {
             _atalhos.Dispose();
             _resgates.Desligar();
+            _youTube.Desligar();
             _som.Dispose();
             _sempreNaFrente.Dispose();
         };
@@ -127,6 +132,7 @@ public partial class JanelaChat : Window
         DefinirAtalhos();
         AplicarSempreNoTopo();
         barraDeCima.MostrarValores(Opcoes.TamanhoDoTexto, Opcoes.Fundo);
+        barraDeCima.MostrarMultiplataforma(Opcoes.ChatMultiplataforma);
         AplicarEstado();
         _ = PrepararNavegadorAsync();
         _ = _conta.VerificarUmaVezAsync(); // o acesso salvo pode ter expirado ou sido removido
@@ -175,6 +181,7 @@ public partial class JanelaChat : Window
             MostrarBordas();
         AtualizarSom();
         _navegador.AbrirDasOpcoes();
+        AtualizarYouTube();
         FicarPronta();
     }
 
@@ -261,7 +268,7 @@ public partial class JanelaChat : Window
         caixaDeEscrever.Visibility = _logica.CaixaDoAppNaTela ? Visibility.Visible : Visibility.Collapsed;
         if (!_logica.CaixaDoAppNaTela && caixaDeEscrever.EmotesAbertos)
             caixaDeEscrever.FecharEmotes();
-        barraDeCima.MostrarEscrever(_caixa.TipoTemCanal, _caixa.Aberta(bordas), _caixa.DicaDoBotaoEscrever(bordas));
+        barraDeCima.MostrarEscrever(_caixa.BotaoEscreverNaTela,_caixa.Aberta(bordas), _caixa.DicaDoBotaoEscrever(bordas));
 
         desenhoDoCanto.Visibility = _logica.CantoLivre ? Visibility.Visible : Visibility.Collapsed;
         _canto.Atualizar(_navegador.Controle, _logica.CantoLivre, margem);
@@ -414,6 +421,7 @@ public partial class JanelaChat : Window
                 AplicarSempreNoTopo();
         };
         barraDeCima.EscreverPedido += ClicarEmEscrever;
+        barraDeCima.MultiplataformaPedido += ligado => _ = AlternarMultiplataformaAsync(ligado);
         barraDeCima.TamanhoDoTextoEscolhido += EscolherTamanhoDoTexto;
         barraDeCima.FundoEscolhido += EscolherFundo;
         barraDeCima.FundoPadraoPedido += () => MudarFundo(Opcoes.FundoPadrao);
@@ -564,7 +572,7 @@ public partial class JanelaChat : Window
             TerminarEscrita(devolverFoco: false);
             caixaDeEscrever.DescartarEmotes();
         }
-        else if (Opcoes.MostrarResgates)
+        else if (ChatMultiplataforma.ResgatesLigados(Opcoes))
         {
             _ = _resgates.LigarAsync(); // com um acesso novo, assina de novo
         }
@@ -575,15 +583,71 @@ public partial class JanelaChat : Window
 
     // --- Canal e página do chat ------------------------------------------------------------------------------
 
-    // Grava o canal na hora e abre o chat dele (ou as boas-vindas, sem canal)
-    private void TrocarCanal(string canal)
+    // Grava os canais na hora e abre o chat deles (ou as boas-vindas, sem canal). Só o do YouTube trocado não recarrega o
+    // chat (as mensagens da tela ficam)
+    private void TrocarCanal(string canal, string youTube)
     {
         _log.LogInformation("Canal trocado na faixa do canal.");
+        bool outraTwitch = !string.Equals(canal, PaginaDoChat.CanalSalvo(Opcoes), StringComparison.OrdinalIgnoreCase);
         Opcoes.Canal = canal;
+        Opcoes.CanalDoYouTube = youTube;
         _arquivo.Gravar();
-        _navegador.AbrirDasOpcoes();
+        if (outraTwitch)
+            _navegador.AbrirDasOpcoes();
+        AtualizarYouTube();
         _caixa.Atualizar();
         AplicarEstado();
+    }
+
+    // --- YouTube (Chat Multiplataforma) ----------------------------------------------------------------------
+
+    private void LigarYouTube()
+    {
+        _youTube.EstadoMudou += estado => Dispatcher.BeginInvoke(() => _faixa.ConexaoDoYouTube = estado);
+        _youTube.MensagemRecebida += item =>
+        {
+            if (MensagemParaAPagina.De(item) is { } mensagem)
+                Dispatcher.BeginInvoke(() => MostrarDoYouTube(mensagem));
+        };
+    }
+
+    // Lê o YouTube só com o Chat Multiplataforma ligado, um canal do YouTube e o chat da Twitch aberto (as mensagens vão
+    // para a página do Padrão)
+    private void AtualizarYouTube()
+    {
+        CanalDoYouTube? canal = ChatMultiplataforma.CanalALer(Opcoes);
+        _youTube.MostrarHistorico = Opcoes.MostrarHistoricoDoYouTube; // vale na próxima vez que conectar
+        if (canal != null && _temWebView2 && PaginaDoChat.CanalSalvo(Opcoes).Length > 0)
+            _youTube.Ligar(canal);
+        else
+            _youTube.Desligar();
+    }
+
+    // O botão da barra: liga o Chat Multiplataforma (só no Padrão: outro tipo de chat vira o Padrão) ou volta a só Twitch,
+    // como o interruptor de Configurações > Chat. Sem canal do YouTube, a faixa abre na caixa dele.
+    private async Task AlternarMultiplataformaAsync(bool ligado)
+    {
+        if (!_temWebView2 || ligado == Opcoes.ChatMultiplataforma)
+        {
+            barraDeCima.MostrarMultiplataforma(Opcoes.ChatMultiplataforma);
+            return;
+        }
+
+        _log.LogInformation("Chat Multiplataforma {Estado} pela barra.", ligado ? "ligado" : "desligado");
+        Opcoes.ChatMultiplataforma = ligado;
+        if (ligado)
+            Opcoes.TipoDeChat = (int)TipoDeChat.Padrao;
+        _arquivo.Gravar();
+        await AplicarOpcoesSalvasAsync();
+
+        if (ligado && ChatMultiplataforma.CanalALer(Opcoes) == null && PaginaDoChat.CanalSalvo(Opcoes).Length > 0)
+            _faixa.AbrirEditorNoYouTube();
+    }
+
+    private void MostrarDoYouTube(MensagemParaAPagina mensagem)
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta && Opcoes.ChatMultiplataforma)
+            _navegador.Executar(ContratoComAPagina.AdicionarDoYouTube(mensagem));
     }
 
     private void LigarNavegador()
@@ -654,7 +718,8 @@ public partial class JanelaChat : Window
     // Os resgates são do canal da conta: só aparecem quando o chat aberto é o desse canal (e só o Padrão os mostra)
     private void MostrarResgate(ResgatesDePontos.Resgate resgate)
     {
-        if (_navegador.Pagina is not ChatPadrao || !string.Equals(_caixa.Canal, _conta.Login, StringComparison.OrdinalIgnoreCase))
+        if (_navegador.Pagina is not ChatPadrao || !ChatMultiplataforma.ResgatesLigados(Opcoes)
+            || !string.Equals(_caixa.Canal, _conta.Login, StringComparison.OrdinalIgnoreCase))
             return;
 
         const string cor = "#a1b3c4";
@@ -666,7 +731,7 @@ public partial class JanelaChat : Window
     // Depois de a página carregar e de verificar o acesso salvo à Twitch
     private async Task LigarResgatesAsync()
     {
-        if (Opcoes.MostrarResgates && await _conta.VerificarUmaVezAsync() && Opcoes.MostrarResgates)
+        if (ChatMultiplataforma.ResgatesLigados(Opcoes) && await _conta.VerificarUmaVezAsync() && ChatMultiplataforma.ResgatesLigados(Opcoes))
             await _resgates.LigarAsync();
     }
 
@@ -751,8 +816,9 @@ public partial class JanelaChat : Window
     {
         await _navegador.AplicarOpcoesSalvasAsync();
         AtualizarSom();
+        AtualizarYouTube();
 
-        if (Opcoes.MostrarResgates)
+        if (ChatMultiplataforma.ResgatesLigados(Opcoes))
             _ = LigarResgatesAsync();
         else
             _resgates.Desligar();
@@ -761,6 +827,7 @@ public partial class JanelaChat : Window
         Opcoes.TamanhoDoTexto = _navegador.AplicarZoom(Opcoes.TamanhoDoTexto);
         barraDeCima.MostrarValores(Opcoes.TamanhoDoTexto, Opcoes.Fundo);
         AplicarSempreNoTopo();
+        barraDeCima.MostrarMultiplataforma(Opcoes.ChatMultiplataforma);
         _caixa.Atualizar();
         AplicarEstado();
         AtualizarPagina();

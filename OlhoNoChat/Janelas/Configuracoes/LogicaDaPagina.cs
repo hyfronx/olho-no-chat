@@ -29,6 +29,22 @@ public abstract class LogicaDaPagina : ObservableObject
         }
     }
 
+    private bool _multiplataformaNaTela;
+
+    /// <summary>O Chat Multiplataforma ligado na aba Chat (ainda sem salvar).</summary>
+    public bool MultiplataformaNaTela
+    {
+        get => _multiplataformaNaTela;
+        set
+        {
+            if (SetProperty(ref _multiplataformaNaTela, value))
+                OnPropertyChanged(nameof(SemMultiplataforma));
+        }
+    }
+
+    /// <summary>Os recursos só da Twitch podem ser usados (desligados no Chat Multiplataforma).</summary>
+    public bool SemMultiplataforma => !MultiplataformaNaTela;
+
     public bool ComPadrao => TipoNaTela == TipoDeChat.Padrao;
     public bool ComChatOficial => TipoNaTela == TipoDeChat.ChatOficial;
     public bool ComEndereco => TipoNaTela == TipoDeChat.EnderecoPersonalizado;

@@ -90,6 +90,61 @@ body {
     margin: 0 5px 2px 1px;
 }
 
+/* Chat Multiplataforma: the icon of the platform at the start of each line (body.onc-multi, chat.js showPlatforms) */
+.onc-platform {
+    display: none;
+}
+
+body.onc-multi .onc-platform {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin: 0 4px -3px 0;
+    /* Longhands: the shorthand here would win over the image of each platform below */
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.onc-platform.twitch {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 2800'%3E%3Cpath fill='%23fff' d='M600 200h1600v1100l-400 400h-400l-350 350v-350H600z'/%3E%3Cpath fill='%239146FF' d='M500 0 0 500v1800h600v500l500-500h400l900-900V0zm1700 1300-400 400h-400l-350 350v-350H600V200h1600z'/%3E%3Cpath fill='%239146FF' d='M1700 550h200v600h-200zm-550 0h200v600h-200z'/%3E%3C/svg%3E");
+}
+
+.onc-platform.youtube {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 17'%3E%3Crect width='24' height='17' rx='4.5' fill='%23FF0000'/%3E%3Cpath fill='%23fff' d='M9.6 4.8v7.4l6.3-3.7z'/%3E%3C/svg%3E");
+}
+
+/* YouTube Super Chat: a bar and the amount in the Super Chat's color */
+.chat_line.onc-superchat {
+    position: relative;
+    padding-left: 9px !important;
+}
+
+.onc-superchat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--superchat-color);
+}
+
+.onc-superchat-amount {
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--superchat-color);
+    color: #000;
+    text-shadow: none;
+    letter-spacing: 0;
+}
+
+/* YouTube members: "virou membro do canal!" in YouTube's member green */
+.onc-notice {
+    color: #5FD07A;
+}
+
 /* "Esconder GIFs": the title in brackets instead (chat.js, showOrHideGifs) */
 .onc-gif-title,
 .onc-hide-gifs .onc-gif {

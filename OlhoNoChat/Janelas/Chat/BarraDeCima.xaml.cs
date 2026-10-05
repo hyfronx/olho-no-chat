@@ -11,7 +11,7 @@ namespace OlhoNoChat.Janelas.Chat;
 
 /// <summary>
 /// A barra laranja da janela do chat: ocultar bordas, tamanho do texto e fundo (com os painéis e a rodinha), sempre no
-/// topo, escrever, Configurações e fechar. Arrastar a barra (fora dos botões) move a janela; clique duplo não maximiza.
+/// topo, Chat Multiplataforma, escrever, Configurações e fechar. Arrastar a barra (fora dos botões) move a janela; clique duplo não maximiza.
 /// Quem decide e aplica é a janela: a barra só avisa o que foi pedido e mostra o estado que a janela passa.
 /// </summary>
 public partial class BarraDeCima : UserControl
@@ -59,6 +59,9 @@ public partial class BarraDeCima : UserControl
     /// <summary>O botão "Sempre no topo" foi clicado (ou trocado pela automação): o estado pedido.</summary>
     public event Action<bool>? SempreNoTopoPedido;
 
+    /// <summary>O botão do Chat Multiplataforma foi clicado: ligado (Twitch + YouTube) ou só a Twitch.</summary>
+    public event Action<bool>? MultiplataformaPedido;
+
     /// <summary>O botão Escrever foi clicado: a janela abre ou fecha a caixa e depois mostra o estado.</summary>
     public event Action? EscreverPedido;
 
@@ -98,6 +101,16 @@ public partial class BarraDeCima : UserControl
             ? "Sempre no topo: ligado. O chat fica na frente do jogo e das outras janelas. Clique para desligar."
             : "Sempre no topo: desligado. O chat é uma janela comum, que fica atrás de outra quando você clica nela. Clique para ligar.",
             atalho);
+    }
+
+    public void MostrarMultiplataforma(bool ligado)
+    {
+        _mostrando = true;
+        botaoMultiplataforma.IsChecked = ligado;
+        _mostrando = false;
+        botaoMultiplataforma.ToolTip = ligado
+            ? "Chat Multiplataforma: ligado. O chat mostra a Twitch e o YouTube juntos, só para ler. Clique para voltar a só Twitch."
+            : "Só Twitch. Clique para ligar o Chat Multiplataforma: o chat da sua live no YouTube junto com o da Twitch (só para ler; escrever e os resgates ficam desligados).";
     }
 
     /// <summary>O Escrever só existe nos tipos de chat com canal; aceso enquanto uma caixa está aberta.</summary>
@@ -140,6 +153,12 @@ public partial class BarraDeCima : UserControl
     {
         if (!_mostrando)
             SempreNoTopoPedido?.Invoke(botaoSempreNoTopo.IsChecked == true);
+    }
+
+    private void Multiplataforma_Mudou(object sender, RoutedEventArgs e)
+    {
+        if (!_mostrando)
+            MultiplataformaPedido?.Invoke(botaoMultiplataforma.IsChecked == true);
     }
 
     private void Escrever_Mudou(object sender, RoutedEventArgs e)
