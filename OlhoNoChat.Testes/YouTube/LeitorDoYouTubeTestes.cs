@@ -1,147 +1,192 @@
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using OlhoNoChat.YouTube;
-using YTLiveChat.Contracts.Models;
-using YTLiveChat.Contracts.Services;
+using static OlhoNoChat.Testes.YouTube.AmostrasDoYouTube;
 
 namespace OlhoNoChat.Testes.YouTube;
 
 /// <summary>
-/// O leitor do YouTube com um leitor falso da biblioteca: quando procura de novo (canal fora do ar, live que acabou, sem
-/// conexão), quando para (canal que não existe) e que os avisos de um leitor antigo são ignorados.
+/// O leitor do YouTube com um YouTube falso: quando procura de novo (canal fora do ar, live que acabou, sem conexão),
+/// quando para (canal que não existe), o que pede ao YouTube e que os avisos de uma leitura antiga são ignorados.
 /// </summary>
 public class LeitorDoYouTubeTestes
 {
     private static readonly TimeSpan Espera = TimeSpan.FromMilliseconds(50);
-    private readonly List<ChatFalso> _criados = [];
+    private readonly YouTubeFalso _youTube = new();
     private readonly ConcurrentQueue<EstadoDoYouTube> _estados = new();
     private readonly ConcurrentQueue<string> _mensagens = new();
 
     private LeitorDoYouTube Novo()
     {
-        var leitor = new LeitorDoYouTube(NullLogger.Instance, () =>
-        {
-            var chat = new ChatFalso();
-            lock (_criados)
-                _criados.Add(chat);
-            return chat;
-        }, Espera, Espera);
+        var leitor = new LeitorDoYouTube(NullLogger.Instance, _youTube, Espera, Espera, TimeSpan.FromMilliseconds(10));
         leitor.EstadoMudou += estado => _estados.Enqueue(estado);
         leitor.MensagemRecebida += item => _mensagens.Enqueue(item.Id);
         return leitor;
     }
 
-    private ChatFalso Criado(int indice)
-    {
-        lock (_criados)
-            return _criados[indice];
-    }
-
-    private int QuantosCriados()
-    {
-        lock (_criados)
-            return _criados.Count;
-    }
-
     private static async Task Esperar(Func<bool> condicao)
     {
-        for (int i = 0; i < 200 && !condicao(); i++)
+        for (int i = 0; i < 300 && !condicao(); i++)
             await Task.Delay(10);
         Assert.True(condicao());
     }
 
     [Fact]
-    public void Ligar_ProcuraPeloArroba()
+    public async Task Ligar_ProcuraPeloArroba()
     {
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
 
         Assert.Equal(EstadoDoYouTube.Procurando, leitor.Estado);
-        Assert.Equal(("@Hyfronx", null, null), Criado(0).Inicio);
+        await Esperar(() => _youTube.Caminhos.Count == 1);
+        Assert.Equal("/@Hyfronx/live", _youTube.Caminhos[0]);
     }
 
     [Fact]
-    public void Ligar_PeloIdOuPelaLive()
+    public async Task Ligar_PeloIdOuPelaLive()
     {
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("UCSJ4gkVC6NrvII8umztf0Ow")!);
+        await Esperar(() => _youTube.Caminhos.Count == 1);
         leitor.Ligar(CanalDoYouTube.Ler("youtu.be/jfKfPfyJRdk")!);
+        await Esperar(() => _youTube.Caminhos.Count == 2);
 
-        Assert.Equal((null, "UCSJ4gkVC6NrvII8umztf0Ow", null), Criado(0).Inicio);
-        Assert.True(Criado(0).Descartado);
-        Assert.Equal((null, null, "jfKfPfyJRdk"), Criado(1).Inicio);
+        Assert.Equal(["/channel/UCSJ4gkVC6NrvII8umztf0Ow/live", "/watch?v=jfKfPfyJRdk"], _youTube.Caminhos);
+        Assert.True(_youTube.Cancelamentos[0].IsCancellationRequested); // a leitura do primeiro foi cancelada
+        Assert.False(_youTube.Cancelamentos[1].IsCancellationRequested);
     }
 
     [Fact]
-    public void Conectado_EAsMensagensChegam()
+    public async Task Conectado_EAsMensagensChegam()
     {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(Resposta("cont1", Texto("m1")));
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Carregou();
-        Criado(0).Mensagem("m1");
 
+        await Esperar(() => _mensagens.Count == 1);
         Assert.Equal(EstadoDoYouTube.Conectado, leitor.Estado);
         Assert.Equal(["m1"], _mensagens);
     }
 
     [Fact]
-    public void MesmoCanal_NaoRecomeca()
+    public async Task PedeAsMensagens_ComAChaveEAContinuacaoDaVez()
+    {
+        _youTube.Pagina(PaginaComLive("cont0"));
+        _youTube.Chat(Resposta("cont1"));
+        _youTube.Chat(Resposta("cont2"));
+        using var leitor = Novo();
+        leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
+
+        await Esperar(() => _youTube.PedidosDoChat.Count == 3);
+        Assert.All(_youTube.PedidosDoChat, p => Assert.Equal("chave1", p.Chave));
+        Assert.Contains("\"continuation\":\"cont0\"", _youTube.PedidosDoChat[0].Corpo);
+        Assert.Contains("\"continuation\":\"cont1\"", _youTube.PedidosDoChat[1].Corpo);
+        Assert.Contains("\"continuation\":\"cont2\"", _youTube.PedidosDoChat[2].Corpo);
+    }
+
+    [Fact]
+    public async Task MesmoCanal_NaoRecomeca()
     {
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
         leitor.Ligar(CanalDoYouTube.Ler("youtube.com/@Hyfronx")!);
+        await Task.Delay(Espera * 2);
 
-        Assert.Equal(1, QuantosCriados());
+        Assert.Single(_youTube.Caminhos);
     }
 
     [Fact]
     public async Task ForaDoAr_EsperaEProcuraDeNovo()
     {
+        _youTube.Pagina(PaginaSemLive);
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Falhou("Failed to initialize from YouTube page: Live Stream ID not found");
 
-        Assert.Equal(EstadoDoYouTube.EsperandoALive, leitor.Estado);
-        Assert.True(Criado(0).Descartado);
-        await Esperar(() => QuantosCriados() == 2 && leitor.Estado == EstadoDoYouTube.Procurando);
+        await Esperar(() => _estados.Contains(EstadoDoYouTube.EsperandoALive));
+        await Esperar(() => _youTube.Caminhos.Count == 2 && leitor.Estado == EstadoDoYouTube.Procurando);
     }
 
     [Fact]
     public async Task LiveAcabou_VoltaAEsperar()
     {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(Resposta("cont1", Texto("m1")));
+        _youTube.Chat(Resposta(null));
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Carregou();
-        Criado(0).Parou("Stream ended or continuation lost");
 
-        Assert.Equal(EstadoDoYouTube.EsperandoALive, leitor.Estado);
-        await Esperar(() => QuantosCriados() == 2);
+        await Esperar(() => _youTube.Caminhos.Count == 2);
+        Assert.Equal([EstadoDoYouTube.Procurando, EstadoDoYouTube.Conectado, EstadoDoYouTube.EsperandoALive, EstadoDoYouTube.Procurando],
+            _estados);
     }
 
     [Fact]
     public async Task CanalQueNaoExiste_NaoProcuraDeNovo_AteLigarOutraVez()
     {
+        _youTube.Pagina(new HttpRequestException("Response status code does not indicate success: 404 (Not Found).", null, HttpStatusCode.NotFound));
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@naoexiste")!);
-        Criado(0).Falhou("Failed to initialize from YouTube page: Response status code does not indicate success: 404 (Not Found).");
 
-        Assert.Equal(EstadoDoYouTube.CanalNaoExiste, leitor.Estado);
+        await Esperar(() => leitor.Estado == EstadoDoYouTube.CanalNaoExiste);
         await Task.Delay(Espera * 4);
-        Assert.Equal(1, QuantosCriados());
+        Assert.Single(_youTube.Caminhos);
 
         leitor.Ligar(CanalDoYouTube.Ler("@naoexiste")!); // confirmar de novo na faixa procura de novo
-        Assert.Equal(2, QuantosCriados());
+        await Esperar(() => _youTube.Caminhos.Count == 2);
     }
 
     [Fact]
     public async Task SemConexao_TentaDeNovo()
     {
+        _youTube.Pagina(new HttpRequestException("No such host is known."));
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Falhou("No such host is known.");
 
-        Assert.Equal(EstadoDoYouTube.SemConexao, leitor.Estado);
-        await Esperar(() => QuantosCriados() == 2);
+        await Esperar(() => _estados.Contains(EstadoDoYouTube.SemConexao));
+        await Esperar(() => _youTube.Caminhos.Count == 2);
+    }
+
+    [Fact]
+    public async Task ChatFalhaUmaVez_ContinuaNaMesmaLive()
+    {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(new HttpRequestException("Erro 500", null, HttpStatusCode.InternalServerError));
+        _youTube.Chat(Resposta("cont1", Texto("m1")));
+        using var leitor = Novo();
+        leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
+
+        await Esperar(() => _mensagens.Count == 1);
+        Assert.Equal(EstadoDoYouTube.Conectado, leitor.Estado);
+        Assert.Single(_youTube.Caminhos);
+    }
+
+    [Fact]
+    public async Task ChatSempreFalhando_DesisteEProcuraDeNovo()
+    {
+        _youTube.Pagina(PaginaComLive());
+        for (int i = 0; i <= LeitorDoYouTube.MaximoDeFalhas; i++)
+            _youTube.Chat(new TaskCanceledException("A task was canceled."));
+        using var leitor = Novo();
+        leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
+
+        await Esperar(() => _estados.Contains(EstadoDoYouTube.SemConexao));
+        Assert.Equal(LeitorDoYouTube.MaximoDeFalhas + 1, _youTube.PedidosDoChat.Count);
+        await Esperar(() => _youTube.Caminhos.Count == 2);
+    }
+
+    [Fact]
+    public async Task ChatProibido_DesisteNaHora()
+    {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(new HttpRequestException("403 (Forbidden)", null, HttpStatusCode.Forbidden));
+        using var leitor = Novo();
+        leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
+
+        await Esperar(() => _estados.Contains(EstadoDoYouTube.SemConexao));
+        Assert.Single(_youTube.PedidosDoChat);
     }
 
     [Fact]
@@ -149,18 +194,19 @@ public class LeitorDoYouTubeTestes
     {
         var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        ChatFalso antigo = Criado(0);
+        await Esperar(() => _youTube.Caminhos.Count == 1);
         leitor.Desligar();
 
         Assert.Equal(EstadoDoYouTube.Desligado, leitor.Estado);
-        Assert.True(antigo.Descartado);
-        antigo.Mensagem("atrasada");
-        antigo.Falhou("Live Stream ID not found");
+        Assert.True(_youTube.Cancelamentos[0].IsCancellationRequested);
+        // A página e as mensagens chegam atrasadas, depois de desligar
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(Resposta("cont1", Texto("atrasada")));
         await Task.Delay(Espera * 4);
 
         Assert.Empty(_mensagens);
         Assert.Equal(EstadoDoYouTube.Desligado, leitor.Estado);
-        Assert.Equal(1, QuantosCriados());
+        Assert.Single(_youTube.Caminhos);
     }
 
     [Theory]
@@ -176,98 +222,94 @@ public class LeitorDoYouTubeTestes
     }
 
     [Fact]
-    public void HistoricoAoConectar_NaoAparece()
+    public async Task HistoricoAoConectar_NaoAparece()
     {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(Resposta("cont1", Texto("antiga", enviadaEm: DateTimeOffset.UtcNow.AddMinutes(-2)), Texto("nova")));
         using var leitor = Novo();
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Carregou();
-        Criado(0).Mensagem("antiga", DateTimeOffset.UtcNow.AddMinutes(-2));
-        Criado(0).Mensagem("nova");
 
+        await Esperar(() => _mensagens.Count == 1);
+        await Task.Delay(Espera);
         Assert.Equal(["nova"], _mensagens);
     }
 
     [Fact]
-    public void HistoricoAoConectar_ComAOpcao_Aparece()
+    public async Task HistoricoAoConectar_ComAOpcao_Aparece()
     {
+        _youTube.Pagina(PaginaComLive());
+        _youTube.Chat(Resposta("cont1", Texto("antiga", enviadaEm: DateTimeOffset.UtcNow.AddMinutes(-2))));
         using var leitor = Novo();
         leitor.MostrarHistorico = true;
         leitor.Ligar(CanalDoYouTube.Ler("@Hyfronx")!);
-        Criado(0).Carregou();
-        Criado(0).Mensagem("antiga", DateTimeOffset.UtcNow.AddMinutes(-2));
 
+        await Esperar(() => _mensagens.Count == 1);
         Assert.Equal(["antiga"], _mensagens);
     }
 
-    [Theory]
-    [InlineData("Critical error:Failed to initialize from YouTube page: Live Stream ID not found", EstadoDoYouTube.EsperandoALive)]
-    [InlineData("Stream ended or continuation lost", EstadoDoYouTube.EsperandoALive)]
-    [InlineData("x 404 (Not Found)", EstadoDoYouTube.CanalNaoExiste)]
-    [InlineData("A task was canceled.", EstadoDoYouTube.SemConexao)]
-    public void PorQueParou(string motivo, EstadoDoYouTube estado) => Assert.Equal(estado, LeitorDoYouTube.PorQueParou(motivo));
-
-#pragma warning disable CS0067, CS0618 // eventos da interface que o leitor não usa
-    private sealed class ChatFalso : IYTLiveChat
+    /// <summary>
+    /// Responde os pedidos com o que o teste pôs na fila (texto ou erro), na ordem. Com a fila vazia, o pedido fica
+    /// esperando a próxima resposta, mesmo depois de cancelado: assim dá para simular uma resposta atrasada.
+    /// </summary>
+    private sealed class YouTubeFalso : IConexaoComOYouTube
     {
-        public (string? Handle, string? ChannelId, string? LiveId)? Inicio { get; private set; }
-        public bool Descartado { get; private set; }
+        private readonly object _trava = new();
+        private readonly Queue<object> _paginas = new(), _chats = new();
+        private readonly List<string> _caminhos = [];
+        private readonly List<CancellationToken> _cancelamentos = [];
+        private readonly List<(string, string)> _pedidosDoChat = [];
+        private TaskCompletionSource _chegou = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public event EventHandler<InitialPageLoadedEventArgs>? InitialPageLoaded;
-        public event EventHandler<ChatStoppedEventArgs>? ChatStopped;
-        public event EventHandler<ChatReceivedEventArgs>? ChatReceived;
-        public event EventHandler<LivestreamStartedEventArgs>? LivestreamStarted;
-        public event EventHandler<LivestreamEndedEventArgs>? LivestreamEnded;
-        public event EventHandler<LivestreamInaccessibleEventArgs>? LivestreamInaccessible;
-        public event EventHandler<RawActionReceivedEventArgs>? RawActionReceived;
-        public event EventHandler<PollUpdatedEventArgs>? PollUpdated;
-        public event EventHandler<PollClosedEventArgs>? PollClosed;
-        public event EventHandler<ChatItemDeletedEventArgs>? ChatItemDeleted;
-        public event EventHandler<ChatItemsDeletedByAuthorEventArgs>? ChatItemsDeletedByAuthor;
-        public event EventHandler<BannerAddedEventArgs>? BannerAdded;
-        public event EventHandler<BannerRemovedEventArgs>? BannerRemoved;
-        public event EventHandler<ChatItemReplacedEventArgs>? ChatItemReplaced;
-        public event EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceived;
-        public event EventHandler<GiftReceivedEventArgs>? GiftReceived;
-        public event EventHandler<CreatorGoalReceivedEventArgs>? CreatorGoalReceived;
-        public event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
+        public IReadOnlyList<string> Caminhos { get { lock (_trava) return [.. _caminhos]; } }
+        public IReadOnlyList<CancellationToken> Cancelamentos { get { lock (_trava) return [.. _cancelamentos]; } }
+        public IReadOnlyList<(string Chave, string Corpo)> PedidosDoChat { get { lock (_trava) return [.. _pedidosDoChat]; } }
 
-        public void Start(string? handle = null, string? channelId = null, string? liveId = null, bool overwrite = false) =>
-            Inicio = (handle, channelId, liveId);
+        public void Pagina(object resposta) => Por(_paginas, resposta);
 
-        public void Stop()
+        public void Chat(object resposta) => Por(_chats, resposta);
+
+        public Task<string> PaginaAsync(string caminho, CancellationToken cancelar)
         {
-        }
-
-        public void Dispose() => Descartado = true;
-
-        public void Carregou() => InitialPageLoaded?.Invoke(this, new InitialPageLoadedEventArgs { LiveId = "live1" });
-
-        public void Mensagem(string id, DateTimeOffset? enviadaEm = null) => ChatReceived?.Invoke(this, new ChatReceivedEventArgs
-        {
-            ChatItem = new ChatItem
+            lock (_trava)
             {
-                Id = id, Author = new Author { Name = "@viewer1", ChannelId = "UC1" }, Message = [],
-                Timestamp = enviadaEm ?? DateTimeOffset.UtcNow,
-            },
-        });
-
-        // Como a biblioteca faz: o erro, depois a parada com "Critical error: ..."
-        public void Falhou(string erro)
-        {
-            ErrorOccurred?.Invoke(this, new ErrorOccurredEventArgs(new InvalidOperationException(erro)));
-            ChatStopped?.Invoke(this, new ChatStoppedEventArgs { Reason = "Critical error: " + erro });
+                _caminhos.Add(caminho);
+                _cancelamentos.Add(cancelar);
+            }
+            return Proxima(_paginas);
         }
 
-        public void Parou(string motivo) => ChatStopped?.Invoke(this, new ChatStoppedEventArgs { Reason = motivo });
+        public Task<string> ChatAsync(string chave, string corpo, CancellationToken cancelar)
+        {
+            lock (_trava)
+                _pedidosDoChat.Add((chave, corpo));
+            return Proxima(_chats);
+        }
 
-        public Task<IReadOnlyList<StreamInfo>> GetStreamsAsync(string? handle = null, string? channelId = null,
-            CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        private void Por(Queue<object> fila, object resposta)
+        {
+            TaskCompletionSource chegou;
+            lock (_trava)
+            {
+                fila.Enqueue(resposta);
+                chegou = _chegou;
+                _chegou = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+            chegou.SetResult();
+        }
 
-        public IAsyncEnumerable<ChatItem> StreamChatItemsAsync(string? handle = null, string? channelId = null, string? liveId = null,
-            bool overwrite = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-
-        public IAsyncEnumerable<RawActionReceivedEventArgs> StreamRawActionsAsync(string? handle = null, string? channelId = null,
-            string? liveId = null, bool overwrite = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        private async Task<string> Proxima(Queue<object> fila)
+        {
+            while (true)
+            {
+                Task chegou;
+                lock (_trava)
+                {
+                    if (fila.TryDequeue(out object? resposta))
+                        return resposta is Exception erro ? throw erro : (string)resposta;
+                    chegou = _chegou.Task;
+                }
+                await chegou;
+            }
+        }
     }
-#pragma warning restore CS0067, CS0618
 }

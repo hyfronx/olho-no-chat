@@ -1,23 +1,17 @@
 using System.Text.Json;
 using OlhoNoChat.Chat;
 using OlhoNoChat.YouTube;
-using YTLiveChat.Contracts.Models;
 
 namespace OlhoNoChat.Testes.YouTube;
 
 public class MensagemParaAPaginaTestes
 {
-    private static ChatItem Item(params MessagePart[] partes) => new()
-    {
-        Id = "abc",
-        Author = new Author { Name = "@Viewer1", ChannelId = "UC1" },
-        Message = partes,
-    };
+    private static ItemDoChat Item(params ParteDoChat[] partes) => new("abc", DateTimeOffset.UtcNow, "@Viewer1", PapelNoChat.Nenhum, partes);
 
     [Fact]
     public void Texto_LoginSemArrobaEmMinusculas()
     {
-        MensagemParaAPagina m = MensagemParaAPagina.De(Item(new TextPart { Text = "oi " }, new TextPart { Text = "chat" }))!;
+        MensagemParaAPagina m = MensagemParaAPagina.De(Item(new ParteDoChat("oi "), new ParteDoChat("chat")))!;
 
         Assert.Equal("abc", m.Id);
         Assert.Equal("viewer1", m.Login);
@@ -32,11 +26,11 @@ public class MensagemParaAPaginaTestes
     public void EmojiComum_ViraTexto_EODoCanal_ViraImagem()
     {
         MensagemParaAPagina m = MensagemParaAPagina.De(Item(
-            new TextPart { Text = "olha " },
-            new EmojiPart { EmojiText = "😂", Url = "https://yt/emoji.png", IsCustomEmoji = false },
-            new TextPart { Text = " " },
-            new EmojiPart { EmojiText = ":gato:", Alt = "gato", Url = "https://yt/gato.png", IsCustomEmoji = true },
-            new TextPart { Text = " fim" }))!;
+            new ParteDoChat("olha "),
+            new ParteDoChat("😂"),
+            new ParteDoChat(" "),
+            new ParteDoChat(":gato:", "https://yt/gato.png"),
+            new ParteDoChat(" fim")))!;
 
         Assert.Equal(3, m.Partes.Count);
         Assert.Equal("olha 😂 ", m.Partes[0]);
@@ -44,57 +38,48 @@ public class MensagemParaAPaginaTestes
         Assert.Equal(" fim", m.Partes[2]);
     }
 
-    [Fact]
-    public void Papel_DonoModeradorMembro()
-    {
-        ChatItem item = Item(new TextPart { Text = "x" });
-        item.IsMembership = true;
-        Assert.Equal(MensagemParaAPagina.Membro, MensagemParaAPagina.De(item)!.Papel);
-        item.IsModerator = true;
-        Assert.Equal(MensagemParaAPagina.Moderador, MensagemParaAPagina.De(item)!.Papel);
-        item.IsOwner = true;
-        Assert.Equal(MensagemParaAPagina.Dono, MensagemParaAPagina.De(item)!.Papel);
-    }
+    [Theory]
+    [InlineData(PapelNoChat.Membro, MensagemParaAPagina.Membro)]
+    [InlineData(PapelNoChat.Moderador, MensagemParaAPagina.Moderador)]
+    [InlineData(PapelNoChat.Dono, MensagemParaAPagina.Dono)]
+    [InlineData(PapelNoChat.Nenhum, "")]
+    public void Papel_DonoModeradorMembro(PapelNoChat papel, string naPagina) =>
+        Assert.Equal(naPagina, MensagemParaAPagina.De(Item(new ParteDoChat("x")) with { Papel = papel })!.Papel);
 
     [Fact]
     public void SuperChat_ValorECorComCerquilha()
     {
-        ChatItem item = Item(new TextPart { Text = "valeu" });
-        item.Superchat = new Superchat { AmountString = "R$ 10,00", Currency = "BRL", BodyBackgroundColor = "1DE9B6" };
+        ItemDoChat item = Item(new ParteDoChat("valeu")) with { SuperChat = new SuperChatDoChat("R$ 10,00", "1DE9B6") };
 
         SuperChatParaAPagina sc = MensagemParaAPagina.De(item)!.SuperChat!;
         Assert.Equal("R$ 10,00", sc.Valor);
         Assert.Equal("#1DE9B6", sc.Cor);
     }
 
-    [Fact]
-    public void SuperChatSemTexto_AindaAparece()
+    [Theory]
+    [InlineData("zzz")]
+    [InlineData(null)]
+    public void SuperChatSemTexto_AindaAparece(string? cor)
     {
-        ChatItem item = Item();
-        item.Superchat = new Superchat { AmountString = "US$ 5.00", Currency = "USD", BodyBackgroundColor = "zzz" };
+        ItemDoChat item = Item() with { SuperChat = new SuperChatDoChat("US$ 5.00", cor) };
 
         MensagemParaAPagina m = MensagemParaAPagina.De(item)!;
         Assert.Empty(m.Partes);
-        Assert.Equal("#1E88E5", m.SuperChat!.Cor); // cor estranha: azul do YouTube
+        Assert.Equal("#1E88E5", m.SuperChat!.Cor); // sem cor ou cor estranha: azul do YouTube
     }
 
     [Theory]
-    [InlineData(MembershipEventType.New, null, null, null, "virou membro do canal!")]
-    [InlineData(MembershipEventType.Milestone, 1, null, null, "é membro há 1 mês!")]
-    [InlineData(MembershipEventType.Milestone, 12, null, null, "é membro há 12 meses!")]
-    [InlineData(MembershipEventType.GiftPurchase, null, 5, null, "deu 5 assinaturas de membro!")]
-    [InlineData(MembershipEventType.GiftPurchase, null, 1, null, "deu uma assinatura de membro!")]
-    [InlineData(MembershipEventType.GiftRedemption, null, null, "@viewer2", "ganhou uma assinatura de membro de @viewer2!")]
-    public void Membros_AvisoEmPortugues(MembershipEventType tipo, int? meses, int? presentes, string? quemDeu, string aviso)
+    [InlineData(TipoDeEventoDeMembro.Novo, null, null, null, "virou membro do canal!")]
+    [InlineData(TipoDeEventoDeMembro.Subiu, null, null, null, "subiu de nível como membro!")]
+    [InlineData(TipoDeEventoDeMembro.Marco, 1, null, null, "é membro há 1 mês!")]
+    [InlineData(TipoDeEventoDeMembro.Marco, 12, null, null, "é membro há 12 meses!")]
+    [InlineData(TipoDeEventoDeMembro.DeuPresente, null, 5, null, "deu 5 assinaturas de membro!")]
+    [InlineData(TipoDeEventoDeMembro.DeuPresente, null, 1, null, "deu uma assinatura de membro!")]
+    [InlineData(TipoDeEventoDeMembro.GanhouPresente, null, null, "@viewer2", "ganhou uma assinatura de membro de @viewer2!")]
+    [InlineData(TipoDeEventoDeMembro.GanhouPresente, null, null, null, "ganhou uma assinatura de membro!")]
+    public void Membros_AvisoEmPortugues(TipoDeEventoDeMembro tipo, int? meses, int? presentes, string? quemDeu, string aviso)
     {
-        ChatItem item = Item();
-        item.MembershipDetails = new MembershipDetails
-        {
-            EventType = tipo,
-            MilestoneMonths = meses,
-            GiftCount = presentes,
-            GifterUsername = quemDeu,
-        };
+        ItemDoChat item = Item() with { Membro = new EventoDeMembro(tipo, meses, presentes, quemDeu) };
 
         Assert.Equal(aviso, MensagemParaAPagina.De(item)!.Aviso);
     }
@@ -105,8 +90,7 @@ public class MensagemParaAPaginaTestes
     [Fact]
     public void ParaAPagina_JsonComOsNomesDaPagina()
     {
-        ChatItem item = Item(new TextPart { Text = "</script> oi" });
-        item.IsModerator = true;
+        ItemDoChat item = Item(new ParteDoChat("</script> oi")) with { Papel = PapelNoChat.Moderador };
         string script = ContratoComAPagina.AdicionarDoYouTube(MensagemParaAPagina.De(item)!);
 
         Assert.StartsWith("window.oncChat && window.oncChat.addYouTube && window.oncChat.addYouTube({", script);

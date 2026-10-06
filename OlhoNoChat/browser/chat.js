@@ -25,7 +25,7 @@
     let settings = {
         fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
-        vips: [], blockList: [], multiplatform: false
+        vips: [], blockList: [], multiplatform: false, kick: ''
     };
     let started = false;
     let socket = null;
@@ -256,16 +256,22 @@
         span.replaceChildren();
         span.dataset.badges.split(',').forEach(badge => {
             const [set, version] = badge.split('/');
-            const imageId = badgeImageId(set, version);
-            if (!imageId) return;
-            const base = 'https://static-cdn.jtvnw.net/badges/v1/' + imageId + '/';
-            const img = document.createElement('img');
+            const img = set === 'kicksub' ? kickSubBadge(Number(version)) : twitchBadge(set, version);
+            if (!img) return;
             img.className = 'tag ' + set + '-' + version;
-            img.src = base + '1';
-            img.srcset = base + '2 2x, ' + base + '3 4x';
             img.alt = set;
             span.append(img);
         });
+    }
+
+    function twitchBadge(set, version) {
+        const imageId = badgeImageId(set, version);
+        if (!imageId) return null;
+        const base = 'https://static-cdn.jtvnw.net/badges/v1/' + imageId + '/';
+        const img = document.createElement('img');
+        img.src = base + '1';
+        img.srcset = base + '2 2x, ' + base + '3 4x';
+        return img;
     }
 
     function refreshBadges() {
@@ -584,7 +590,7 @@
         // Chat Multiplataforma: where the message came from (hidden by CSS while it is off, see showPlatforms)
         const platform = document.createElement('span');
         platform.className = 'onc-platform ' + (line.platform || 'twitch');
-        platform.title = line.platform === 'youtube' ? 'YouTube' : 'Twitch';
+        platform.title = { youtube: 'YouTube', kick: 'Kick' }[line.platform] || 'Twitch';
         div.append(platform);
         if (line.sourceRoom) {
             const source = document.createElement('span');
@@ -808,6 +814,208 @@
         }, YOUTUBE_ROLE_BADGES[m.role] || '', '');
     }
 
+    // --- Kick (Chat Multiplataforma) ----------------------------------------------------------------
+    // Read here, like the Twitch IRC: the channel's chat room id comes from Kick's site API (it answers this page),
+    // then the Pusher WebSocket the site itself uses sends the room's messages. Read-only, no account. The same
+    // filters and sound as the Twitch ones: the filter lists hold the Kick name, moderators count as Mods.
+    // The app shows the state in the channel strip (onc:kick-state, see LogicaFaixaDoCanal).
+
+    const KICK_API = 'https://kick.com/api/v2/channels/';
+    const KICK_PUSHER_URL = 'wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false';
+    const KICK_ACTIVITY_MS = 120000;   // Pusher's activity timeout: a ping when nothing came for this long...
+    const KICK_PONG_LIMIT_MS = 30000;  // ...and a new connection when even the pong doesn't come
+    const KICK_API_RETRY_MS = 20000;   // the site API didn't answer: try again
+    const KICK_BADGES = { broadcaster: 'broadcaster/1', moderator: 'moderator/1', vip: 'vip/1' };
+
+    const kick = {
+        channel: '',       // the channel being read ('' = none)
+        room: null,        // its chat room id
+        subBadges: [],     // the channel's subscriber badges, [{ months, src }] from the fewest months
+        socket: null,
+        lastData: 0,
+        pingSent: false,
+        retryDelay: RETRY_MIN_MS,
+        retryTimer: null,
+        state: ''
+    };
+
+    // The Kick channel in the settings, read only with the Chat Multiplataforma on and a Twitch channel (like YouTube)
+    function updateKick() {
+        const wanted = started && settings.multiplatform && channel ? String(settings.kick || '') : '';
+        if (wanted === kick.channel) return;
+        stopKick();
+        kick.channel = wanted;
+        if (wanted) loadKickChannel(wanted);
+        else setKickState('off');
+    }
+
+    function stopKick() {
+        clearTimeout(kick.retryTimer);
+        const old = kick.socket;
+        kick.socket = null;
+        kick.room = null;
+        kick.subBadges = [];
+        kick.retryDelay = RETRY_MIN_MS;
+        if (old) old.close();
+    }
+
+    function setKickState(newState) {
+        if (newState === kick.state) return;
+        kick.state = newState;
+        postToApp('onc:kick-state:' + newState);
+    }
+
+    function loadKickChannel(name) {
+        setKickState('connecting');
+        fetch(KICK_API + encodeURIComponent(name))
+            .then(response => {
+                if (kick.channel !== name) return;
+                if (response.status === 404) {
+                    setKickState('notfound');
+                    return;
+                }
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json().then(data => {
+                    if (kick.channel !== name) return;
+                    kick.room = data.chatroom.id;
+                    kick.subBadges = (data.subscriber_badges || [])
+                        .filter(b => b.badge_image && b.badge_image.src)
+                        .map(b => ({ months: Number(b.months) || 0, src: b.badge_image.src }))
+                        .sort((a, b) => a.months - b.months);
+                    connectKick();
+                });
+            })
+            .catch(e => {
+                if (kick.channel !== name) return;
+                console.warn('[ONC] Could not find the Kick channel ' + name, e);
+                setKickState('disconnected');
+                kick.retryTimer = setTimeout(() => loadKickChannel(name), KICK_API_RETRY_MS);
+            });
+    }
+
+    function connectKick() {
+        clearTimeout(kick.retryTimer);
+        setKickState('connecting');
+        const ws = new WebSocket(KICK_PUSHER_URL);
+        kick.socket = ws;
+        kick.lastData = Date.now();
+        kick.pingSent = false;
+
+        const send = (event, data) => ws.send(JSON.stringify({ event, data }));
+        ws.onmessage = (message) => {
+            if (ws !== kick.socket) return;
+            kick.lastData = Date.now();
+            kick.pingSent = false;
+            let event, data;
+            try {
+                event = JSON.parse(message.data);
+                data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            } catch (e) {
+                console.error('[ONC] Could not read the Kick event: ' + message.data, e);
+                return;
+            }
+            switch (event.event) {
+                case 'pusher:connection_established':
+                    send('pusher:subscribe', { auth: '', channel: 'chatrooms.' + kick.room + '.v2' });
+                    break;
+                case 'pusher_internal:subscription_succeeded':
+                    kick.retryDelay = RETRY_MIN_MS;
+                    setKickState('connected');
+                    break;
+                case 'pusher:ping':
+                    send('pusher:pong', {});
+                    break;
+                case 'App\\Events\\ChatMessageEvent':
+                    onKickMessage(data);
+                    break;
+                case 'App\\Events\\MessageDeletedEvent':
+                    if (data && data.message && data.message.id)
+                        removeLines(`.chat_line[data-id="${CSS.escape('kick-' + data.message.id)}"]`);
+                    break;
+                case 'App\\Events\\UserBannedEvent':
+                    if (data && data.user && data.user.username)
+                        removeLines(`.chat_line[data-id^="kick-"][data-nick="${CSS.escape(String(data.user.username).toLowerCase())}"]`);
+                    break;
+                case 'App\\Events\\ChatroomClearEvent':
+                    removeLines('.chat_line[data-id^="kick-"]');
+                    break;
+            }
+        };
+        ws.onclose = () => {
+            if (ws !== kick.socket) return;
+            kick.socket = null;
+            setKickState('disconnected');
+            kick.retryTimer = setTimeout(connectKick, kick.retryDelay);
+            kick.retryDelay = Math.min(kick.retryDelay * 2, RETRY_MAX_MS);
+        };
+    }
+
+    // Kick's chat can stay quiet for minutes: a ping keeps the connection, one that stopped answering is replaced
+    setInterval(() => {
+        const ws = kick.socket;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const silentFor = Date.now() - kick.lastData;
+        if (kick.pingSent && silentFor > KICK_ACTIVITY_MS + KICK_PONG_LIMIT_MS) {
+            ws.close();
+        } else if (!kick.pingSent && silentFor > KICK_ACTIVITY_MS) {
+            kick.pingSent = true;
+            ws.send(JSON.stringify({ event: 'pusher:ping', data: {} }));
+        }
+    }, 5000);
+
+    // "[emote:37226:KEKW]" in the text is a Kick emote
+    function kickParts(text) {
+        const parts = [];
+        let last = 0;
+        for (const m of text.matchAll(/\[emote:(\d+):([^\]]*)\]/g)) {
+            if (m.index > last) parts.push(text.slice(last, m.index));
+            parts.push({ emote: { src: 'https://files.kick.com/emotes/' + m[1] + '/fullsize' }, name: m[2] });
+            last = m.index + m[0].length;
+        }
+        if (last < text.length) parts.push(text.slice(last));
+        return parts;
+    }
+
+    // The channel's subscriber badge for that many months (the one of the most months reached, at least the first)
+    function kickSubBadge(months) {
+        let badge = null;
+        kick.subBadges.forEach(b => { if (b.months <= months || !badge) badge = b; });
+        if (!badge) return null;
+        const img = document.createElement('img');
+        img.src = badge.src;
+        return img;
+    }
+
+    function onKickMessage(m) {
+        const sender = (m && m.sender) || {};
+        const identity = sender.identity || {};
+        const login = String(sender.username || sender.slug || '').toLowerCase();
+        const text = String(m.content || '');
+        if (!login || !text) return;
+        if (settings.hideBots && (text[0] === '!' || /bot$/.test(login))) return;
+
+        // Broadcaster, Mods and VIPs count for the filters; the subscriber badge is the channel's own picture
+        const badges = [], shown = [];
+        (identity.badges || []).forEach(b => {
+            if (KICK_BADGES[b.type]) {
+                badges.push(KICK_BADGES[b.type]);
+                shown.push(KICK_BADGES[b.type]);
+            } else if (b.type === 'subscriber') {
+                shown.push('kicksub/' + (Number(b.count) || 0));
+            }
+        });
+
+        showLine({
+            id: 'kick-' + m.id,
+            platform: 'kick',
+            login,
+            name: sender.username || login,
+            color: userColor(login, identity.color),
+            action: false,
+            parts: kickParts(text)
+        }, badges.join(','), shown.join(','));
+    }
+
     // The platform icons only while the Chat Multiplataforma is on (also on the lines already shown)
     function showPlatforms() {
         document.body.classList.toggle('onc-multi', !!settings.multiplatform);
@@ -823,6 +1031,7 @@
             if (started || !channel) return;
             started = true;
             connect();
+            updateKick();
         },
 
         // Settings saved while the chat is open (see MainWindow.LiveSettings.cs)
@@ -831,7 +1040,8 @@
             showOrHideGifs();
             showPlatforms();
             if (settings.hideOtherChannels) removeLines('.onc-other-channel');
-            if (!settings.multiplatform) removeLines('.chat_line[data-id^="yt-"]');
+            if (!settings.multiplatform) removeLines('.chat_line[data-id^="yt-"], .chat_line[data-id^="kick-"]');
+            updateKick();
         },
 
         // A message of the YouTube chat (Chat Multiplataforma)

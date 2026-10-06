@@ -34,7 +34,7 @@ public sealed class Opcoes
     /// <summary>0 = Padrão, 1 = Chat oficial da Twitch, 2 = Endereço personalizado (<see cref="Tipos"/>).</summary>
     public int TipoDeChat { get; set; } = (int)Tipos.Padrao;
     /// <summary>
-    /// "Chat Multiplataforma": o chat de uma live do YouTube junto com o da Twitch, só no Padrão. Ligado, os recursos só
+    /// "Chat Multiplataforma": o chat de uma live do YouTube e o de um canal da Kick junto com o da Twitch, só no Padrão. Ligado, os recursos só
     /// da Twitch ficam desligados (escrever, emotes da conta, resgates, outros tipos de chat).
     /// </summary>
     public bool ChatMultiplataforma { get; set; } = false;
@@ -42,6 +42,8 @@ public sealed class Opcoes
     public string CanalDoYouTube { get; set; } = string.Empty;
     /// <summary>Ao entrar no chat de uma live, mostrar também as últimas mensagens que o YouTube manda (as de antes).</summary>
     public bool MostrarHistoricoDoYouTube { get; set; } = false;
+    /// <summary>O nome do canal da Kick (<see cref="Kick.CanalDaKick"/>); trocado na faixa do canal.</summary>
+    public string CanalDaKick { get; set; } = string.Empty;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Do jeito que foi digitado na aba Chat.</summary>
@@ -148,6 +150,7 @@ public sealed class Opcoes
 
         Canal ??= padrao.Canal;
         CanalDoYouTube ??= padrao.CanalDoYouTube;
+        CanalDaKick ??= padrao.CanalDaKick;
         EnderecoPersonalizado ??= padrao.EnderecoPersonalizado;
         SegundosParaApagar ??= padrao.SegundosParaApagar;
         CssDoTemaNenhum ??= padrao.CssDoTemaNenhum;
@@ -177,6 +180,7 @@ public sealed class Opcoes
     {
         Canal = Canal,
         CanalDoYouTube = CanalDoYouTube,
+        CanalDaKick = CanalDaKick,
         Conta = Conta,
         ListaDeUsuarios = ListaDeUsuarios,
         UsuariosBloqueados = UsuariosBloqueados,

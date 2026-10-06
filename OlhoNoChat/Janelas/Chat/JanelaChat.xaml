@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:chat="clr-namespace:OlhoNoChat.Janelas.Chat"
         AllowsTransparency="True" WindowStyle="None" Background="Transparent" ResizeMode="CanResize" Topmost="True"
-        Icon="/icons/olho_no_chat.ico" Title="" Width="360" Height="530" MinWidth="348">
+        Icon="/icons/olho_no_chat.ico" Title="" Width="360" Height="530" MinWidth="334">
     <!-- O chat por cima do jogo. Tudo é recortado com os cantos arredondados; a linha da moldura só aparece (laranja) no
          modo rolagem com as bordas ocultas. De cima para baixo: barra laranja, faixa do canal, chat, caixa de escrever. -->
     <Border x:Name="moldura" CornerRadius="10" BorderThickness="0" BorderBrush="Transparent">

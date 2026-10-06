@@ -13,7 +13,7 @@ public sealed class ContratoComAPaginaTestes
     public void JsonDeConfiguracoes_PadraoDaPrimeiraInstalacao_Exato()
     {
         Assert.Equal(
-            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false}""",
+            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"kick":""}""",
             ContratoComAPagina.JsonDeConfiguracoes(new Opcoes()));
     }
 
@@ -37,7 +37,7 @@ public sealed class ContratoComAPaginaTestes
         };
 
         Assert.Equal(
-            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false}""",
+            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"kick":""}""",
             ContratoComAPagina.JsonDeConfiguracoes(opcoes));
     }
 
@@ -135,6 +135,12 @@ public sealed class ContratoComAPaginaTestes
     [InlineData("onc:exit-scroll-mode", MensagemDaPagina.SairDoModoRolagem)]
     [InlineData("onc:compose-sent", MensagemDaPagina.EscritaEnviada)]
     [InlineData("onc:compose-cancel", MensagemDaPagina.EscritaCancelada)]
+    [InlineData("onc:kick-state:connecting", MensagemDaPagina.KickConectando)]
+    [InlineData("onc:kick-state:connected", MensagemDaPagina.KickConectado)]
+    [InlineData("onc:kick-state:disconnected", MensagemDaPagina.KickDesconectado)]
+    [InlineData("onc:kick-state:notfound", MensagemDaPagina.KickNaoExiste)]
+    [InlineData("onc:kick-state:off", MensagemDaPagina.KickDesligado)]
+    [InlineData("onc:kick-state:qualquer", MensagemDaPagina.Desconhecida)]
     [InlineData("onc:outra", MensagemDaPagina.Desconhecida)]
     [InlineData("", MensagemDaPagina.Desconhecida)]
     [InlineData(null, MensagemDaPagina.Desconhecida)]

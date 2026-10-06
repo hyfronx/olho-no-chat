@@ -583,17 +583,21 @@ public partial class JanelaChat : Window
 
     // --- Canal e página do chat ------------------------------------------------------------------------------
 
-    // Grava os canais na hora e abre o chat deles (ou as boas-vindas, sem canal). Só o do YouTube trocado não recarrega o
-    // chat (as mensagens da tela ficam)
-    private void TrocarCanal(string canal, string youTube)
+    // Grava os canais na hora e abre o chat deles (ou as boas-vindas, sem canal). Só o do YouTube ou o da Kick trocado não
+    // recarrega o chat (as mensagens da tela ficam): a página troca o canal da Kick sozinha
+    private void TrocarCanal(string canal, string youTube, string kick)
     {
         _log.LogInformation("Canal trocado na faixa do canal.");
         bool outraTwitch = !string.Equals(canal, PaginaDoChat.CanalSalvo(Opcoes), StringComparison.OrdinalIgnoreCase);
+        bool outraKick = kick != Opcoes.CanalDaKick;
         Opcoes.Canal = canal;
         Opcoes.CanalDoYouTube = youTube;
+        Opcoes.CanalDaKick = kick;
         _arquivo.Gravar();
         if (outraTwitch)
             _navegador.AbrirDasOpcoes();
+        else if (outraKick)
+            _ = _navegador.AplicarOpcoesSalvasAsync();
         AtualizarYouTube();
         _caixa.Atualizar();
         AplicarEstado();
@@ -624,7 +628,7 @@ public partial class JanelaChat : Window
     }
 
     // O botão da barra: liga o Chat Multiplataforma (só no Padrão: outro tipo de chat vira o Padrão) ou volta a só Twitch,
-    // como o interruptor de Configurações > Chat. Sem canal do YouTube, a faixa abre na caixa dele.
+    // como o interruptor de Configurações > Chat. Sem canal do YouTube nem da Kick, a faixa abre na caixa do YouTube.
     private async Task AlternarMultiplataformaAsync(bool ligado)
     {
         if (!_temWebView2 || ligado == Opcoes.ChatMultiplataforma)
@@ -640,7 +644,8 @@ public partial class JanelaChat : Window
         _arquivo.Gravar();
         await AplicarOpcoesSalvasAsync();
 
-        if (ligado && ChatMultiplataforma.CanalALer(Opcoes) == null && PaginaDoChat.CanalSalvo(Opcoes).Length > 0)
+        if (ligado && ChatMultiplataforma.CanalALer(Opcoes) == null && ChatMultiplataforma.KickALer(Opcoes).Length == 0
+            && PaginaDoChat.CanalSalvo(Opcoes).Length > 0)
             _faixa.AbrirEditorNoYouTube();
     }
 
@@ -665,6 +670,7 @@ public partial class JanelaChat : Window
             if (_caixa.NaCaixaDaTwitch)
                 TerminarEscrita(devolverFoco: false);
             _faixa.PaginaComecouACarregar(_navegador.Pagina?.Canal != null);
+            _faixa.ConexaoDaKick = EstadoDaKick.Desligado; // a página nova conecta de novo (e avisa)
         };
 
         _navegador.Carregou += sucesso =>
@@ -694,6 +700,17 @@ public partial class JanelaChat : Window
                         MensagemDaPagina.Desconectado => EstadoDaConexao.SemConexao,
                         _ => EstadoDaConexao.Conectando,
                     });
+                    break;
+                case MensagemDaPagina.KickConectando or MensagemDaPagina.KickConectado or MensagemDaPagina.KickDesconectado
+                    or MensagemDaPagina.KickNaoExiste or MensagemDaPagina.KickDesligado when _navegador.Pagina is ChatPadrao:
+                    _faixa.ConexaoDaKick = mensagem switch
+                    {
+                        MensagemDaPagina.KickConectando => EstadoDaKick.Conectando,
+                        MensagemDaPagina.KickConectado => EstadoDaKick.Conectado,
+                        MensagemDaPagina.KickDesconectado => EstadoDaKick.SemConexao,
+                        MensagemDaPagina.KickNaoExiste => EstadoDaKick.CanalNaoExiste,
+                        _ => EstadoDaKick.Desligado,
+                    };
                     break;
                 case MensagemDaPagina.SairDoModoRolagem:
                     SairDoModoRolagem();

@@ -42,6 +42,8 @@ public static class ContratoComAPagina
             blockList = opcoes.UsuariosBloqueados.Select(nome => nome.ToLowerInvariant()),
             // Chat Multiplataforma: cada mensagem mostra o ícone da plataforma
             multiplatform = opcoes.ChatMultiplataforma,
+            // Chat Multiplataforma: o canal da Kick que a página lê ("" = nenhum)
+            kick = ChatMultiplataforma.KickALer(opcoes),
         });
     }
 
@@ -188,6 +190,7 @@ public static class ContratoComAPagina
     public static MensagemDaPagina LerMensagem(string? mensagem)
     {
         const string estado = "onc:chat-state:";
+        const string estadoDaKick = "onc:kick-state:";
         return mensagem switch
         {
             "onc:play-sound" => MensagemDaPagina.TocarSom,
@@ -200,6 +203,15 @@ public static class ContratoComAPagina
                 "connected" => MensagemDaPagina.Conectado,
                 "disconnected" => MensagemDaPagina.Desconectado,
                 _ => MensagemDaPagina.Conectando,
+            },
+            _ when mensagem != null && mensagem.StartsWith(estadoDaKick, StringComparison.Ordinal) => mensagem[estadoDaKick.Length..] switch
+            {
+                "connecting" => MensagemDaPagina.KickConectando,
+                "connected" => MensagemDaPagina.KickConectado,
+                "disconnected" => MensagemDaPagina.KickDesconectado,
+                "notfound" => MensagemDaPagina.KickNaoExiste,
+                "off" => MensagemDaPagina.KickDesligado,
+                _ => MensagemDaPagina.Desconhecida,
             },
             _ => MensagemDaPagina.Desconhecida,
         };

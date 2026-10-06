@@ -48,51 +48,60 @@
             </ToggleButton>
             <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
-            <!-- Chat Multiplataforma (Twitch + YouTube) ou só a Twitch: os logos coloridos das duas plataformas (diferente do
-                 balão do Escrever). Só Twitch: o do YouTube fica apagado; ligado: os dois acesos no fundo branco. -->
-            <ToggleButton x:Name="botaoMultiplataforma" Style="{StaticResource BotaoDaBarraLigaDesliga}" Width="48"
+            <!-- Chat Multiplataforma (Twitch, YouTube e Kick) ou só a Twitch: os logos coloridos das três plataformas em triângulo
+                 (diferente do balão do Escrever). Só Twitch: o do YouTube e o da Kick ficam apagados, em branco e laranja;
+                 ligado: os três com as cores deles no fundo branco. -->
+            <ToggleButton x:Name="botaoMultiplataforma" Style="{StaticResource BotaoDaBarraLigaDesliga}"
                           AutomationProperties.Name="Chat Multiplataforma" Checked="Multiplataforma_Mudou" Unchecked="Multiplataforma_Mudou">
-                <Canvas Width="38" Height="18">
-                    <!-- Twitch -->
-                    <Path Fill="White" Data="M3,3 H14 V9 L11,12 H8 L6,14 V12 H3 Z" />
-                    <Path Fill="#9146FF" Data="M3,1 L1,4 V15 H5 V18 L8,15 H11 L16,10 V1 Z M14,9 L11,12 H8 L6,14 V12 H3 V3 H14 Z" />
-                    <Path Fill="#9146FF" Data="M10,5 H11.5 V8.5 H10 Z M6.8,5 H8.3 V8.5 H6.8 Z" />
-                    <!-- YouTube -->
-                    <Grid Canvas.Left="21" Canvas.Top="3.5" Width="17" Height="12">
-                        <Grid.Style>
-                            <Style TargetType="Grid">
-                                <Setter Property="Opacity" Value="0.45" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                        <Setter Property="Opacity" Value="1" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Grid.Style>
-                        <Border CornerRadius="3.5">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="White" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                            <Setter Property="Background" Value="#FF0000" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-                        <Path Data="M6.8,3.2 V8.8 L11.6,6 Z">
-                            <Path.Style>
-                                <Style TargetType="Path">
-                                    <Setter Property="Fill" Value="{StaticResource Laranja}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                            <Setter Property="Fill" Value="White" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Path.Style>
-                        </Path>
+                <ToggleButton.Resources>
+                    <!-- Apagado em só Twitch -->
+                    <Style x:Key="LogoQueAcende" TargetType="Grid">
+                        <Setter Property="Opacity" Value="0.45" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                <Setter Property="Opacity" Value="1" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                    <!-- O fundo do logo: branco em só Twitch, a cor da plataforma (Tag) ligado -->
+                    <Style x:Key="FundoDoLogo" TargetType="Border">
+                        <Setter Property="Background" Value="White" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                <Setter Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                    <!-- O desenho do logo: laranja em só Twitch, a cor dele (Tag) ligado -->
+                    <Style x:Key="DesenhoDoLogo" TargetType="Path">
+                        <Setter Property="Fill" Value="{StaticResource Laranja}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                <Setter Property="Fill" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ToggleButton.Resources>
+                <Canvas Width="24" Height="23">
+                    <!-- Twitch, em cima -->
+                    <Canvas Canvas.Left="6" Width="16" Height="18">
+                        <Canvas.RenderTransform>
+                            <ScaleTransform ScaleX="0.75" ScaleY="0.75" />
+                        </Canvas.RenderTransform>
+                        <Path Fill="White" Data="M3,3 H14 V9 L11,12 H8 L6,14 V12 H3 Z" />
+                        <Path Fill="#9146FF" Data="M3,1 L1,4 V15 H5 V18 L8,15 H11 L16,10 V1 Z M14,9 L11,12 H8 L6,14 V12 H3 V3 H14 Z" />
+                        <Path Fill="#9146FF" Data="M10,5 H11.5 V8.5 H10 Z M6.8,5 H8.3 V8.5 H6.8 Z" />
+                    </Canvas>
+                    <!-- YouTube, embaixo à esquerda -->
+                    <Grid Canvas.Left="0" Canvas.Top="14.5" Width="12" Height="8.5" Style="{StaticResource LogoQueAcende}">
+                        <Border CornerRadius="2.5" Tag="#FF0000" Style="{StaticResource FundoDoLogo}" />
+                        <Path Data="M4.8,2.2 V6.3 L8.2,4.25 Z" Tag="White" Style="{StaticResource DesenhoDoLogo}" />
+                    </Grid>
+                    <!-- Kick, embaixo à direita -->
+                    <Grid Canvas.Left="13.5" Canvas.Top="13" Width="10" Height="10" Style="{StaticResource LogoQueAcende}">
+                        <Border CornerRadius="2.2" Tag="#0B0B0B" Style="{StaticResource FundoDoLogo}" />
+                        <Path Tag="#53FC18" Style="{StaticResource DesenhoDoLogo}"
+                              Data="M1.8,1.8 H3.9 V3.6 H4.9 V2.7 H5.8 V1.8 H8.2 V3.9 H7.3 V4.8 H6.4 V5.2 H7.3 V6.1 H8.2 V8.2 H5.8 V7.3 H4.9 V6.4 H3.9 V8.2 H1.8 Z" />
                     </Grid>
                 </Canvas>
             </ToggleButton>

@@ -1,9 +1,6 @@
+using System.Net;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
-using YTLiveChat.Contracts;
-using YTLiveChat.Contracts.Models;
-using YTLiveChat.Contracts.Services;
-using YTLiveChat.Services;
 
 namespace OlhoNoChat.YouTube;
 
@@ -30,9 +27,10 @@ public enum EstadoDoYouTube
 }
 
 /// <summary>
-/// Lê o chat de uma live do YouTube, só leitura, pela biblioteca YTLiveChat (a mesma API interna que a página do YouTube
-/// usa; sem chave nem conta). Quando o canal não está ao vivo, ou a live acaba, espera e procura de novo; quando o canal
-/// não existe, para. Os avisos chegam em outra thread (quem usa passa para a da tela).
+/// Lê o chat de uma live do YouTube, só leitura, pela API interna que a própria página do YouTube usa (InnerTube; sem
+/// chave nem conta): abre a página da live do canal e depois pede as mensagens novas de tempos em tempos. Quando o canal
+/// não está ao vivo, ou a live acaba, espera e procura de novo; quando o canal não existe, para. Os avisos chegam em
+/// outra thread (quem usa passa para a da tela).
 /// </summary>
 public sealed class LeitorDoYouTube : IDisposable
 {
@@ -43,10 +41,16 @@ public sealed class LeitorDoYouTube : IDisposable
     public static readonly TimeSpan EsperaSemConexao = TimeSpan.FromSeconds(20);
 
     /// <summary>
-    /// De quanto em quanto tempo pede as mensagens novas. Um pouco mais devagar que o padrão da biblioteca (1 s): menos
-    /// pedidos ao YouTube, e as mensagens chegam juntas do mesmo jeito.
+    /// De quanto em quanto tempo pede as mensagens novas (ou mais devagar, se o YouTube pedir): poucos pedidos ao
+    /// YouTube, e as mensagens chegam juntas do mesmo jeito.
     /// </summary>
     public const int IntervaloDosPedidosMs = 2000;
+
+    /// <summary>
+    /// Quantas vezes seguidas o pedido das mensagens pode falhar (esperando um pouco mais a cada vez) antes de desistir da
+    /// live e ir para <see cref="EstadoDoYouTube.SemConexao"/>.
+    /// </summary>
+    public const int MaximoDeFalhas = 5;
 
     /// <summary>
     /// Ao entrar no chat de uma live, o YouTube manda junto as últimas mensagens já enviadas. Nos primeiros segundos depois
@@ -55,37 +59,36 @@ public sealed class LeitorDoYouTube : IDisposable
     public static readonly TimeSpan JanelaDoHistorico = TimeSpan.FromSeconds(15);
     public static readonly TimeSpan FolgaDoRelogio = TimeSpan.FromSeconds(5);
 
-    private static readonly Lazy<HttpClient> Http = new(() => new HttpClient { BaseAddress = new Uri("https://www.youtube.com") });
-
-    private readonly Func<IYTLiveChat> _criarChat;
+    private readonly IConexaoComOYouTube _youTube;
     private readonly ILogger _log;
     private readonly TimeSpan _esperaPorLive;
     private readonly TimeSpan _esperaSemConexao;
+    private readonly TimeSpan _intervalo;
     private readonly object _trava = new();
-    private IYTLiveChat? _chat;
-    private CancellationTokenSource? _proximaTentativa;
-    private string _ultimoErro = string.Empty;
-    private DateTimeOffset _conectadoEm;
+    // A leitura atual; trocar de canal ou parar a cancela, e os avisos de uma leitura antiga são ignorados
+    private CancellationTokenSource? _leitura;
 
     public LeitorDoYouTube(ILogger<LeitorDoYouTube> log)
-        : this(log, CriarChatDaBiblioteca, EsperaPorLive, EsperaSemConexao)
+        : this(log, new ConexaoComOYouTube(), EsperaPorLive, EsperaSemConexao, TimeSpan.FromMilliseconds(IntervaloDosPedidosMs))
     {
     }
 
-    /// <param name="criarChat">Um leitor novo da biblioteca a cada tentativa (os testes usam um falso).</param>
-    public LeitorDoYouTube(ILogger log, Func<IYTLiveChat> criarChat, TimeSpan esperaPorLive, TimeSpan esperaSemConexao)
+    /// <param name="youTube">Os pedidos ao YouTube (os testes usam um falso).</param>
+    /// <param name="intervalo">Entre um pedido das mensagens e outro.</param>
+    public LeitorDoYouTube(ILogger log, IConexaoComOYouTube youTube, TimeSpan esperaPorLive, TimeSpan esperaSemConexao, TimeSpan intervalo)
     {
         _log = log;
-        _criarChat = criarChat;
+        _youTube = youTube;
         _esperaPorLive = esperaPorLive;
         _esperaSemConexao = esperaSemConexao;
+        _intervalo = intervalo;
     }
 
     /// <summary>O estado mudou (em outra thread).</summary>
     public event Action<EstadoDoYouTube>? EstadoMudou;
 
     /// <summary>Uma mensagem do chat (em outra thread).</summary>
-    public event Action<ChatItem>? MensagemRecebida;
+    public event Action<ItemDoChat>? MensagemRecebida;
 
     public CanalDoYouTube? Canal { get; private set; }
 
@@ -94,24 +97,24 @@ public sealed class LeitorDoYouTube : IDisposable
     /// <summary>Mostrar o histórico que o YouTube manda ao conectar (opção "Mostrar as mensagens de antes de conectar").</summary>
     public bool MostrarHistorico { get; set; }
 
-    private static IYTLiveChat CriarChatDaBiblioteca() =>
-        new YTLiveChat.Services.YTLiveChat(new YTLiveChatOptions { RequestFrequency = IntervaloDosPedidosMs }, new YTHttpClient(Http.Value));
-
     /// <summary>
     /// Começa a ler o chat do canal. O mesmo canal já ligado não recomeça (as mensagens continuam); um canal que não
     /// existia é procurado de novo.
     /// </summary>
     public void Ligar(CanalDoYouTube canal)
     {
+        var leitura = new CancellationTokenSource();
         lock (_trava)
         {
             if (canal == Canal && Estado is not (EstadoDoYouTube.Desligado or EstadoDoYouTube.CanalNaoExiste))
                 return;
             Parar();
             Canal = canal;
+            _leitura = leitura;
             _log.LogInformation("YouTube: lendo o chat de {Canal}.", canal);
         }
-        Abrir();
+        Mudar(EstadoDoYouTube.Procurando, leitura);
+        _ = Task.Run(() => LerAsync(canal, leitura));
     }
 
     /// <summary>Para de ler (Chat Multiplataforma desligado, canal do YouTube apagado ou o app fechando).</summary>
@@ -129,92 +132,107 @@ public sealed class LeitorDoYouTube : IDisposable
 
     public void Dispose() => Desligar();
 
-    // Com a trava
+    // Com a trava. Só pede para parar; não espera (sem prazo marcado, o CancellationTokenSource dispensa o Dispose)
     private void Parar()
     {
-        _proximaTentativa?.Cancel();
-        _proximaTentativa?.Dispose();
-        _proximaTentativa = null;
-        IYTLiveChat? chat = _chat;
-        _chat = null;
-        chat?.Dispose(); // só pede para parar; não espera
+        _leitura?.Cancel();
+        _leitura = null;
     }
 
-    private void Abrir()
+    // Procura a live, lê o chat até ela acabar e espera para procurar de novo; até cancelar ou o canal não existir
+    private async Task LerAsync(CanalDoYouTube canal, CancellationTokenSource leitura)
     {
-        IYTLiveChat chat;
-        CanalDoYouTube? canal;
-        lock (_trava)
+        CancellationToken cancelar = leitura.Token;
+        try
         {
-            canal = Canal;
-            if (canal == null)
-                return;
-            chat = _criarChat();
-            _chat = chat;
-            _ultimoErro = string.Empty;
-        }
-
-        // Avisos de um leitor antigo (de antes de trocar ou parar) são ignorados
-        chat.InitialPageLoaded += (_, _) =>
-        {
-            if (!EhOAtual(chat))
-                return;
-            _conectadoEm = DateTimeOffset.UtcNow;
-            Mudar(EstadoDoYouTube.Conectado);
-        };
-        chat.ChatReceived += (_, e) =>
-        {
-            if (EhOAtual(chat) && (MostrarHistorico || !EhDoHistorico(e.ChatItem.Timestamp, _conectadoEm, DateTimeOffset.UtcNow)))
-                MensagemRecebida?.Invoke(e.ChatItem);
-        };
-        chat.ErrorOccurred += (_, e) =>
-        {
-            lock (_trava)
+            while (true)
             {
-                if (chat == _chat)
-                    _ultimoErro = e.GetException().Message;
+                EstadoDoYouTube parou = await LerUmaVezAsync(canal, leitura).ConfigureAwait(false);
+                Mudar(parou, leitura);
+                if (parou == EstadoDoYouTube.CanalNaoExiste)
+                    return;
+                await Task.Delay(parou == EstadoDoYouTube.SemConexao ? _esperaSemConexao : _esperaPorLive, cancelar).ConfigureAwait(false);
+                Mudar(EstadoDoYouTube.Procurando, leitura);
             }
-        };
-        chat.ChatStopped += (_, e) => Parou(chat, e.Reason);
-
-        Mudar(EstadoDoYouTube.Procurando);
-        switch (canal.Tipo)
+        }
+        catch (OperationCanceledException) when (cancelar.IsCancellationRequested)
         {
-            case TipoDeCanalDoYouTube.Arroba:
-                chat.Start(handle: "@" + canal.Valor);
-                break;
-            case TipoDeCanalDoYouTube.Id:
-                chat.Start(channelId: canal.Valor);
-                break;
-            default:
-                chat.Start(liveId: canal.Valor);
-                break;
         }
     }
 
-    private bool EhOAtual(IYTLiveChat chat)
+    // Uma procura; devolve por que parou: canal fora do ar, live acabou, canal que não existe ou falha de conexão
+    private async Task<EstadoDoYouTube> LerUmaVezAsync(CanalDoYouTube canal, CancellationTokenSource leitura)
     {
-        lock (_trava)
-            return chat == _chat;
+        CancellationToken cancelar = leitura.Token;
+        PaginaDaLive? pagina;
+        try
+        {
+            pagina = PaginaDaLive.Ler(await _youTube.PaginaAsync(PaginaDaLive.Caminho(canal), cancelar).ConfigureAwait(false));
+        }
+        catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
+        {
+            _log.LogInformation("YouTube: o canal {Canal} não existe.", canal);
+            return EstadoDoYouTube.CanalNaoExiste;
+        }
+        catch (Exception e) when (!cancelar.IsCancellationRequested)
+        {
+            _log.LogInformation("YouTube: a página de {Canal} não abriu: {Erro}", canal, e.Message);
+            return EstadoDoYouTube.SemConexao;
+        }
+        if (pagina == null)
+        {
+            _log.LogInformation("YouTube: {Canal} não está ao vivo.", canal);
+            return EstadoDoYouTube.EsperandoALive;
+        }
+
+        DateTimeOffset conectadoEm = DateTimeOffset.UtcNow;
+        _log.LogInformation("YouTube: lendo o chat da live {Live}.", pagina.IdDaLive);
+        Mudar(EstadoDoYouTube.Conectado, leitura);
+
+        string? continuacao = pagina.Continuacao;
+        int falhas = 0;
+        while (continuacao != null)
+        {
+            RespostaDoChat resposta;
+            try
+            {
+                string json = await _youTube.ChatAsync(pagina.Chave, pagina.PedidoDoChat(continuacao), cancelar).ConfigureAwait(false);
+                resposta = RespostaDoChat.Ler(json);
+                falhas = 0;
+            }
+            catch (Exception e) when (!cancelar.IsCancellationRequested)
+            {
+                // 403: live só para membros ou bloqueada no país; não adianta insistir
+                if (e is HttpRequestException { StatusCode: HttpStatusCode.Forbidden } || ++falhas > MaximoDeFalhas)
+                {
+                    _log.LogInformation("YouTube: o chat da live {Live} não respondeu: {Erro}", pagina.IdDaLive, e.Message);
+                    return EstadoDoYouTube.SemConexao;
+                }
+                await Task.Delay(_intervalo * falhas, cancelar).ConfigureAwait(false);
+                continue;
+            }
+
+            foreach (ItemDoChat item in resposta.Itens)
+            {
+                if (MostrarHistorico || !EhDoHistorico(item.EnviadaEm, conectadoEm, DateTimeOffset.UtcNow))
+                    Receber(item, leitura);
+            }
+            continuacao = resposta.Continuacao;
+            if (continuacao != null)
+                await Task.Delay(resposta.Espera > _intervalo ? resposta.Espera.Value : _intervalo, cancelar).ConfigureAwait(false);
+        }
+        _log.LogInformation("YouTube: a live {Live} acabou.", pagina.IdDaLive);
+        return EstadoDoYouTube.EsperandoALive;
     }
 
-    // A leitura parou sozinha: canal fora do ar, live acabou, canal que não existe ou falha de conexão
-    private void Parou(IYTLiveChat chat, string? motivo)
+    private void Receber(ItemDoChat item, CancellationTokenSource leitura)
     {
-        EstadoDoYouTube novo;
         lock (_trava)
         {
-            if (chat != _chat)
+            if (leitura != _leitura)
                 return;
-            _chat = null;
-            chat.Dispose();
-
-            novo = PorQueParou(motivo + " " + _ultimoErro);
-            _log.LogInformation("YouTube: a leitura parou ({Estado}): {Motivo} {Erro}", novo, motivo, _ultimoErro);
-            if (novo != EstadoDoYouTube.CanalNaoExiste)
-                TentarDeNovoDepois(novo == EstadoDoYouTube.SemConexao ? _esperaSemConexao : _esperaPorLive);
         }
-        Mudar(novo);
+        MensagemRecebida?.Invoke(item);
     }
 
     /// <summary>
@@ -224,45 +242,12 @@ public sealed class LeitorDoYouTube : IDisposable
     public static bool EhDoHistorico(DateTimeOffset enviadaEm, DateTimeOffset conectadoEm, DateTimeOffset agora) =>
         agora - conectadoEm < JanelaDoHistorico && enviadaEm < conectadoEm - FolgaDoRelogio;
 
-    /// <summary>O que o motivo da parada (e o último erro) quer dizer.</summary>
-    public static EstadoDoYouTube PorQueParou(string texto)
-    {
-        if (texto.Contains("404", StringComparison.Ordinal))
-            return EstadoDoYouTube.CanalNaoExiste;
-
-        string[] semLive =
-        [
-            "Live Stream ID not found", "canonical link not found", "is finished live", "Continuation token not found",
-            "No acceptable livestream", "Stream ended", "continuation lost",
-        ];
-        return semLive.Any(t => texto.Contains(t, StringComparison.OrdinalIgnoreCase))
-            ? EstadoDoYouTube.EsperandoALive
-            : EstadoDoYouTube.SemConexao;
-    }
-
-    // Com a trava
-    private void TentarDeNovoDepois(TimeSpan espera)
-    {
-        var cancelar = new CancellationTokenSource();
-        _proximaTentativa = cancelar;
-        _ = Task.Delay(espera, cancelar.Token).ContinueWith(tarefa =>
-        {
-            lock (_trava)
-            {
-                if (tarefa.IsCanceled || _proximaTentativa != cancelar)
-                    return;
-                _proximaTentativa = null;
-                cancelar.Dispose();
-            }
-            Abrir();
-        }, TaskScheduler.Default);
-    }
-
-    private void Mudar(EstadoDoYouTube estado)
+    // Sem leitura vale sempre (Desligar); com leitura, só se ela ainda for a atual
+    private void Mudar(EstadoDoYouTube estado, CancellationTokenSource? leitura = null)
     {
         lock (_trava)
         {
-            if (Estado == estado)
+            if ((leitura != null && leitura != _leitura) || Estado == estado)
                 return;
             Estado = estado;
         }

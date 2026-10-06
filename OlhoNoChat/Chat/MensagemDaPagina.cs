@@ -26,4 +26,19 @@ public enum MensagemDaPagina
 
     /// <summary>Chat oficial: Esc na caixa da Twitch.</summary>
     EscritaCancelada,
+
+    /// <summary>Padrão, Chat Multiplataforma: procurando o canal da Kick ou conectando ao chat dele.</summary>
+    KickConectando,
+
+    /// <summary>Padrão, Chat Multiplataforma: lendo o chat da Kick.</summary>
+    KickConectado,
+
+    /// <summary>Padrão, Chat Multiplataforma: sem conexão com a Kick (a página tenta de novo sozinha).</summary>
+    KickDesconectado,
+
+    /// <summary>Padrão, Chat Multiplataforma: a Kick disse que o canal não existe (não tenta de novo).</summary>
+    KickNaoExiste,
+
+    /// <summary>Padrão: sem canal da Kick para ler.</summary>
+    KickDesligado,
 }

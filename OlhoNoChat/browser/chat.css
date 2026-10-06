@@ -114,6 +114,11 @@ body.onc-multi .onc-platform {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 17'%3E%3Crect width='24' height='17' rx='4.5' fill='%23FF0000'/%3E%3Cpath fill='%23fff' d='M9.6 4.8v7.4l6.3-3.7z'/%3E%3C/svg%3E");
 }
 
+/* The Kick "K": green, in blocks, on black */
+.onc-platform.kick {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Crect width='14' height='14' rx='3' fill='%230B0B0B'/%3E%3Cpath fill='%2353FC18' d='M2.5 2.5h3v2.6h1.3V3.8h1.3V2.5h3.4v3H10.2v1.2H8.9v.6h1.3v1.2h1.3v3H8.1v-1.3H6.8V8.9H5.5v2.6h-3z'/%3E%3C/svg%3E");
+}
+
 /* YouTube Super Chat: a bar and the amount in the Super Chat's color */
 .chat_line.onc-superchat {
     position: relative;

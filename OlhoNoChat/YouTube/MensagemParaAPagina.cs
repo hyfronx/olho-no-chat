@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using YTLiveChat.Contracts.Models;
 
 namespace OlhoNoChat.YouTube;
 
@@ -24,73 +23,71 @@ public sealed partial record MensagemParaAPagina(
     [GeneratedRegex("^[0-9A-Fa-f]{6}$")]
     private static partial Regex CorHex();
 
-    /// <summary>A mensagem que a biblioteca leu, para a página; null quando não há nada para mostrar.</summary>
-    public static MensagemParaAPagina? De(ChatItem item)
+    /// <summary>A mensagem que o leitor leu, para a página; null quando não há nada para mostrar.</summary>
+    public static MensagemParaAPagina? De(ItemDoChat item)
     {
-        string nome = (item.Author.Name ?? string.Empty).Trim();
-        // O YouTube mostra o @ como nome; sem @, o nome mesmo (os filtros comparam em minúsculas, sem o @)
-        string login = (item.Author.ChannelHandle is { Length: > 0 } arroba ? arroba : nome).TrimStart('@').ToLowerInvariant();
+        string nome = item.Nome.Trim();
+        // O YouTube mostra o @ como nome (os filtros comparam em minúsculas, sem o @)
+        string login = nome.TrimStart('@').ToLowerInvariant();
         if (nome.Length == 0)
             nome = login;
 
-        string papel = item.IsOwner ? Dono : item.IsModerator ? Moderador : item.IsMembership ? Membro : string.Empty;
-        List<object> partes = PartesDe(item.Message);
+        string papel = item.Papel switch
+        {
+            PapelNoChat.Dono => Dono,
+            PapelNoChat.Moderador => Moderador,
+            PapelNoChat.Membro => Membro,
+            _ => string.Empty,
+        };
+        List<object> partes = PartesDe(item.Partes);
 
-        SuperChatParaAPagina? superChat = item.Superchat is { } sc
-            ? new SuperChatParaAPagina(sc.AmountString, CorHex().IsMatch(sc.BodyBackgroundColor ?? string.Empty) ? "#" + sc.BodyBackgroundColor : "#1E88E5")
+        SuperChatParaAPagina? superChat = item.SuperChat is { } sc
+            ? new SuperChatParaAPagina(sc.Valor, CorHex().IsMatch(sc.Cor ?? string.Empty) ? "#" + sc.Cor : "#1E88E5")
             : null;
-        string? aviso = item.MembershipDetails is { } membro ? AvisoDeMembro(membro) : null;
+        string? aviso = item.Membro is { } membro ? AvisoDeMembro(membro) : null;
 
         if (partes.Count == 0 && superChat == null && aviso == null)
             return null;
         return new MensagemParaAPagina(item.Id, login, nome, papel, partes, superChat, aviso);
     }
 
-    // Textos juntos num pedaço só; emojis comuns viram o próprio caractere (como na Twitch); os do canal, imagem
-    private static List<object> PartesDe(MessagePart[]? mensagem)
+    // Textos juntos num pedaço só (os emojis comuns já são o caractere, como na Twitch); os do canal, imagem
+    private static List<object> PartesDe(IReadOnlyList<ParteDoChat> mensagem)
     {
         var partes = new List<object>();
         var texto = new StringBuilder();
-        foreach (MessagePart parte in mensagem ?? [])
+        foreach (ParteDoChat parte in mensagem)
         {
-            switch (parte)
+            if (parte.Imagem == null)
             {
-                case TextPart t:
-                    texto.Append(t.Text);
-                    break;
-                case EmojiPart e when !e.IsCustomEmoji && !string.IsNullOrEmpty(e.EmojiText):
-                    texto.Append(e.EmojiText);
-                    break;
-                case ImagePart imagem when !string.IsNullOrEmpty(imagem.Url):
-                    if (texto.Length > 0)
-                    {
-                        partes.Add(texto.ToString());
-                        texto.Clear();
-                    }
-                    string nome = imagem is EmojiPart emoji && !string.IsNullOrEmpty(emoji.EmojiText) ? emoji.EmojiText : imagem.Alt ?? string.Empty;
-                    partes.Add(new { emote = new { src = imagem.Url }, name = nome });
-                    break;
+                texto.Append(parte.Texto);
+                continue;
             }
+            if (texto.Length > 0)
+            {
+                partes.Add(texto.ToString());
+                texto.Clear();
+            }
+            partes.Add(new { emote = new { src = parte.Imagem }, name = parte.Texto });
         }
         if (texto.Length > 0)
             partes.Add(texto.ToString());
         return partes;
     }
 
-    private static string AvisoDeMembro(MembershipDetails membro) => membro.EventType switch
+    private static string AvisoDeMembro(EventoDeMembro membro) => membro.Tipo switch
     {
-        MembershipEventType.New => "virou membro do canal!",
-        MembershipEventType.Upgraded => "subiu de nível como membro!",
-        MembershipEventType.Milestone => membro.MilestoneMonths is int meses and > 0
+        TipoDeEventoDeMembro.Novo => "virou membro do canal!",
+        TipoDeEventoDeMembro.Subiu => "subiu de nível como membro!",
+        TipoDeEventoDeMembro.Marco => membro.Meses is int meses and > 0
             ? $"é membro há {meses} {(meses == 1 ? "mês" : "meses")}!"
             : "comemora mais um tempo como membro!",
-        MembershipEventType.GiftPurchase => membro.GiftCount is int quantas and > 1
+        TipoDeEventoDeMembro.DeuPresente => membro.Presentes is int quantas and > 1
             ? $"deu {quantas} assinaturas de membro!"
             : "deu uma assinatura de membro!",
-        MembershipEventType.GiftRedemption => string.IsNullOrWhiteSpace(membro.GifterUsername)
+        _ => string.IsNullOrWhiteSpace(membro.QuemDeu) // GanhouPresente
             ? "ganhou uma assinatura de membro!"
-            : $"ganhou uma assinatura de membro de {membro.GifterUsername.Trim()}!",
-        _ => "é membro do canal!",
+            : $"ganhou uma assinatura de membro de {membro.QuemDeu.Trim()}!",
     };
 }
 

@@ -39,6 +39,7 @@ public partial class FaixaDoCanal : UserControl
                 _logica.PropertyChanged -= LogicaMudou;
                 _logica.PedirFoco -= Focar;
                 _logica.PedirFocoNoYouTube -= FocarNoYouTube;
+                _logica.PedirFocoNaKick -= FocarNaKick;
             }
             _logica = value;
             DataContext = value;
@@ -47,6 +48,7 @@ public partial class FaixaDoCanal : UserControl
                 value.PropertyChanged += LogicaMudou;
                 value.PedirFoco += Focar;
                 value.PedirFocoNoYouTube += FocarNoYouTube;
+                value.PedirFocoNaKick += FocarNaKick;
             }
             MostrarPonto();
         }
@@ -62,7 +64,7 @@ public partial class FaixaDoCanal : UserControl
     private void LogicaMudou(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(LogicaFaixaDoCanal.Conexao) or nameof(LogicaFaixaDoCanal.EditorAberto)
-            or nameof(LogicaFaixaDoCanal.ConexaoDoYouTube))
+            or nameof(LogicaFaixaDoCanal.ConexaoDoYouTube) or nameof(LogicaFaixaDoCanal.ConexaoDaKick))
             MostrarPonto();
     }
 
@@ -74,6 +76,14 @@ public partial class FaixaDoCanal : UserControl
             EstadoDoYouTube.Procurando => Amarelo,
             EstadoDoYouTube.Conectado => Verde,
             EstadoDoYouTube.CanalNaoExiste or EstadoDoYouTube.SemConexao => Vermelho,
+            _ => Cinza,
+        };
+        // O da Kick também não pisca
+        pontoDaKick.Fill = (_logica?.ConexaoDaKick ?? EstadoDaKick.Desligado) switch
+        {
+            EstadoDaKick.Conectando => Amarelo,
+            EstadoDaKick.Conectado => Verde,
+            EstadoDaKick.CanalNaoExiste or EstadoDaKick.SemConexao => Vermelho,
             _ => Cinza,
         };
 
@@ -119,13 +129,17 @@ public partial class FaixaDoCanal : UserControl
         });
     }
 
-    private void FocarNoYouTube()
+    private void FocarNoYouTube() => FocarESelecionar(caixaYouTube);
+
+    private void FocarNaKick() => FocarESelecionar(caixaKick);
+
+    private void FocarESelecionar(TextBox caixa)
     {
         Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
-            caixaYouTube.Focus();
-            Keyboard.Focus(caixaYouTube);
-            caixaYouTube.SelectAll();
+            caixa.Focus();
+            Keyboard.Focus(caixa);
+            caixa.SelectAll();
         });
     }
 

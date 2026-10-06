@@ -28,8 +28,6 @@ Bibliotecas usadas no app
 -------------------------
 
   .NET 10 e Microsoft.Extensions   MIT            https://github.com/dotnet/runtime
-  Agash.YTLiveChat (YTLiveChat)    MIT            https://github.com/Agash/YTLiveChat
-                                   Copyright (c) Agash. Lê o chat das lives do YouTube (Chat Multiplataforma).
   AvalonEdit                       MIT            https://github.com/icsharpcode/AvalonEdit
   CommunityToolkit.Mvvm            MIT            https://github.com/CommunityToolkit/dotnet
   H.NotifyIcon                     MIT            https://github.com/HavenDV/H.NotifyIcon

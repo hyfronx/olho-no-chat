@@ -36,7 +36,7 @@
                 </Grid>
             </Border>
 
-            <!-- Chat Multiplataforma: o chat de uma live do YouTube junto com o da Twitch (só no Padrão) -->
+            <!-- Chat Multiplataforma: o chat de uma live do YouTube e o de um canal da Kick junto com o da Twitch (só no Padrão) -->
             <Border Style="{DynamicResource Cartao}" Margin="0,4,0,4">
                 <StackPanel>
                     <Grid>
@@ -49,7 +49,7 @@
                         <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
                             <TextBlock Text="Chat Multiplataforma" Style="{DynamicResource Rotulo}" />
                             <TextBlock Style="{DynamicResource Dica}"
-                                       Text="Mostra também o chat da sua live no YouTube, junto com o da Twitch, com o ícone de cada plataforma. É só para ler: enquanto estiver ligado, escrever no chat, os resgates e os outros tipos de chat ficam desligados. O canal do YouTube se escolhe na faixa em cima do chat." />
+                                       Text="Mostra também o chat da sua live no YouTube e na Kick, junto com o da Twitch, com o ícone de cada plataforma. É só para ler: enquanto estiver ligado, escrever no chat, os resgates e os outros tipos de chat ficam desligados. Os canais do YouTube e da Kick se escolhem na faixa em cima do chat." />
                         </StackPanel>
                         <ctl:Interruptor x:Name="interruptorMultiplataforma" Grid.Column="2" IsChecked="{Binding ChatMultiplataforma}"
                                          AutomationProperties.Name="Chat Multiplataforma" />

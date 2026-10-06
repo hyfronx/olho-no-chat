@@ -30,7 +30,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private int _tipoDeChat;
 
-    /// <summary>Chat Multiplataforma (Twitch + YouTube): só existe no Padrão, então ligar escolhe o Padrão e trava a lista.</summary>
+    /// <summary>Chat Multiplataforma (Twitch, YouTube e Kick): só existe no Padrão, então ligar escolhe o Padrão e trava a lista.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PodeEscolherOTipo))]
     private bool _chatMultiplataforma;

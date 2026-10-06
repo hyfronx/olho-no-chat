@@ -1,10 +1,12 @@
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Kick;
 using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Chat;
 
 /// <summary>
-/// O "Chat Multiplataforma": o chat da Twitch e o de uma live do YouTube juntos no Padrão. Ligado, o YouTube é só leitura e
+/// O "Chat Multiplataforma": o chat da Twitch, o de uma live do YouTube e o de um canal da Kick juntos no Padrão. Ligado, o
+/// YouTube e a Kick são só leitura e
 /// os recursos só da Twitch ficam desligados para não misturar as plataformas: escrever no chat (e os emotes da conta),
 /// os resgates de pontos e os outros tipos de chat. A conta da Twitch continua conectada, só sem uso.
 /// </summary>
@@ -19,4 +21,8 @@ public static class ChatMultiplataforma
     /// <summary>O canal do YouTube a ler, ou null (função desligada ou sem canal).</summary>
     public static CanalDoYouTube? CanalALer(Opcoes opcoes) =>
         opcoes.ChatMultiplataforma ? CanalDoYouTube.Ler(opcoes.CanalDoYouTube) : null;
+
+    /// <summary>O canal da Kick a ler (a página do chat lê sozinha), ou "" (função desligada ou sem canal).</summary>
+    public static string KickALer(Opcoes opcoes) =>
+        opcoes.ChatMultiplataforma ? CanalDaKick.Ler(opcoes.CanalDaKick) ?? string.Empty : string.Empty;
 }

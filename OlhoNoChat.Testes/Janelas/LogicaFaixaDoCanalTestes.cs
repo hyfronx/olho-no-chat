@@ -1,5 +1,6 @@
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.Chat;
+using OlhoNoChat.Kick;
 using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Testes.Janelas;
@@ -9,6 +10,7 @@ public class LogicaFaixaDoCanalTestes
     private readonly Opcoes _opcoes = new() { Canal = "hyfronx" };
     private readonly List<string> _trocas = [];
     private readonly List<string> _trocasDoYouTube = [];
+    private readonly List<string> _trocasDaKick = [];
     private readonly List<string> _perguntados = [];
     private bool _conectada;
     private bool? _existe = true;
@@ -22,12 +24,14 @@ public class LogicaFaixaDoCanalTestes
                 _perguntados.Add(nome);
                 return Task.FromResult(_existe);
             },
-            (canal, youTube) =>
+            (canal, youTube, kick) =>
             {
                 _trocas.Add(canal);
                 _trocasDoYouTube.Add(youTube);
+                _trocasDaKick.Add(kick);
                 _opcoes.Canal = canal;
                 _opcoes.CanalDoYouTube = youTube;
+                _opcoes.CanalDaKick = kick;
             });
         logica.PedirFoco += selecionar => _focos.Add(selecionar);
         return logica;
@@ -158,7 +162,7 @@ public class LogicaFaixaDoCanalTestes
     {
         _conectada = true;
         var resposta = new TaskCompletionSource<bool?>();
-        var logica = new LogicaFaixaDoCanal(() => _opcoes, () => true, _ => resposta.Task, (canal, _) => _trocas.Add(canal));
+        var logica = new LogicaFaixaDoCanal(() => _opcoes, () => true, _ => resposta.Task, (canal, _, _) => _trocas.Add(canal));
         logica.AbrirEditor();
         logica.Texto = "outro";
 
@@ -258,7 +262,8 @@ public class LogicaFaixaDoCanalTestes
         _opcoes.CanalDoYouTube = "@hyfronx";
         var logica = Nova();
 
-        Assert.False(logica.ComYouTube);
+        Assert.False(logica.Multiplataforma);
+        Assert.False(logica.KickNaFaixa);
         Assert.False(logica.YouTubeNaFaixa);
         Assert.Equal(LogicaFaixaDoCanal.DicaPadrao, logica.Dica);
     }
@@ -272,7 +277,7 @@ public class LogicaFaixaDoCanalTestes
 
         Assert.True(logica.YouTubeNaFaixa);
         Assert.Equal("@Hyfronx", logica.YouTubeSalvo);
-        Assert.Equal(LogicaFaixaDoCanal.DicaComYouTube, logica.Dica);
+        Assert.Equal(LogicaFaixaDoCanal.DicaMultiplataforma, logica.Dica);
 
         logica.ConexaoDoYouTube = EstadoDoYouTube.EsperandoALive;
         Assert.Equal("YouTube: @Hyfronx não está ao vivo. Esperando a live começar…\nClique para trocar de canal.", logica.DicaDaFaixa);
@@ -355,5 +360,132 @@ public class LogicaFaixaDoCanalTestes
 
         Assert.Equal([""], _trocas);
         Assert.Equal([""], _trocasDoYouTube);
+    }
+
+    // --- Chat Multiplataforma: o canal da Kick na mesma faixa ---------------------------------------------
+
+    [Fact]
+    public void ComMultiplataforma_MostraAKickEADicaDasTres()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDoYouTube = "@Hyfronx";
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+
+        Assert.True(logica.KickNaFaixa);
+        Assert.True(logica.OutrosCanaisNaFaixa);
+        Assert.Equal("gaules", logica.KickSalvo);
+
+        logica.PaginaAvisou(EstadoDaConexao.Conectado);
+        logica.ConexaoDoYouTube = EstadoDoYouTube.Conectado;
+        logica.ConexaoDaKick = EstadoDaKick.Conectado;
+        Assert.Equal("Twitch: Conectado ao chat de hyfronx.\nYouTube: lendo o chat da live de @Hyfronx.\nKick: lendo o chat de gaules.\n" +
+                     "Clique para trocar de canal.", logica.DicaDaFaixa);
+
+        logica.ConexaoDaKick = EstadoDaKick.CanalNaoExiste;
+        Assert.EndsWith("Kick: não achei o canal gaules na Kick. Confira o nome.\nClique para trocar de canal.", logica.DicaDaFaixa);
+    }
+
+    [Fact]
+    public void SoAKick_SemYouTubeNaDica()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+        logica.ConexaoDaKick = EstadoDaKick.SemConexao;
+
+        Assert.False(logica.YouTubeNaFaixa);
+        Assert.True(logica.OutrosCanaisNaFaixa);
+        Assert.Equal("Kick: sem conexão com a Kick. Tentando de novo…\nClique para trocar de canal.", logica.DicaDaFaixa);
+    }
+
+    [Fact]
+    public void SemMultiplataforma_AKickSalvaNaoAparece()
+    {
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+
+        Assert.False(logica.KickNaFaixa);
+        Assert.False(logica.OutrosCanaisNaFaixa);
+    }
+
+    [Fact]
+    public async Task SoAKickTrocada_TrocaComOsMesmosOutros()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDoYouTube = "@hyfronx";
+        _conectada = true;
+        var logica = Nova();
+        logica.AbrirEditor();
+        logica.TextoDaKick = "https://kick.com/Gaules/videos";
+
+        await logica.ConfirmarAsync();
+
+        Assert.Empty(_perguntados); // a Twitch não muda: não pergunta
+        Assert.Equal(["hyfronx"], _trocas);
+        Assert.Equal(["@hyfronx"], _trocasDoYouTube);
+        Assert.Equal(["gaules"], _trocasDaKick);
+        Assert.False(logica.EditorAberto);
+    }
+
+    [Fact]
+    public async Task KickInvalida_MostraOErroEPedeOFocoNela()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        var logica = Nova();
+        int focos = 0;
+        logica.PedirFocoNaKick += () => focos++;
+        logica.AbrirEditor();
+        logica.TextoDaKick = "não é um canal!";
+
+        await logica.ConfirmarAsync();
+
+        Assert.Equal(CanalDaKick.DicaInvalido, logica.Dica);
+        Assert.True(logica.DicaEhErro);
+        Assert.Equal(1, focos);
+        Assert.Empty(_trocas);
+    }
+
+    [Fact]
+    public async Task KickVazia_SemKick()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+        logica.AbrirEditor();
+        logica.TextoDaKick = "  ";
+
+        await logica.ConfirmarAsync();
+
+        Assert.Equal([""], _trocasDaKick);
+        Assert.False(logica.KickNaFaixa);
+    }
+
+    [Fact]
+    public void SairDoCanal_ComMultiplataforma_TiraOsTres()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDoYouTube = "@hyfronx";
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+
+        logica.SairDoCanal();
+
+        Assert.Equal([""], _trocas);
+        Assert.Equal([""], _trocasDoYouTube);
+        Assert.Equal([""], _trocasDaKick);
+    }
+
+    [Fact]
+    public void SairDoCanal_SemMultiplataforma_GuardaOsOutros()
+    {
+        _opcoes.CanalDoYouTube = "@hyfronx";
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+
+        logica.SairDoCanal();
+
+        Assert.Equal(["@hyfronx"], _trocasDoYouTube);
+        Assert.Equal(["gaules"], _trocasDaKick);
     }
 }
