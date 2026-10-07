@@ -1,5 +1,6 @@
 // The "Padrão" chat: reads the chat of a Twitch channel (anonymous IRC, read-only) and shows its messages.
-// Opened by the app as chat.html?canal=<name>&tema=padrao; it connects when the app calls
+// Opened by the app as chat.html?canal=<name>&tema=padrao (an empty channel in the Chat Multiplataforma: only YouTube
+// and/or Kick, without Twitch); it connects when the app calls
 // window.oncChat.start(settings), so the settings already apply to the first message.
 (function () {
     'use strict';
@@ -165,7 +166,7 @@
     pillDot.className = 'onc-dot';
     const pillText = document.createElement('span');
     pill.append(pillDot, pillText);
-    document.body.appendChild(pill);
+    if (channel) document.body.appendChild(pill);
     let pillFadeTimer = null;
 
     const stateTexts = {
@@ -839,9 +840,9 @@
         state: ''
     };
 
-    // The Kick channel in the settings, read only with the Chat Multiplataforma on and a Twitch channel (like YouTube)
+    // The Kick channel in the settings, read only with the Chat Multiplataforma on
     function updateKick() {
-        const wanted = started && settings.multiplatform && channel ? String(settings.kick || '') : '';
+        const wanted = started && settings.multiplatform ? String(settings.kick || '') : '';
         if (wanted === kick.channel) return;
         stopKick();
         kick.channel = wanted;
@@ -1028,9 +1029,9 @@
             Object.assign(settings, newSettings);
             showOrHideGifs();
             showPlatforms();
-            if (started || !channel) return;
+            if (started) return;
             started = true;
-            connect();
+            if (channel) connect();
             updateKick();
         },
 
@@ -1059,6 +1060,7 @@
         // For the app's watchdog: "open:<ms since Twitch last sent something>" or the state
         health() {
             if (!started) return 'missing';
+            if (!channel) return 'open:0'; // without Twitch there is nothing to watch
             if (socket && socket.readyState === WebSocket.OPEN) return 'open:' + (Date.now() - lastData);
             return 'disconnected';
         }

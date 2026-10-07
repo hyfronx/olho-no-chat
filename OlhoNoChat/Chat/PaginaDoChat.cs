@@ -58,7 +58,7 @@ public abstract class PaginaDoChat
 
     /// <summary>
     /// A página das opções: o chat do canal salvo, o endereço personalizado, ou as boas-vindas quando falta o canal ou o
-    /// endereço.
+    /// endereço. No Chat Multiplataforma a Twitch é opcional: com o canal do YouTube ou o da Kick, o Padrão abre sem ela.
     /// </summary>
     public static PaginaDoChat DasOpcoes(Opcoes opcoes)
     {
@@ -68,7 +68,7 @@ public abstract class PaginaDoChat
 
         if (TiposDeChat.UsaCanal(tipo))
         {
-            if (canal.Length == 0)
+            if (canal.Length == 0 && !ChatMultiplataforma.TemOutroCanal(opcoes))
                 return new PaginaDeBoasVindas(comCanal: true);
             return tipo == TipoDeChat.ChatOficial ? new ChatOficialDaTwitch(canal, opcoes) : new ChatPadrao(canal, opcoes);
         }

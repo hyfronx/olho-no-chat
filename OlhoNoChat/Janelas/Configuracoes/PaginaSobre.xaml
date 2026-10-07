@@ -63,6 +63,22 @@
                 </Grid>
             </Border>
 
+            <TextBlock Text="Plataformas" Style="{DynamicResource TituloDaSecao}" />
+            <Border x:Name="cartaoPlataformas" Style="{DynamicResource Cartao}" Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" VerticalAlignment="Top" Margin="2,2,16,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Feito para a Twitch" Style="{DynamicResource Rotulo}" FontWeight="SemiBold" />
+                        <TextBlock Style="{DynamicResource Dica}" Margin="0,4,0,0"
+                                   Text="O Olho no Chat é focado na Twitch, por isso ela tem mais destaque e todos os recursos: escrever no chat, emotes da sua conta e resgates de pontos. O Chat Multiplataforma, que junta o chat do YouTube e o da Kick, está em Beta: é só para ler e ainda está em testes, então pode ter falhas e mudar." />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <TextBlock Text="Segurança da sua conta" Style="{DynamicResource TituloDaSecao}" />
             <Border Style="{DynamicResource CartaoDeAviso}" Margin="0,0,0,4">
                 <Grid>

@@ -22,6 +22,9 @@ public static class ChatMultiplataforma
     public static CanalDoYouTube? CanalALer(Opcoes opcoes) =>
         opcoes.ChatMultiplataforma ? CanalDoYouTube.Ler(opcoes.CanalDoYouTube) : null;
 
+    /// <summary>Ligado, com o canal do YouTube ou o da Kick: o chat abre mesmo sem canal da Twitch.</summary>
+    public static bool TemOutroCanal(Opcoes opcoes) => CanalALer(opcoes) != null || KickALer(opcoes).Length > 0;
+
     /// <summary>O canal da Kick a ler (a página do chat lê sozinha), ou "" (função desligada ou sem canal).</summary>
     public static string KickALer(Opcoes opcoes) =>
         opcoes.ChatMultiplataforma ? CanalDaKick.Ler(opcoes.CanalDaKick) ?? string.Empty : string.Empty;

@@ -170,8 +170,8 @@ public sealed partial class LogicaCaixaDeEscrever : ObservableObject
         AtalhoEscrever);
 
     public string DicaDoBotaoEscrever(bool bordasVisiveis) => Atalho.NaDica(Aberta(bordasVisiveis)
-        ? "Fechar a caixa de escrever no chat."
-        : "Escrever no chat: abre a caixa embaixo do chat.", AtalhoEscrever);
+        ? "Fechar a caixa de escrever"
+        : "Escrever no chat da Twitch", AtalhoEscrever);
 
     /// <summary>Por que não dá para escrever, na ordem em que a pessoa precisa resolver.</summary>
     public string TextoQueNaoDa =>

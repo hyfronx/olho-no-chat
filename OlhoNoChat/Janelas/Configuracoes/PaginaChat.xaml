@@ -47,9 +47,16 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
                         <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                            <TextBlock Text="Chat Multiplataforma" Style="{DynamicResource Rotulo}" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Chat Multiplataforma" Style="{DynamicResource Rotulo}" />
+                                <!-- Ainda em testes (ver a aba Sobre) -->
+                                <Border Margin="8,0,0,0" Padding="6,0,6,1" CornerRadius="8" VerticalAlignment="Center"
+                                        Background="#33E85D30" BorderBrush="#99E85D30" BorderThickness="1">
+                                    <TextBlock Text="Beta" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource LaranjaClaro}" />
+                                </Border>
+                            </StackPanel>
                             <TextBlock Style="{DynamicResource Dica}"
-                                       Text="Mostra também o chat da sua live no YouTube e na Kick, junto com o da Twitch, com o ícone de cada plataforma. É só para ler: enquanto estiver ligado, escrever no chat, os resgates e os outros tipos de chat ficam desligados. Os canais do YouTube e da Kick se escolhem na faixa em cima do chat." />
+                                       Text="Mostra também o chat da sua live no YouTube e na Kick, junto com o da Twitch, com o ícone de cada plataforma. É só para ler: enquanto estiver ligado, escrever no chat, os resgates e os outros tipos de chat ficam desligados. Os canais se escolhem na faixa em cima do chat; a Twitch fica opcional. Ainda em testes." />
                         </StackPanel>
                         <ctl:Interruptor x:Name="interruptorMultiplataforma" Grid.Column="2" IsChecked="{Binding ChatMultiplataforma}"
                                          AutomationProperties.Name="Chat Multiplataforma" />

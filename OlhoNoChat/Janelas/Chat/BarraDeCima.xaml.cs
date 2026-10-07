@@ -88,8 +88,8 @@ public partial class BarraDeCima : UserControl
         ajusteFundo.Mostrar(porcentagem, escuro);
         AutomationProperties.SetHelpText(botaoTamanhoDoTexto, texto);
         AutomationProperties.SetHelpText(botaoFundo, escuro);
-        dicaTamanhoDoTexto.Content = $"Tamanho do texto: {texto}\nClique para ajustar, ou gire a rodinha do mouse aqui.";
-        dicaFundo.Content = $"Fundo do chat: {escuro}\nClique para ajustar, ou gire a rodinha do mouse aqui.";
+        dicaTamanhoDoTexto.Content = $"Tamanho do texto: {texto}\nA rodinha do mouse aqui também ajusta.";
+        dicaFundo.Content = $"Fundo do chat: {escuro}\nA rodinha do mouse aqui também ajusta.";
     }
 
     public void MostrarSempreNoTopo(bool ligado, Atalho? atalho)
@@ -97,9 +97,7 @@ public partial class BarraDeCima : UserControl
         _mostrando = true;
         botaoSempreNoTopo.IsChecked = ligado;
         _mostrando = false;
-        botaoSempreNoTopo.ToolTip = Atalho.NaDica(ligado
-            ? "Sempre no topo: ligado. O chat fica na frente do jogo e das outras janelas. Clique para desligar."
-            : "Sempre no topo: desligado. O chat é uma janela comum, que fica atrás de outra quando você clica nela. Clique para ligar.",
+        botaoSempreNoTopo.ToolTip = Atalho.NaDica(ligado ? "Desativar Sempre no topo" : "Ativar Sempre no topo (o chat fica na frente do jogo)",
             atalho);
     }
 
@@ -109,8 +107,8 @@ public partial class BarraDeCima : UserControl
         botaoMultiplataforma.IsChecked = ligado;
         _mostrando = false;
         botaoMultiplataforma.ToolTip = ligado
-            ? "Chat Multiplataforma: ligado. O chat mostra a Twitch, o YouTube e a Kick juntos, só para ler. Clique para voltar a só Twitch."
-            : "Só Twitch. Clique para ligar o Chat Multiplataforma: o chat da sua live no YouTube e na Kick junto com o da Twitch (só para ler; escrever e os resgates ficam desligados).";
+            ? "Desativar Chat Multiplataforma (Beta)"
+            : "Ativar Chat Multiplataforma (Beta): Twitch, YouTube e Kick juntos, só para ler";
     }
 
     /// <summary>O Escrever só existe nos tipos de chat com canal; aceso enquanto uma caixa está aberta.</summary>
@@ -125,8 +123,7 @@ public partial class BarraDeCima : UserControl
 
     public void MostrarAtalhoDasBordas(Atalho? atalho) =>
         botaoOcultarBordas.ToolTip = Atalho.NaDica(
-            "Ocultar bordas: deixa só o chat por cima do jogo. Para mostrar as bordas de novo, use o atalho ou o ícone do Olho no Chat perto do relógio.",
-            atalho);
+            "Ocultar bordas\nPara mostrar de novo: o atalho ou o ícone do Olho no Chat perto do relógio.", atalho);
 
     public void FecharPaineis()
     {

@@ -488,4 +488,74 @@ public class LogicaFaixaDoCanalTestes
         Assert.Equal(["@hyfronx"], _trocasDoYouTube);
         Assert.Equal(["gaules"], _trocasDaKick);
     }
+
+    // --- Chat Multiplataforma: a Twitch é opcional ----------------------------------------------------------
+
+    [Fact]
+    public async Task Multiplataforma_SemTwitch_ConectaSoAKick()
+    {
+        _opcoes.Canal = string.Empty;
+        _opcoes.ChatMultiplataforma = true;
+        _conectada = true;
+        var logica = Nova();
+        Assert.True(logica.EditorAberto);
+        logica.TextoDaKick = "gaules";
+
+        await logica.ConfirmarAsync();
+
+        Assert.Empty(_perguntados); // sem Twitch, nada a perguntar
+        Assert.Equal([""], _trocas);
+        Assert.Equal(["gaules"], _trocasDaKick);
+        Assert.True(logica.TemCanal);
+        Assert.False(logica.EditorAberto);
+        Assert.False(logica.TwitchNaFaixa);
+        Assert.False(logica.VariosCanaisNaFaixa); // só a Kick: o "Trocar canal" aparece inteiro
+    }
+
+    [Fact]
+    public async Task Multiplataforma_TudoVazio_PedePeloMenosUm()
+    {
+        _opcoes.Canal = string.Empty;
+        _opcoes.ChatMultiplataforma = true;
+        var logica = Nova();
+
+        await logica.ConfirmarAsync();
+
+        Assert.Equal("Digite pelo menos um canal.", logica.Dica);
+        Assert.True(logica.DicaEhErro);
+        Assert.Empty(_trocas);
+    }
+
+    [Fact]
+    public async Task SemMultiplataforma_ATwitchContinuaObrigatoria()
+    {
+        _opcoes.Canal = string.Empty;
+        _opcoes.CanalDaKick = "gaules";
+        var logica = Nova();
+
+        Assert.False(logica.TemCanal);
+        await logica.ConfirmarAsync();
+
+        Assert.Equal("Digite o nome do canal.", logica.Dica);
+        Assert.Empty(_trocas);
+    }
+
+    [Fact]
+    public void ExemploDaCaixaDaTwitch_DizQueEhOpcionalNoMultiplataforma()
+    {
+        var logica = Nova();
+        Assert.Equal("Nome do canal da Twitch", logica.ExemploDaTwitch);
+
+        _opcoes.ChatMultiplataforma = true;
+        Assert.Equal("Canal da Twitch (nome ou link)", Nova().ExemploDaTwitch);
+    }
+
+    [Fact]
+    public void VariosCanais_TrocarCanalSoComOIcone()
+    {
+        _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDaKick = "gaules";
+
+        Assert.True(Nova().VariosCanaisNaFaixa);
+    }
 }

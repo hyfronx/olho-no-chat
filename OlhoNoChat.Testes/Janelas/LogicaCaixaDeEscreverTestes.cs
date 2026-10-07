@@ -201,11 +201,11 @@ public class LogicaCaixaDeEscreverTestes
         var logica = Nova();
         Assert.Equal("Vai para o chat de hyfronx como Hyfronx", logica.DicaDaCaixa);
         Assert.Equal("Fechar a caixa (Esc).\nAtalho: Ctrl + Alt + F11", logica.DicaDoFechar);
-        Assert.Equal("Escrever no chat: abre a caixa embaixo do chat.\nAtalho: Ctrl + Alt + F11", logica.DicaDoBotaoEscrever(true));
+        Assert.Equal("Escrever no chat da Twitch\nAtalho: Ctrl + Alt + F11", logica.DicaDoBotaoEscrever(true));
 
         logica.Comecar(false, false, IntPtr.Zero);
         Assert.Equal("Fechar a caixa e voltar para o jogo (Esc).\nAtalho: Ctrl + Alt + F11", logica.DicaDoFechar);
-        Assert.Equal("Fechar a caixa de escrever no chat.\nAtalho: Ctrl + Alt + F11", logica.DicaDoBotaoEscrever(true));
+        Assert.Equal("Fechar a caixa de escrever\nAtalho: Ctrl + Alt + F11", logica.DicaDoBotaoEscrever(true));
 
         _opcoes.AtalhoEscrever = new Atalho(Key.None, ModifierKeys.None);
         Assert.Equal("Fechar a caixa e voltar para o jogo (Esc).", logica.DicaDoFechar);

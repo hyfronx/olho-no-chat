@@ -341,4 +341,23 @@ public sealed class PaginaDoChatTestes
     {
         Assert.Equal(login, NavegadorDoChat.EhLoginDaTwitch(endereco));
     }
+
+    [Fact]
+    public void Multiplataforma_SemTwitchComOutroCanal_AbreOPadraoSemCanal()
+    {
+        PaginaDoChat soKick = PaginaDoChat.DasOpcoes(Com(o => { o.ChatMultiplataforma = true; o.CanalDaKick = "gaules"; }));
+        PaginaDoChat soYouTube = PaginaDoChat.DasOpcoes(Com(o => { o.ChatMultiplataforma = true; o.CanalDoYouTube = "@hyfronx"; }));
+
+        Assert.IsType<ChatPadrao>(soKick);
+        Assert.Null(soKick.Canal); // sem o ponto da Twitch
+        Assert.Contains("chat.html?canal=&", soKick.Endereco);
+        Assert.IsType<ChatPadrao>(soYouTube);
+    }
+
+    [Fact]
+    public void SemTwitch_OutroCanalSoValeNoMultiplataforma()
+    {
+        Assert.IsType<PaginaDeBoasVindas>(PaginaDoChat.DasOpcoes(Com(o => o.CanalDaKick = "gaules")));
+        Assert.IsType<PaginaDeBoasVindas>(PaginaDoChat.DasOpcoes(Com(o => o.ChatMultiplataforma = true)));
+    }
 }

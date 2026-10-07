@@ -588,16 +588,11 @@ public partial class JanelaChat : Window
     private void TrocarCanal(string canal, string youTube, string kick)
     {
         _log.LogInformation("Canal trocado na faixa do canal.");
-        bool outraTwitch = !string.Equals(canal, PaginaDoChat.CanalSalvo(Opcoes), StringComparison.OrdinalIgnoreCase);
-        bool outraKick = kick != Opcoes.CanalDaKick;
         Opcoes.Canal = canal;
         Opcoes.CanalDoYouTube = youTube;
         Opcoes.CanalDaKick = kick;
         _arquivo.Gravar();
-        if (outraTwitch)
-            _navegador.AbrirDasOpcoes();
-        else if (outraKick)
-            _ = _navegador.AplicarOpcoesSalvasAsync();
+        _ = _navegador.AplicarOpcoesSalvasAsync(); // recarrega só se a página for outra (outra Twitch, sem canal...)
         AtualizarYouTube();
         _caixa.Atualizar();
         AplicarEstado();
@@ -615,13 +610,12 @@ public partial class JanelaChat : Window
         };
     }
 
-    // Lê o YouTube só com o Chat Multiplataforma ligado, um canal do YouTube e o chat da Twitch aberto (as mensagens vão
-    // para a página do Padrão)
+    // Lê o YouTube só com o Chat Multiplataforma ligado e um canal do YouTube (as mensagens vão para a página do Padrão)
     private void AtualizarYouTube()
     {
         CanalDoYouTube? canal = ChatMultiplataforma.CanalALer(Opcoes);
         _youTube.MostrarHistorico = Opcoes.MostrarHistoricoDoYouTube; // vale na próxima vez que conectar
-        if (canal != null && _temWebView2 && PaginaDoChat.CanalSalvo(Opcoes).Length > 0)
+        if (canal != null && _temWebView2)
             _youTube.Ligar(canal);
         else
             _youTube.Desligar();

@@ -27,6 +27,26 @@
                 <Path Fill="#53FC18" Data="M2.5,2.5 H5.5 V5.1 H6.8 V3.8 H8.1 V2.5 H11.5 V5.5 H10.2 V6.7 H8.9 V7.3 H10.2 V8.5 H11.5 V11.5 H8.1 V10.2 H6.8 V8.9 H5.5 V11.5 H2.5 Z" />
             </Grid>
         </ControlTemplate>
+        <!-- O ponto da conexão no canto do logo, com um anel da cor da faixa para destacar do logo -->
+        <Style x:Key="PontoNoLogo" TargetType="Ellipse">
+            <Setter Property="Width" Value="9" />
+            <Setter Property="Height" Value="9" />
+            <Setter Property="Stroke" Value="{StaticResource FundoDaFaixa}" />
+            <Setter Property="StrokeThickness" Value="1.5" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Margin" Value="0,0,-4,-3" />
+        </Style>
+        <!-- O nome: cortado com "…" quando não cabe; dentro de uma moldura (Grid com ClipToBounds) onde desliza com o mouse
+             em cima, ver NomeQueDesliza -->
+        <Style x:Key="NomeNaFaixa" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource Texto}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
     </UserControl.Resources>
 
     <!-- O canal do chat, embaixo da barra laranja. Numa linha própria da janela, como a caixa de escrever: a página do chat
@@ -34,56 +54,53 @@
     <Border Background="{StaticResource FundoDaFaixa}" BorderBrush="{StaticResource LinhaDaFaixa}" BorderThickness="0,0,0,1">
         <Grid>
             <!-- Fechada: só o canal; o clique abre a caixa do nome -->
-            <!-- Cada canal numa linha, um embaixo do outro (nomes grandes não empurram os outros para fora): o logo, o nome e,
-                 logo depois dele, o ponto da conexão (verde / amarelo piscando / vermelho; o do YouTube fica cinza esperando a
-                 live). O YouTube e a Kick só no Chat Multiplataforma, com canal. -->
-            <Button x:Name="botaoTrocarCanal" Style="{StaticResource BotaoPlano}" MinHeight="30" Padding="10,4,10,4"
+            <!-- Os canais numa linha só: o logo com o ponto da conexão no canto (verde / amarelo / vermelho; o do YouTube fica
+                 cinza esperando a live) e o nome. O YouTube e a Kick só no Chat Multiplataforma, com canal. Sem espaço, só os
+                 nomes compridos são cortados (PainelDosCanais) e deslizam com o mouse em cima (NomeQueDesliza). -->
+            <Button x:Name="botaoTrocarCanal" Style="{StaticResource BotaoPlano}" Height="30" Padding="10,0,10,0"
                     AutomationProperties.Name="Trocar canal" ToolTip="{Binding DicaDaFaixa}"
-                    Visibility="{Binding EditorAberto, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" Click="TrocarCanal_Click">
+                    Visibility="{Binding EditorAberto, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" Click="TrocarCanal_Click"
+                    MouseEnter="Faixa_MouseEnter" MouseLeave="Faixa_MouseLeave">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <!-- A mesma largura para os logos: os nomes ficam alinhados -->
-                    <ContentControl Width="16" Template="{StaticResource LogoDaTwitch}" Focusable="False" />
-                    <DockPanel Grid.Column="1" Margin="8,0,8,1" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <Ellipse x:Name="pontoDeConexao" DockPanel.Dock="Right" Width="8" Height="8" Margin="7,1,0,0"
-                                 VerticalAlignment="Center" Visibility="Collapsed" />
-                        <TextBlock x:Name="textoCanal" Text="{Binding CanalSalvo}" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Texto}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
-
-                    <ContentControl Grid.Row="1" Width="16" Margin="0,4,0,0" Template="{StaticResource LogoDoYouTube}" Focusable="False"
-                                    Visibility="{Binding YouTubeNaFaixa, Converter={StaticResource VisivelSe}}" />
-                    <DockPanel x:Name="youTubeNaFaixa" Grid.Row="1" Grid.Column="1" Margin="8,4,8,1" HorizontalAlignment="Left"
-                               Visibility="{Binding YouTubeNaFaixa, Converter={StaticResource VisivelSe}}">
-                        <Ellipse x:Name="pontoDoYouTube" DockPanel.Dock="Right" Width="8" Height="8" Margin="7,1,0,0"
-                                 VerticalAlignment="Center" />
-                        <TextBlock x:Name="textoYouTube" Text="{Binding YouTubeSalvo}" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Texto}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
-
-                    <ContentControl Grid.Row="2" Width="16" Margin="0,4,0,0" Template="{StaticResource LogoDaKick}" Focusable="False"
-                                    Visibility="{Binding KickNaFaixa, Converter={StaticResource VisivelSe}}" />
-                    <DockPanel x:Name="kickNaFaixa" Grid.Row="2" Grid.Column="1" Margin="8,4,8,1" HorizontalAlignment="Left"
-                               Visibility="{Binding KickNaFaixa, Converter={StaticResource VisivelSe}}">
-                        <Ellipse x:Name="pontoDaKick" DockPanel.Dock="Right" Width="8" Height="8" Margin="7,1,0,0"
-                                 VerticalAlignment="Center" />
-                        <TextBlock x:Name="textoKick" Text="{Binding KickSalvo}" FontSize="13" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Texto}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
-
-                    <StackPanel Grid.Column="2" Grid.RowSpan="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ctl:PainelDosCanais Margin="0,0,10,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <DockPanel Visibility="{Binding TwitchNaFaixa, Converter={StaticResource VisivelSe}}">
+                            <Grid DockPanel.Dock="Left" Margin="0,0,9,0" VerticalAlignment="Center">
+                                <ContentControl Template="{StaticResource LogoDaTwitch}" Focusable="False" />
+                                <Ellipse x:Name="pontoDeConexao" Style="{StaticResource PontoNoLogo}" Visibility="Collapsed" />
+                            </Grid>
+                            <Grid ClipToBounds="True">
+                                <TextBlock x:Name="textoCanal" Text="{Binding CanalSalvo}" Style="{StaticResource NomeNaFaixa}" />
+                            </Grid>
+                        </DockPanel>
+                        <DockPanel x:Name="youTubeNaFaixa" Visibility="{Binding YouTubeNaFaixa, Converter={StaticResource VisivelSe}}">
+                            <Grid DockPanel.Dock="Left" Margin="0,1,9,0" VerticalAlignment="Center">
+                                <ContentControl Template="{StaticResource LogoDoYouTube}" Focusable="False" />
+                                <Ellipse x:Name="pontoDoYouTube" Style="{StaticResource PontoNoLogo}" />
+                            </Grid>
+                            <Grid ClipToBounds="True">
+                                <TextBlock x:Name="textoYouTube" Text="{Binding YouTubeSalvo}" Style="{StaticResource NomeNaFaixa}" />
+                            </Grid>
+                        </DockPanel>
+                        <DockPanel x:Name="kickNaFaixa" Visibility="{Binding KickNaFaixa, Converter={StaticResource VisivelSe}}">
+                            <Grid DockPanel.Dock="Left" Margin="0,0,9,0" VerticalAlignment="Center">
+                                <ContentControl Template="{StaticResource LogoDaKick}" Focusable="False" />
+                                <Ellipse x:Name="pontoDaKick" Style="{StaticResource PontoNoLogo}" />
+                            </Grid>
+                            <Grid ClipToBounds="True">
+                                <TextBlock x:Name="textoKick" Text="{Binding KickSalvo}" Style="{StaticResource NomeNaFaixa}" />
+                            </Grid>
+                        </DockPanel>
+                    </ctl:PainelDosCanais>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE8AB;" FontSize="12" Foreground="{StaticResource LaranjaClaro}" />
+                        <!-- Com mais de um canal, só o ícone (o texto fica na dica) -->
                         <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource LaranjaClaro}"
-                                   VerticalAlignment="Center" />
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding VariosCanaisNaFaixa, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
                     </StackPanel>
                 </Grid>
             </Button>
@@ -105,7 +122,7 @@
                 <!-- A mesma largura para os logos: as caixas ficam alinhadas -->
                 <ContentControl Width="16" Margin="2,0,8,0" Template="{StaticResource LogoDaTwitch}" Focusable="False" />
                 <TextBox x:Name="caixaCanal" Grid.Column="1" MaxLength="300" MinHeight="32" FontSize="14"
-                         ctl:CaixaDeTexto.TextoDeExemplo="Nome do canal da Twitch" AutomationProperties.Name="Canal da Twitch"
+                         ctl:CaixaDeTexto.TextoDeExemplo="{Binding ExemploDaTwitch}" AutomationProperties.Name="Canal da Twitch"
                          Text="{Binding Texto, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
                 <Button x:Name="botaoEntrar" Grid.Column="2" Margin="6,0,0,0" Height="32" MinWidth="0" Padding="12,0"
                         Style="{StaticResource BotaoPrincipal}" Content="Conectar" IsEnabled="{Binding PodeConfirmar}"

@@ -42,7 +42,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
 {
     public const string DicaPadrao = "Ex.: seucanal, @seucanal ou o link do canal";
     public const string DicaMultiplataforma =
-        "Twitch e Kick: o nome ou o link do canal. YouTube: o @ do canal, o link do canal ou o link da live. Só a Twitch é obrigatória.";
+        "Twitch e Kick: o nome ou o link do canal. YouTube: o @ do canal, o link do canal ou o link da live. Preencha pelo menos um.";
 
     private readonly Func<Opcoes> _opcoes;
     private readonly Func<bool> _contaConectada;
@@ -81,7 +81,14 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
 
     public string CanalSalvo => PaginaDoChat.CanalSalvo(_opcoes());
 
-    public bool TemCanal => CanalSalvo.Length > 0;
+    /// <summary>Há algum canal: o da Twitch, ou no Chat Multiplataforma o do YouTube ou o da Kick (a Twitch é opcional).</summary>
+    public bool TemCanal => TwitchNaFaixa || YouTubeNaFaixa || KickNaFaixa;
+
+    /// <summary>O canal da Twitch aparece na faixa fechada.</summary>
+    public bool TwitchNaFaixa => CanalSalvo.Length > 0;
+
+    /// <summary>O texto de exemplo da caixa da Twitch: no Chat Multiplataforma ela pode ficar vazia.</summary>
+    public string ExemploDaTwitch => Multiplataforma ? "Canal da Twitch (nome ou link)" : "Nome do canal da Twitch";
 
     /// <summary>Chat Multiplataforma: a faixa mostra também o canal do YouTube e o da Kick.</summary>
     public bool Multiplataforma => _opcoes().ChatMultiplataforma;
@@ -98,8 +105,11 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     /// <summary>O canal da Kick aparece na faixa fechada.</summary>
     public bool KickNaFaixa => Multiplataforma && KickSalvo.Length > 0;
 
-    /// <summary>A faixa fechada tem mais de um canal: a dica diz o estado de cada plataforma.</summary>
+    /// <summary>A faixa fechada tem o YouTube ou a Kick: a dica diz o estado de cada plataforma.</summary>
     public bool OutrosCanaisNaFaixa => YouTubeNaFaixa || KickNaFaixa;
+
+    /// <summary>A faixa fechada tem mais de um canal: o "Trocar canal" vira só o ícone (o texto fica na dica).</summary>
+    public bool VariosCanaisNaFaixa => new[] { TwitchNaFaixa, YouTubeNaFaixa, KickNaFaixa }.Count(sim => sim) > 1;
 
     private string DicaInicial => Multiplataforma ? DicaMultiplataforma : DicaPadrao;
 
@@ -264,13 +274,9 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         if (Procurando)
             return;
 
+        // No Chat Multiplataforma a Twitch pode ficar vazia, se houver o YouTube ou a Kick
         string nome = NomesDaTwitch.Extrair(Texto);
-        if (nome.Length == 0)
-        {
-            Erro("Digite o nome do canal.");
-            return;
-        }
-        if (!NomesDaTwitch.EhValido(nome))
+        if (nome.Length > 0 && !NomesDaTwitch.EhValido(nome))
         {
             Erro(NomesDaTwitch.DicaNomeInvalido);
             return;
@@ -314,6 +320,12 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
             }
         }
 
+        if (nome.Length == 0 && (!Multiplataforma || (youTube.Length == 0 && kick.Length == 0)))
+        {
+            Erro(Multiplataforma ? "Digite pelo menos um canal." : "Digite o nome do canal.");
+            return;
+        }
+
         bool mesmaTwitch = string.Equals(nome, CanalSalvo, StringComparison.OrdinalIgnoreCase);
         if (mesmaTwitch && youTube == YouTubeSalvo && kick == KickSalvo)
         {
@@ -322,7 +334,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         }
 
         // Sem conta a Twitch não é perguntada (o chat de um canal que não existe só fica vazio)
-        if (!mesmaTwitch && _contaConectada())
+        if (!mesmaTwitch && nome.Length > 0 && _contaConectada())
         {
             Procurando = true;
             MostrarDica("Procurando o canal…", erro: false);
@@ -393,6 +405,10 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         OnPropertyChanged(nameof(YouTubeNaFaixa));
         OnPropertyChanged(nameof(KickSalvo));
         OnPropertyChanged(nameof(KickNaFaixa));
+        OnPropertyChanged(nameof(OutrosCanaisNaFaixa));
+        OnPropertyChanged(nameof(TwitchNaFaixa));
+        OnPropertyChanged(nameof(VariosCanaisNaFaixa));
+        OnPropertyChanged(nameof(ExemploDaTwitch));
         OnPropertyChanged(nameof(DicaDaFaixa));
     }
 

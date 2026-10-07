@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using OlhoNoChat.Controles;
 using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Janelas.Chat;
@@ -143,7 +144,26 @@ public partial class FaixaDoCanal : UserControl
         });
     }
 
-    private void TrocarCanal_Click(object sender, RoutedEventArgs e) => _logica?.AbrirEditor();
+    private void TrocarCanal_Click(object sender, RoutedEventArgs e)
+    {
+        Faixa_MouseLeave(sender, null); // a faixa fechada some sem avisar que o mouse saiu
+        _logica?.AbrirEditor();
+    }
+
+    // Com o mouse em cima da faixa, os nomes cortados deslizam para mostrar o resto
+    private void Faixa_MouseEnter(object sender, MouseEventArgs e)
+    {
+        foreach (TextBlock nome in Nomes)
+            NomeQueDesliza.Comecar(nome);
+    }
+
+    private void Faixa_MouseLeave(object sender, MouseEventArgs? e)
+    {
+        foreach (TextBlock nome in Nomes)
+            NomeQueDesliza.Parar(nome);
+    }
+
+    private TextBlock[] Nomes => [textoCanal, textoYouTube, textoKick];
 
     private void Cancelar_Click(object sender, RoutedEventArgs e) => _logica?.FecharEditor();
 
