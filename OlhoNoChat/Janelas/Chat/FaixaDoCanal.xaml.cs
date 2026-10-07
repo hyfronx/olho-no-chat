@@ -169,8 +169,6 @@ public partial class FaixaDoCanal : UserControl
 
     private void Entrar_Click(object sender, RoutedEventArgs e) => _ = _logica?.ConfirmarAsync();
 
-    private void SairDoCanal_Click(object sender, RoutedEventArgs e) => _logica?.SairDoCanal();
-
     private void CaixaCanal_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)

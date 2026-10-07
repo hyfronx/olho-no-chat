@@ -121,11 +121,11 @@
                 </Grid.RowDefinitions>
                 <!-- A mesma largura para os logos: as caixas ficam alinhadas -->
                 <ContentControl Width="16" Margin="2,0,8,0" Template="{StaticResource LogoDaTwitch}" Focusable="False" />
-                <TextBox x:Name="caixaCanal" Grid.Column="1" MaxLength="300" MinHeight="32" FontSize="14"
+                <TextBox x:Name="caixaCanal" ctl:CaixaDeTexto.BotaoDeApagar="True" Grid.Column="1" MaxLength="300" MinHeight="32" FontSize="14"
                          ctl:CaixaDeTexto.TextoDeExemplo="{Binding ExemploDaTwitch}" AutomationProperties.Name="Canal da Twitch"
                          Text="{Binding Texto, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
                 <Button x:Name="botaoEntrar" Grid.Column="2" Margin="6,0,0,0" Height="32" MinWidth="0" Padding="12,0"
-                        Style="{StaticResource BotaoPrincipal}" Content="Conectar" IsEnabled="{Binding PodeConfirmar}"
+                        Style="{StaticResource BotaoPrincipal}" Content="Aplicar" IsEnabled="{Binding PodeConfirmar}"
                         Click="Entrar_Click" />
                 <Button x:Name="botaoCancelarCanal" Grid.Column="3" Margin="4,0,0,0" Width="32" Height="32" Padding="0"
                         Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center"
@@ -137,7 +137,7 @@
                 <!-- Chat Multiplataforma: o canal do YouTube (pode ficar vazio) -->
                 <ContentControl Grid.Row="1" Width="16" Margin="2,6,8,0" Template="{StaticResource LogoDoYouTube}" Focusable="False"
                                 Visibility="{Binding Multiplataforma, Converter={StaticResource VisivelSe}}" />
-                <TextBox x:Name="caixaYouTube" Grid.Row="1" Grid.Column="1" Margin="0,6,0,0" MaxLength="300" MinHeight="32" FontSize="14"
+                <TextBox x:Name="caixaYouTube" ctl:CaixaDeTexto.BotaoDeApagar="True" Grid.Row="1" Grid.Column="1" Margin="0,6,0,0" MaxLength="300" MinHeight="32" FontSize="14"
                          ctl:CaixaDeTexto.TextoDeExemplo="Canal do YouTube (@canal ou link da live)"
                          AutomationProperties.Name="Canal do YouTube"
                          Visibility="{Binding Multiplataforma, Converter={StaticResource VisivelSe}}"
@@ -145,12 +145,12 @@
                 <!-- e o da Kick (também pode ficar vazio) -->
                 <ContentControl Grid.Row="2" Width="16" Margin="2,6,8,0" Template="{StaticResource LogoDaKick}" Focusable="False"
                                 Visibility="{Binding Multiplataforma, Converter={StaticResource VisivelSe}}" />
-                <TextBox x:Name="caixaKick" Grid.Row="2" Grid.Column="1" Margin="0,6,0,0" MaxLength="300" MinHeight="32" FontSize="14"
+                <TextBox x:Name="caixaKick" ctl:CaixaDeTexto.BotaoDeApagar="True" Grid.Row="2" Grid.Column="1" Margin="0,6,0,0" MaxLength="300" MinHeight="32" FontSize="14"
                          ctl:CaixaDeTexto.TextoDeExemplo="Canal da Kick (nome ou link)"
                          AutomationProperties.Name="Canal da Kick"
                          Visibility="{Binding Multiplataforma, Converter={StaticResource VisivelSe}}"
                          Text="{Binding TextoDaKick, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
-                <TextBlock x:Name="dicaCanal" Grid.Row="3" Grid.ColumnSpan="2" Margin="2,5,8,0" FontSize="12" TextWrapping="Wrap" Text="{Binding Dica}">
+                <TextBlock x:Name="dicaCanal" Grid.Row="3" Grid.ColumnSpan="4" Margin="2,5,8,0" FontSize="12" TextWrapping="Wrap" Text="{Binding Dica}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
@@ -162,9 +162,6 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <Button x:Name="botaoSairDoCanal" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,3,0,0"
-                        Style="{StaticResource BotaoLink}" Content="Sair do canal" ToolTip="Para de mostrar o chat desse canal"
-                        Visibility="{Binding TemCanal, Converter={StaticResource VisivelSe}}" Click="SairDoCanal_Click" />
             </Grid>
         </Grid>
     </Border>

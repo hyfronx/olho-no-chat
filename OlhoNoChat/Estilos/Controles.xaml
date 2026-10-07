@@ -381,6 +381,34 @@
 
     <!-- ===== Caixa de texto ===== -->
 
+    <!-- O "x" dentro da caixa que apaga o texto: só o ícone, claro com o mouse em cima; fora do Tab (o teclado já apaga) -->
+    <Style x:Key="BotaoDeApagarDaCaixa" TargetType="Button">
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Cursor" Value="Arrow" />
+        <Setter Property="ToolTip" Value="Apagar" />
+        <Setter Property="AutomationProperties.Name" Value="Apagar" />
+        <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo" Background="Transparent" CornerRadius="5">
+                        <TextBlock Text="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"
+                                   Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="#22FFFFFF" />
+                            <Setter Property="Foreground" Value="{StaticResource Texto}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="TextBox">
         <Setter Property="Foreground" Value="{StaticResource Texto}" />
         <Setter Property="Background" Value="{StaticResource FundoDoCampo}" />
@@ -401,17 +429,28 @@
                     <Border x:Name="Fundo" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
                         <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
                             <TextBlock x:Name="Exemplo" Margin="{TemplateBinding Padding}" Padding="2,0,0,0" VerticalAlignment="Center"
                                        Foreground="{StaticResource TextoDaDica}" IsHitTestVisible="False" Visibility="Collapsed"
                                        Text="{Binding Path=(ctl:CaixaDeTexto.TextoDeExemplo), RelativeSource={RelativeSource TemplatedParent}}" />
                             <!-- A caixa já aplica o Padding dentro do PART_ContentHost -->
                             <ScrollViewer x:Name="PART_ContentHost" Style="{x:Null}" VerticalAlignment="Center"
                                           Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+                            <!-- O "x" que apaga tudo (ctl:CaixaDeTexto.BotaoDeApagar), só com texto -->
+                            <Button x:Name="Apagar" Grid.Column="1" Style="{StaticResource BotaoDeApagarDaCaixa}" Visibility="Collapsed"
+                                    Command="{x:Static ctl:CaixaDeTexto.Apagar}" CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="ctl:CaixaDeTexto.BotaoDeApagar" Value="True">
+                            <Setter TargetName="Apagar" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="Text" Value="">
                             <Setter TargetName="Exemplo" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Apagar" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Fundo" Property="BorderBrush" Value="{StaticResource BordaDoCampoComMouse}" />

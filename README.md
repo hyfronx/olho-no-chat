@@ -7,7 +7,7 @@ Mostra o chat da sua live por cima do jogo, com fundo transparente. Feito para q
 
 1. Baixe o `OlhoNoChat-win-Setup.exe` na página de [versões](https://github.com/hyfronx/olho-no-chat/releases/latest).
 2. Abra o instalador. Se aparecer o aviso "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**. Isso só acontece na primeira vez.
-3. Digite o nome do seu canal na faixa em cima do chat e clique em **Conectar**.
+3. Digite o nome do seu canal na faixa em cima do chat e clique em **Aplicar**.
 
 ## Como usar
 

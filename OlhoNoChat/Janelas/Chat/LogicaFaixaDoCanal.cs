@@ -268,7 +268,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
             MostrarDica(null);
     }
 
-    /// <summary>"Conectar", ou Enter na caixa.</summary>
+    /// <summary>"Aplicar", ou Enter na caixa: conecta os canais novos e tira os que foram apagados.</summary>
     public async Task ConfirmarAsync()
     {
         if (Procurando)
@@ -356,15 +356,6 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         }
 
         Trocar(nome, youTube, kick);
-    }
-
-    /// <summary>"Sair do canal": sem canal (nem o do YouTube e o da Kick), o chat mostra as boas-vindas e a faixa fica aberta.</summary>
-    public void SairDoCanal()
-    {
-        if (Multiplataforma)
-            Trocar(string.Empty, string.Empty, string.Empty);
-        else
-            Trocar(string.Empty, YouTubeSalvo, KickSalvo);
     }
 
     private void Trocar(string canal, string youTube, string kick)

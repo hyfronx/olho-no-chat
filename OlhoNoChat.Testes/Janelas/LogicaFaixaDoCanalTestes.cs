@@ -193,18 +193,6 @@ public class LogicaFaixaDoCanalTestes
     }
 
     [Fact]
-    public void SairDoCanal_GravaVazioEAFaixaAbre()
-    {
-        var logica = Nova();
-        logica.AbrirEditor();
-        logica.SairDoCanal();
-
-        Assert.Equal([""], _trocas);
-        Assert.True(logica.EditorAberto);
-        Assert.False(logica.TemCanal);
-    }
-
-    [Fact]
     public void FaixaSumiu_OEditorFecha()
     {
         var logica = Nova();
@@ -349,19 +337,6 @@ public class LogicaFaixaDoCanalTestes
         Assert.Empty(_trocas);
         Assert.False(logica.EditorAberto);
     }
-
-    [Fact]
-    public void SairDoCanal_ComMultiplataforma_TiraOsDois()
-    {
-        _opcoes.ChatMultiplataforma = true;
-        _opcoes.CanalDoYouTube = "@hyfronx";
-        var logica = Nova();
-        logica.SairDoCanal();
-
-        Assert.Equal([""], _trocas);
-        Assert.Equal([""], _trocasDoYouTube);
-    }
-
     // --- Chat Multiplataforma: o canal da Kick na mesma faixa ---------------------------------------------
 
     [Fact]
@@ -460,35 +435,6 @@ public class LogicaFaixaDoCanalTestes
         Assert.Equal([""], _trocasDaKick);
         Assert.False(logica.KickNaFaixa);
     }
-
-    [Fact]
-    public void SairDoCanal_ComMultiplataforma_TiraOsTres()
-    {
-        _opcoes.ChatMultiplataforma = true;
-        _opcoes.CanalDoYouTube = "@hyfronx";
-        _opcoes.CanalDaKick = "gaules";
-        var logica = Nova();
-
-        logica.SairDoCanal();
-
-        Assert.Equal([""], _trocas);
-        Assert.Equal([""], _trocasDoYouTube);
-        Assert.Equal([""], _trocasDaKick);
-    }
-
-    [Fact]
-    public void SairDoCanal_SemMultiplataforma_GuardaOsOutros()
-    {
-        _opcoes.CanalDoYouTube = "@hyfronx";
-        _opcoes.CanalDaKick = "gaules";
-        var logica = Nova();
-
-        logica.SairDoCanal();
-
-        Assert.Equal(["@hyfronx"], _trocasDoYouTube);
-        Assert.Equal(["gaules"], _trocasDaKick);
-    }
-
     // --- Chat Multiplataforma: a Twitch é opcional ----------------------------------------------------------
 
     [Fact]
