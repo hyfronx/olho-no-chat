@@ -67,7 +67,7 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
         Assert.Equal(0.8, o.TamanhoDoTexto);
         Assert.Equal(165, o.Fundo);
         Assert.Equal(Opcoes.TemaPadrao, o.Tema);
-        Assert.Equal("job-done.wav", o.SomDeMensagem);
+        Assert.Equal("intuition.wav", o.SomDeMensagem);
         Assert.Equal(1.0f, o.Volume);
         Assert.Equal("none", o.ContornoDasLetras);
         Assert.Equal(new Atalho(Key.F9, ModifierKeys.Control | ModifierKeys.Alt), o.AtalhoBordas);
@@ -350,6 +350,16 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
         Assert.Equal(Opcoes.TemaPadrao, o.Tema);
         Assert.Equal(0.8, o.TamanhoDoTexto);
         Assert.True(o.EsconderBots);
+    }
+
+    [Fact]
+    public void QuemJaTemOApp_ContinuaComOSomGravado()
+    {
+        // O arquivo de quem já usava o app tem todas as opções, inclusive o som (o padrão de antes, "Job done")
+        File.WriteAllText(Novo, ArquivoDeConfiguracoes.ParaJson(new Opcoes { SomDeMensagem = "job-done.wav" }));
+
+        Assert.Equal("job-done.wav", ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.SomDeMensagem);
+        Assert.Contains("\"SomDeMensagem\"", File.ReadAllText(Novo));
     }
 
     [Fact]

@@ -133,10 +133,11 @@ public static class ImportacaoDoArquivoAntigo
         o.SaidaDeSom = Inteiro(v["DeviceID"]) ?? o.SaidaDeSom;
         o.NomeDaSaidaDeSom = Texto(v["DeviceName"]) ?? o.NomeDaSaidaDeSom;
         o.PastaDosSons = Texto(v["SoundClipsFolder"]) ?? o.PastaDosSons;
-        // Os sons "Alert …" que vinham com o app foram trocados por outros depois da 1.2.0: um deles salvo vira o
-        // padrão novo (só na pasta do app; uma pasta escolhida pela pessoa pode ter as próprias cópias)
+        // Os sons "Alert …" que vinham com o app foram trocados por outros depois da 1.2.0: um deles salvo vira o "Job
+        // done", o padrão daquela época (só na pasta do app; uma pasta escolhida pela pessoa pode ter as próprias cópias).
+        // Quem já tinha o app não muda de som com o padrão novo das instalações
         if (o.PastaDosSons == SonsDisponiveis.PastaPadrao && o.SomDeMensagem.StartsWith("Alert ", StringComparison.Ordinal))
-            o.SomDeMensagem = Opcoes.SomPadrao;
+            o.SomDeMensagem = Opcoes.SomNoLugarDosAntigos;
 
         // Geral
         o.EsconderBordasAoAbrir = Booleano(v["AutoHideBorders"]) ?? o.EsconderBordasAoAbrir;

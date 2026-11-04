@@ -23,7 +23,11 @@ public sealed class Opcoes
 
     public const int TemaNenhum = 0;
     public const int TemaPadrao = 1;
-    public const string SomPadrao = "job-done.wav";
+    // O som de uma instalação nova ("Intuition" desde a 2.6.1; antes "Job done"). Quem já tem o app continua com o som
+    // gravado no arquivo, porque todas as opções são gravadas
+    public const string SomPadrao = "intuition.wav";
+    /// <summary>O som que entrou no lugar dos "Alert …" antigos (até a 1.2.0), na conversão do arquivo antigo.</summary>
+    public const string SomNoLugarDosAntigos = "job-done.wav";
     // Texto em 80% e fundo escuro em 65% (o fundo vai de 0 a 255: 165 aparece como 65%)
     public const double TamanhoDoTextoPadrao = 0.8;
     public const byte FundoPadrao = 165;
