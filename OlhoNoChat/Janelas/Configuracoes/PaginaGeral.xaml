@@ -116,6 +116,17 @@
                             <Button x:Name="botaoMudarAtalhoEscrever" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
                                     Tag="{Binding ElementName=atalhoEscrever}" Click="MudarAtalho_Click" />
                         </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Pausar/continuar o chat (chat Padrão)" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoPausar" Grid.Column="1" Width="180" Atalho="{Binding AtalhoPausar}" />
+                            <Button x:Name="botaoMudarAtalhoPausar" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoPausar}" Click="MudarAtalho_Click" />
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
             </Border>

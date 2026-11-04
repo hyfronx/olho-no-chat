@@ -353,6 +353,37 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
     }
 
     [Fact]
+    public void AtalhoDaPausaJaUsadoPorOutro_FicaSemAtalho()
+    {
+        // Quem já tinha posto Ctrl + Alt + F6 nas bordas: a pausa (nova, com o mesmo padrão) não funcionaria
+        File.WriteAllText(Novo, """{ "AtalhoBordas": { "Tecla": 95, "Modificadores": 3 } }""");
+
+        var o = ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes;
+
+        Assert.Null(o.AtalhoPausar);
+        Assert.Equal(new Atalho(Key.F6, ModifierKeys.Control | ModifierKeys.Alt), o.AtalhoBordas);
+    }
+
+    [Fact]
+    public void AtalhoDaPausa_SemConflitoFicaComOPadrao()
+    {
+        File.WriteAllText(Novo, """{ "canal": "x" }""");
+
+        Assert.Equal(new Atalho(Key.F6, ModifierKeys.Control | ModifierKeys.Alt), ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.AtalhoPausar);
+    }
+
+    [Theory]
+    [InlineData("0", 0.5)]
+    [InlineData("2.5", 2.5)]
+    [InlineData("40", 6)]
+    public void VelocidadeDeContinuarForaDosLimites_VoltaParaDentro(string gravada, double esperada)
+    {
+        File.WriteAllText(Novo, $$"""{ "LinhasPorSegundoAoContinuar": {{gravada}} }""");
+
+        Assert.Equal(esperada, ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.LinhasPorSegundoAoContinuar);
+    }
+
+    [Fact]
     public void RestaurarPadrao_MantemCanalContaListasEJanelaEGuardaUmaCopia()
     {
         var arquivo = AbrirComoCopiaPrincipal();

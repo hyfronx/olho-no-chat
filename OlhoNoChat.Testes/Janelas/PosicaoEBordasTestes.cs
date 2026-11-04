@@ -44,6 +44,40 @@ public class PosicaoEBordasTestes
         Assert.False(PosicaoNaTela.EstaVisivel(Retangulo.De(100, 1380, 400, 500), [Principal]));
     }
 
+    // A largura mínima subiu de 376 para 412 (48 px a 150%) e chegou a altura mínima de 200
+    [Fact]
+    public void GravadaMenorQueOMinimo_EncostadaNaDireita_VoltaParaDentroOQueCresceu()
+    {
+        // 380 de largura encostada na borda direita virou 412: os 48 px que passaram voltam
+        Retangulo cresceu = Retangulo.De(2560 - 570, 300, 618, 600);
+        Assert.Equal(Retangulo.De(2560 - 618, 300, 618, 600), PosicaoNaTela.PuxarParaDentro(cresceu, Principal, 48, 0));
+    }
+
+    [Fact]
+    public void GravadaMenorQueOMinimo_EncostadaEmBaixo_SobeOQueCresceu()
+    {
+        Retangulo cresceu = Retangulo.De(100, 1400 - 225, 618, 300);
+        Assert.Equal(Retangulo.De(100, 1400 - 300, 618, 300), PosicaoNaTela.PuxarParaDentro(cresceu, Principal, 0, 75));
+    }
+
+    [Fact]
+    public void GravadaMenorQueOMinimo_LongeDasBordas_FicaOndeEstava()
+    {
+        Assert.Null(PosicaoNaTela.PuxarParaDentro(Retangulo.De(0, 0, 618, 300), Principal, 48, 75));
+        Assert.Null(PosicaoNaTela.PuxarParaDentro(Retangulo.De(1000, 500, 618, 300), Principal, 48, 75));
+    }
+
+    [Fact]
+    public void JanelaDeixadaParaFora_SoVoltaOQueCresceu_NuncaPassaDaEsquerda()
+    {
+        // Já estava 100 px para fora por escolha: volta só os 48 px do mínimo novo
+        Retangulo paraFora = Retangulo.De(2560 - 618 + 148, 300, 618, 600);
+        Assert.Equal(Retangulo.De(2560 - 618 + 100, 300, 618, 600), PosicaoNaTela.PuxarParaDentro(paraFora, Principal, 48, 0));
+
+        // Mais larga que a área: não sai pela esquerda
+        Assert.Null(PosicaoNaTela.PuxarParaDentro(Retangulo.De(0, 0, 2600, 300), Principal, 48, 0));
+    }
+
     [Fact]
     public void NoCentro_JanelaMaiorQueAAreaEncolhe()
     {

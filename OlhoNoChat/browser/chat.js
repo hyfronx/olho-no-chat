@@ -27,7 +27,9 @@
         fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
         twitchNotices: true, youTubeNotices: true, tiktokGifts: true, tiktokFollows: true, tiktokShares: false, tiktokSuperFans: true,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
-        vips: [], blockList: [], multiplatform: false, kick: ''
+        vips: [], blockList: [], multiplatform: false, kick: '',
+        // Pause: the speed when continuing (one-line messages a second; 0 = automatic) and the hotkey, for the marker
+        resumeSpeed: 0, pauseHotkey: ''
     };
     let started = false;
     let socket = null;
@@ -141,8 +143,13 @@
                 // A timeout or ban takes that user's messages out; without a user, /clear empties the chat
                 if (message.params[1]) removeLines(`.chat_line[data-nick="${CSS.escape(message.params[1].toLowerCase())}"]`);
                 else {
-                    box.replaceChildren();
+                    // Paused, the marker stays: the pause goes on with the messages that come after the /clear
+                    const kept = pause === 'paused' && marker ? [marker] : [];
+                    if (!kept.length) marker = null;
+                    box.replaceChildren(...kept);
                     newLines.replaceChildren();
+                    pauseLost = false;
+                    refreshMarker();
                 }
                 break;
             case 'CLEARMSG':
@@ -1099,6 +1106,8 @@
     function removeLines(selector) {
         box.querySelectorAll(selector).forEach(line => line.remove());
         newLines.querySelectorAll(selector).forEach(line => line.remove());
+        refreshMarker(); // the count of a pause
+        refreshReadingPill();
     }
 
     // --- Scrolling -----------------------------------------------------------------------------------
@@ -1130,12 +1139,15 @@
     // move the scroll position, and that must not stop the chat from following the new messages.
     let dragging = false;
     box.addEventListener('wheel', (e) => {
+        if (pause === 'reading') wheelHoldUntil = performance.now() + WHEEL_HOLD_MS;
         if (e.deltaY < 0 && box.scrollTop > 0) pinned = false;
     }, { passive: true });
     box.addEventListener('pointerdown', () => { dragging = true; });
     window.addEventListener('pointerup', () => { dragging = false; });
 
+    // Paused or reading, the pause decides (see "Pause"): reaching the bottom by hand doesn't end a pause
     box.addEventListener('scroll', () => {
+        if (pause !== 'live') return;
         if (isAtBottom()) pin();
         else if (dragging) pinned = false;
     });
@@ -1148,21 +1160,48 @@
     function scheduleLayout() {
         if (layoutPending) return;
         layoutPending = true;
-        setTimeout(() => {
-            layoutPending = false;
-            const added = [...newLines.children];
-            box.append(newLines);
-            added.forEach(fitOversized); // needs the line on the page, to know its font
-            let extra = box.children.length - (pinned ? MAX_LINES : MAX_LINES_SCROLLED_BACK);
-            while (extra-- > 0) box.firstElementChild.remove();
-            if (pinned) scrollToBottom();
-            else newMessages.style.display = 'block';
-        }, LINE_BATCH_MS);
+        setTimeout(layoutLines, LINE_BATCH_MS);
+    }
+
+    function layoutLines() {
+        layoutPending = false;
+        const added = [...newLines.children];
+        // Paused or reading, the lines in view stay where they are when old ones are taken out at the top
+        const anchor = pause === 'live' ? null : firstLineInView();
+        const anchorTop = anchor ? anchor.offsetTop : 0;
+        const scrollTop = box.scrollTop;
+        box.append(newLines);
+        added.forEach(fitOversized); // needs the line on the page, to know its font
+        let extra = box.children.length - (pinned && pause === 'live' ? MAX_LINES : MAX_LINES_SCROLLED_BACK);
+        while (extra-- > 0) {
+            let first = box.firstElementChild;
+            if (first === marker) {
+                // Paused, the marker stays: the oldest unread messages go instead
+                if (pause === 'paused' && first.nextElementSibling) {
+                    first = first.nextElementSibling;
+                    pauseLost = true;
+                } else {
+                    marker = null;
+                }
+            }
+            first.remove();
+        }
+        if (anchor && anchor.isConnected) {
+            const wanted = scrollTop + anchor.offsetTop - anchorTop;
+            if (Math.abs(box.scrollTop - wanted) > 1) box.scrollTop = wanted;
+        }
+        if (pause === 'reading') readSetTo = box.scrollTop; // not a move by the person: the slide goes on
+        if (pause !== 'live') {
+            refreshMarker();
+            refreshReadingPill();
+        } else if (pinned) scrollToBottom();
+        else newMessages.style.display = 'block';
+        recordArrivals(added);
     }
 
     // Emotes load after their line is added and make it taller
-    box.addEventListener('load', () => { if (pinned) scrollToBottom(); }, true);
-    window.addEventListener('resize', () => { if (pinned) scrollToBottom(); });
+    box.addEventListener('load', () => { if (pinned && pause === 'live') scrollToBottom(); }, true);
+    window.addEventListener('resize', () => { if (pinned && pause === 'live') scrollToBottom(); });
 
     // Called by the app (MainWindow.UpdateChatScrollMode), also before this script ran (oncScrollModeWanted)
     window.oncSetScrollMode = function (mode) {
@@ -1170,13 +1209,309 @@
         scrollBanner.textContent = 'Modo rolagem: use a rodinha do mouse\n' +
             (mode.hotkey ? 'Clique aqui ou aperte ' + mode.hotkey + ' para sair' : 'Clique aqui para sair');
         scrollBanner.style.display = mode.enabled && mode.banner ? 'block' : 'none';
-        if (!mode.enabled) pin();
+        // A paused chat stays paused when the borders hide (and reads on by itself)
+        if (!mode.enabled && pause === 'live') pin();
     };
+
+    // --- Pause ---------------------------------------------------------------------------------------
+    // The app's pause button (or its hotkey), for a streamer busy with the game: the messages keep coming (and
+    // ringing), only the chat stops moving. A marker goes under the last message wholly on screen ("Chat pausado
+    // · 12 mensagens novas"); scrolled back, it stays at the bottom. Continuing brings the messages below into view
+    // by themselves, from where the chat is to the newest one: each comes in with a short slide and stays still for
+    // the time it takes to read it (still text is easier to read than moving text, and the page is drawn only while
+    // it slides). At the newest one the chat follows the new ones again. Pausing while it reads stops it there.
+    // The app shows the state on its button (onc:pause-state:paused|reading|live).
+
+    // The automatic speed: a person reads chat at about this many characters a second, plus a moment to find each
+    // message and its name; an emote counts as a short word and a GIF as a quick look (so short messages go by
+    // faster, long ones slower). settings.resumeSpeed (one-line messages a second) replaces it with a fixed speed.
+    const READ_CHARS_PER_SECOND = 25;
+    const READ_SECONDS_PER_MESSAGE = 0.3;
+    const READ_CHARS_PER_IMAGE = 3;
+    const READ_SECONDS_PER_GIF = 1;
+    const READ_MIN_LINES_PER_SECOND = 0.4;
+    const READ_MAX_LINES_PER_SECOND = 8;
+    // Faster than the messages come, or it would never reach the newest one
+    const CATCH_UP_FACTOR = 1.5;
+    const ARRIVALS_MS = 20000;
+    // Messages read faster than this come in together (a busy chat doesn't slide all the time)
+    const STEP_MIN_MS = 800;
+    // The slide of each step: each frame covers part of the way left (about 170 ms in all), at most 60 frames a second
+    const SLIDE_FRAME_MS = 15;
+    const SLIDE_TIME_S = 0.045;
+    // The wheel moves the chat while it reads: the reading goes on from there a moment later
+    const WHEEL_HOLD_MS = 400;
+
+    let pause = 'live';      // 'paused' or 'reading'
+    let marker = null;       // the marker of the pause now (older ones are quiet dividers)
+    let pauseLost = false;   // so many messages came while paused that the oldest unread ones didn't fit
+    let readTimer = 0, readFrame = 0, readTarget = null, readLast = 0, readSetTo = 0;
+    let readToTop = false;   // the step shows the beginning of a message taller than the chat (the rest comes next)
+    let wheelHoldUntil = 0;
+    const arrivals = [];     // [time, height] of the lines added in the last ARRIVALS_MS, for CATCH_UP_FACTOR
+    const readingTimes = new WeakMap();
+
+    // While reading: how many messages are still below the screen (a click goes straight to the newest)
+    const readingPill = document.createElement('div');
+    readingPill.id = 'onc-reading';
+    readingPill.className = 'onc-pill';
+    readingPill.addEventListener('click', goLive);
+    document.body.append(readingPill);
+
+    const timeNow = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const messagesText = (n) => n + (n === 1 ? ' mensagem nova' : ' mensagens novas');
+
+    function firstLineInView() {
+        for (const line of box.children)
+            if (line.offsetTop + line.offsetHeight > box.scrollTop) return line;
+        return null;
+    }
+
+    function newMarker() {
+        const div = document.createElement('div');
+        div.className = 'onc-pause-marker';
+        div.dataset.time = timeNow();
+        div.innerHTML = '<div class="onc-pause-label"><div class="onc-pause-title"><span class="onc-pause-icon"></span>' +
+            '<span class="onc-pause-text"></span><span class="onc-pause-count"></span></div>' +
+            '<div class="onc-pause-hint"><span class="onc-when-click"></span><span class="onc-when-no-click"></span></div></div>';
+        // With the borders shown the window takes clicks: the marker continues too
+        div.addEventListener('click', () => { if (div === marker && pause === 'paused') resume(); });
+        return div;
+    }
+
+    function refreshMarker() {
+        if (!marker) return;
+        if (pause !== 'paused') {
+            marker.querySelector('.onc-pause-text').textContent = 'Pausado às ' + marker.dataset.time;
+            marker.querySelector('.onc-pause-count').textContent = '';
+            return;
+        }
+        let count = 0;
+        for (let line = marker.nextElementSibling; line; line = line.nextElementSibling)
+            if (line.classList.contains('chat_line')) count++;
+        marker.querySelector('.onc-pause-text').textContent = 'Chat pausado';
+        marker.querySelector('.onc-pause-count').textContent = count ? ' · ' + (pauseLost ? 'mais de ' : '') + messagesText(count) : '';
+        const hotkey = settings.pauseHotkey;
+        marker.querySelector('.onc-when-click').textContent = hotkey
+            ? 'Clique aqui ou aperte ' + hotkey + ' para continuar' : 'Clique aqui para continuar';
+        marker.querySelector('.onc-when-no-click').textContent = hotkey
+            ? 'Aperte ' + hotkey + ' para continuar' : 'Para continuar, mostre as bordas e clique aqui';
+    }
+
+    function tellPause() {
+        postToApp('onc:pause-state:' + pause);
+    }
+
+    function pauseChat() {
+        if (pause === 'paused') return;
+        stopReading();
+        if (layoutPending) layoutLines(); // what came in the last moment is on screen already
+        // The marker goes before the first line not wholly on screen (at the bottom, after the newest one)
+        const bottom = box.scrollTop + box.clientHeight;
+        let before = null;
+        for (const line of box.children) {
+            if (line.offsetTop + line.offsetHeight > bottom + 1) { before = line; break; }
+        }
+        marker = newMarker();
+        box.insertBefore(marker, before);
+        pause = 'paused';
+        pinned = false;
+        pauseLost = false;
+        newMessages.style.display = 'none';
+        readingPill.style.display = 'none';
+        refreshMarker();
+        // In view at the bottom (measured in its own place, before it can stick)
+        box.scrollTop = Math.max(box.scrollTop, marker.offsetTop + marker.offsetHeight - box.clientHeight);
+        marker.classList.add('paused');
+        tellPause();
+    }
+
+    function resume() {
+        if (pause !== 'paused') return;
+        if (marker) {
+            // Nothing came while paused: no divider left behind
+            if (!marker.nextElementSibling) {
+                marker.remove();
+                marker = null;
+            } else {
+                marker.classList.replace('paused', 'read');
+            }
+        }
+        pause = 'reading';
+        refreshMarker();
+        if (box.scrollHeight - box.clientHeight - box.scrollTop <= 1) {
+            goLive();
+            return;
+        }
+        tellPause();
+        nextStep();
+    }
+
+    // The newest message reached (or the pill clicked): the chat follows the new messages again
+    function goLive() {
+        if (pause === 'live') return;
+        stopReading();
+        if (pause === 'paused' && marker) marker.classList.replace('paused', 'read');
+        pause = 'live';
+        refreshMarker();
+        readingPill.style.display = 'none';
+        pin();
+        tellPause();
+    }
+
+    function stopReading() {
+        clearTimeout(readTimer);
+        cancelAnimationFrame(readFrame);
+        readTimer = readFrame = 0;
+        readTarget = null;
+    }
+
+    // The next messages not wholly on screen come in (a short slide); then nothing moves while they are read.
+    // Messages read faster than STEP_MIN_MS come in together.
+    function nextStep() {
+        readTimer = 0;
+        if (pause !== 'reading') return;
+        if (dragging || performance.now() < wheelHoldUntil) {
+            readTimer = setTimeout(nextStep, WHEEL_HOLD_MS / 4);
+            return;
+        }
+        const bottom = box.scrollTop + box.clientHeight;
+        let first = null;
+        for (const line of box.children) {
+            if (line.offsetTop + line.offsetHeight > bottom + 1) { first = line; break; }
+        }
+        if (!first) {
+            goLive();
+            return;
+        }
+        const lineHeight = oneLineHeight();
+        const catchUp = arrivalSpeed() * CATCH_UP_FACTOR;
+        let seconds = 0;
+        readToTop = first.offsetHeight > box.clientHeight && first.offsetTop > box.scrollTop + 1;
+        if (readToTop) {
+            // Taller than the chat: its beginning (the name) first, for the part of it that fits; the rest in the next step
+            readTarget = first;
+            seconds = readingSeconds(first, lineHeight, catchUp) * box.clientHeight / first.offsetHeight;
+        } else {
+            for (let line = first; line; line = line.nextElementSibling) {
+                // Never so many together that the first one leaves the top of the chat
+                if (line !== first && line.offsetTop + line.offsetHeight - Math.max(first.offsetTop, box.scrollTop) > box.clientHeight) break;
+                seconds += readingSeconds(line, lineHeight, catchUp);
+                readTarget = line;
+                if (seconds * 1000 >= STEP_MIN_MS) break;
+            }
+        }
+        readLast = performance.now();
+        readSetTo = box.scrollTop;
+        cancelAnimationFrame(readFrame);
+        readFrame = requestAnimationFrame(slide);
+        readTimer = setTimeout(nextStep, seconds * 1000);
+        refreshReadingPill();
+    }
+
+    // Each frame covers part of the way left, so the slide slows down at the end
+    function slide(now) {
+        readFrame = 0;
+        if (pause !== 'reading' || !readTarget) return;
+        const top = box.scrollTop;
+        // The person moved the chat (the wheel, the scroll bar): this slide stops, the reading goes on from there
+        if (dragging || now < wheelHoldUntil || Math.abs(top - readSetTo) > 1 || !readTarget.isConnected) {
+            readTarget = null;
+            return;
+        }
+        // A screen faster than 60 frames a second doesn't draw the page more often
+        if (now - readLast < SLIDE_FRAME_MS) {
+            readFrame = requestAnimationFrame(slide);
+            return;
+        }
+        const pixel = 1 / (window.devicePixelRatio || 1);
+        const target = Math.min(box.scrollHeight - box.clientHeight, readToTop
+            ? readTarget.offsetTop
+            : readTarget.offsetTop + readTarget.offsetHeight - box.clientHeight);
+        const seconds = Math.max(0, (now - readLast) / 1000);
+        readLast = now;
+        if (target - top <= pixel) {
+            if (target > top) box.scrollTop = target;
+            readSetTo = box.scrollTop;
+            readTarget = null;
+            refreshReadingPill();
+            return;
+        }
+        box.scrollTop = top + Math.max(pixel, (target - top) * (1 - Math.exp(-seconds / SLIDE_TIME_S)));
+        readSetTo = box.scrollTop;
+        readFrame = requestAnimationFrame(slide);
+    }
+
+    // How long a message stays to be read: automatic, by its text (between READ_MIN_LINES_PER_SECOND and
+    // READ_MAX_LINES_PER_SECOND), or by its height at the fixed speed; never slower than the chat comes
+    function readingSeconds(line, lineHeight, catchUp) {
+        const height = line.offsetHeight;
+        let seconds = settings.resumeSpeed > 0
+            ? height / (settings.resumeSpeed * lineHeight)
+            : Math.min(Math.max(readingTime(line), height / (READ_MAX_LINES_PER_SECOND * lineHeight)),
+                height / (READ_MIN_LINES_PER_SECOND * lineHeight));
+        if (catchUp > 0) seconds = Math.min(seconds, height / catchUp);
+        return seconds;
+    }
+
+    // The height of a message of one line, with its spacing: a "line" of the fixed speed
+    function oneLineHeight() {
+        const line = box.querySelector('.chat_line');
+        if (!line) return 36;
+        const style = getComputedStyle(line);
+        const height = (parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.25 || 24)
+            + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+        return height > 0 ? height : 36;
+    }
+
+    function readingTime(line) {
+        let time = readingTimes.get(line);
+        if (time !== undefined) return time;
+        if (!line.classList.contains('chat_line')) {
+            time = READ_SECONDS_PER_MESSAGE; // the pause markers
+        } else {
+            const stamp = line.querySelector('.time_stamp');
+            const chars = line.textContent.length - (stamp ? stamp.textContent.length : 0);
+            const images = line.querySelectorAll('.message img:not(.onc-gif), .onc-notice img').length;
+            const gifs = settings.hideGifs ? 0 : line.querySelectorAll('.onc-gif').length;
+            time = READ_SECONDS_PER_MESSAGE + (chars + images * READ_CHARS_PER_IMAGE) / READ_CHARS_PER_SECOND
+                + gifs * READ_SECONDS_PER_GIF;
+        }
+        readingTimes.set(line, time);
+        return time;
+    }
+
+    // How fast the chat comes, paused or not: the height of the lines added in the last ARRIVALS_MS
+    function recordArrivals(added) {
+        const now = performance.now();
+        while (arrivals.length && arrivals[0][0] < now - ARRIVALS_MS) arrivals.shift();
+        if (added.length) arrivals.push([now, added.reduce((sum, line) => sum + line.offsetHeight, 0)]);
+    }
+
+    // In CSS pixels a second
+    function arrivalSpeed() {
+        const now = performance.now();
+        while (arrivals.length && arrivals[0][0] < now - ARRIVALS_MS) arrivals.shift();
+        return arrivals.reduce((sum, arrival) => sum + arrival[1], 0) / (ARRIVALS_MS / 1000);
+    }
+
+    function refreshReadingPill() {
+        if (pause !== 'reading') return;
+        const bottom = box.scrollTop + box.clientHeight;
+        let count = 0;
+        // The lines of the step coming into view (up to readTarget) aren't counted
+        for (let line = box.lastElementChild; line && line !== readTarget && line.offsetTop >= bottom - 1; line = line.previousElementSibling)
+            if (line.classList.contains('chat_line')) count++;
+        readingPill.textContent = '↓ ' + messagesText(count);
+        readingPill.style.display = count ? 'block' : 'none';
+    }
+
     if (window.oncScrollModeWanted) window.oncSetScrollMode(window.oncScrollModeWanted);
 
-    // "Apagar mensagens antigas": a line older than settings.fade seconds fades out
+    // "Apagar mensagens antigas": a line older than settings.fade seconds fades out (not while paused or reading:
+    // the unread messages wait to be read)
     setInterval(() => {
-        if (!settings.fade) return;
+        if (!settings.fade || pause !== 'live') return;
         const limit = Date.now() - settings.fade * 1000;
         for (const line of box.children) {
             if (Number(line.dataset.timestamp) > limit) break;
@@ -1510,6 +1845,15 @@
             const wasMultiplatform = pill.classList.contains('multi');
             updateKick();
             if (wasMultiplatform !== !!settings.multiplatform) refreshPill();
+            refreshMarker(); // the pause hotkey may be another one
+        },
+
+        // The app's pause button and hotkey: pauses, or continues a paused chat (see "Pause"). The new state:
+        // 'paused', 'reading' or 'live' (also sent to the app as onc:pause-state:...)
+        togglePause() {
+            if (pause === 'paused') resume();
+            else pauseChat();
+            return pause;
         },
 
         // Chat Multiplataforma: how the YouTube or the TikTok reading is (the app reads them): connecting, connected,

@@ -111,6 +111,45 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+                <!-- Pausar o chat: o botão da barra laranja e o atalho (aba Geral); aqui, a velocidade de continuar -->
+                <Border Style="{DynamicResource Cartao}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE769;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Continuar a pausa no ritmo de leitura" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Style="{DynamicResource Dica}"
+                                           Text="Com o chat pausado (botão de pausa da barra laranja ou o atalho), as mensagens continuam chegando. Ao continuar, ele rola sozinho até a última, numa velocidade calculada pelo texto que vai aparecendo: mensagens curtas passam mais rápido, textos longos mais devagar. Desligue para escolher uma velocidade fixa." />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorVelocidadeAutomatica" Grid.Column="2" IsChecked="{Binding VelocidadeAutomaticaAoContinuar}"
+                                             AutomationProperties.Name="Continuar a pausa no ritmo de leitura" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <!-- Desbotada com a velocidade automática -->
+                        <Grid x:Name="linhaVelocidadeFixa" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding VelocidadeFixa}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Velocidade fixa" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Style="{DynamicResource Dica}"
+                                           Text="Em linhas por segundo. Se as mensagens chegarem mais rápido que isso, a rolagem acelera para alcançar a última." />
+                            </StackPanel>
+                            <Slider x:Name="deslizanteVelocidade" Grid.Column="1" Width="180" VerticalAlignment="Center" AutomationProperties.Name="Velocidade fixa"
+                                    Minimum="0.5" Maximum="6" SmallChange="0.5" LargeChange="1" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                    Value="{Binding LinhasPorSegundoAoContinuar}" />
+                            <TextBlock x:Name="textoVelocidade" Grid.Column="2" Width="78" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"
+                                       Style="{DynamicResource Rotulo}" Text="{Binding TextoDaVelocidade}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
                 <TextBlock Text="Filtros" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">

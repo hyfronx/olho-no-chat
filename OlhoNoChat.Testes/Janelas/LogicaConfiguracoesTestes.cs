@@ -57,6 +57,8 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     {
         c.Chat.ApagarMensagensAntigas = true;
         c.Chat.SegundosParaApagar = "45";
+        c.Chat.VelocidadeAutomaticaAoContinuar = false;
+        c.Chat.LinhasPorSegundoAoContinuar = 3.5;
         c.Chat.EsconderBots = false;
         c.Chat.EsconderGifs = true;
         c.Chat.EsconderOutrosCanais = true;
@@ -178,6 +180,8 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.Equal("", o.EnderecoPersonalizado);
         Assert.True(o.ApagarMensagensAntigas);
         Assert.Equal("45", o.SegundosParaApagar);
+        Assert.False(o.VelocidadeAutomaticaAoContinuar);
+        Assert.Equal(3.5, o.LinhasPorSegundoAoContinuar);
         Assert.False(o.EsconderBots);
         Assert.True(o.EsconderGifs);
         Assert.True(o.EsconderOutrosCanais);
@@ -312,6 +316,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         c.Geral.PermitirVariasCopias = true;
         c.Geral.AtalhoEscrever = null;
         c.Geral.AtalhoBordas = new Atalho(Key.B, ModifierKeys.Control | ModifierKeys.Shift);
+        c.Geral.AtalhoPausar = new Atalho(Key.P, ModifierKeys.Control | ModifierKeys.Alt);
         c.Twitch.CaixaDeDigitar = 1;
         c.Twitch.FecharCaixaDepoisDeEnviar = true;
         c.Twitch.MostrarResgates = true;
@@ -330,6 +335,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.True(o.PermitirVariasCopias);
         Assert.Null(o.AtalhoEscrever);
         Assert.Equal(new Atalho(Key.B, ModifierKeys.Control | ModifierKeys.Shift), o.AtalhoBordas);
+        Assert.Equal(new Atalho(Key.P, ModifierKeys.Control | ModifierKeys.Alt), o.AtalhoPausar);
         Assert.True(o.CaixaDaTwitch);
         Assert.True(o.FecharCaixaDepoisDeEnviar);
         Assert.True(o.MostrarResgates);

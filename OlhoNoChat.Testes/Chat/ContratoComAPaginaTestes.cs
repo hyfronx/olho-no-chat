@@ -14,7 +14,7 @@ public sealed class ContratoComAPaginaTestes
     public void JsonDeConfiguracoes_PadraoDaPrimeiraInstalacao_Exato()
     {
         Assert.Equal(
-            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"kick":""}""",
+            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"kick":"","resumeSpeed":0,"pauseHotkey":"Ctrl \u002B Alt \u002B F6"}""",
             ContratoComAPagina.JsonDeConfiguracoes(new Opcoes()));
     }
 
@@ -41,10 +41,13 @@ public sealed class ContratoComAPaginaTestes
             DestacarModeradores = true,
             ListaDeUsuarios = ["Fulano", "BELTRANO"],
             UsuariosBloqueados = ["NightBot"],
+            VelocidadeAutomaticaAoContinuar = false,
+            LinhasPorSegundoAoContinuar = 2.5,
+            AtalhoPausar = null,
         };
 
         Assert.Equal(
-            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"kick":""}""",
+            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"kick":"","resumeSpeed":2.5,"pauseHotkey":""}""",
             ContratoComAPagina.JsonDeConfiguracoes(opcoes));
     }
 
@@ -60,6 +63,12 @@ public sealed class ContratoComAPaginaTestes
         var opcoes = new Opcoes { ApagarMensagensAntigas = ligado, SegundosParaApagar = segundos };
 
         Assert.StartsWith($"{{\"fade\":{fade},", ContratoComAPagina.JsonDeConfiguracoes(opcoes));
+    }
+
+    [Fact]
+    public void AlternarPausa_Exato()
+    {
+        Assert.Equal("window.oncChat && window.oncChat.togglePause && window.oncChat.togglePause();", ContratoComAPagina.AlternarPausa);
     }
 
     [Fact]
@@ -178,6 +187,10 @@ public sealed class ContratoComAPaginaTestes
     [InlineData("onc:kick-state:notfound", MensagemDaPagina.KickNaoExiste)]
     [InlineData("onc:kick-state:off", MensagemDaPagina.KickDesligado)]
     [InlineData("onc:kick-state:qualquer", MensagemDaPagina.Desconhecida)]
+    [InlineData("onc:pause-state:paused", MensagemDaPagina.ChatPausado)]
+    [InlineData("onc:pause-state:reading", MensagemDaPagina.ChatContinuando)]
+    [InlineData("onc:pause-state:live", MensagemDaPagina.ChatAoVivo)]
+    [InlineData("onc:pause-state:qualquer", MensagemDaPagina.Desconhecida)]
     [InlineData("onc:outra", MensagemDaPagina.Desconhecida)]
     [InlineData("", MensagemDaPagina.Desconhecida)]
     [InlineData(null, MensagemDaPagina.Desconhecida)]

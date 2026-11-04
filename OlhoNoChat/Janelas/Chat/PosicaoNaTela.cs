@@ -44,4 +44,18 @@ public static class PosicaoNaTela
             return NoCentro(janela, areaDoPrincipal);
         return null;
     }
+
+    /// <summary>
+    /// Uma janela gravada menor que o tamanho mínimo de agora (a largura mínima subiu na 2.6.0 e a altura mínima chegou)
+    /// cresce para a direita e para baixo. Se por isso ela passar da borda direita ou de baixo da área do monitor, volta
+    /// para dentro só o que cresceu: nunca mais que isso, nem para fora da borda esquerda ou de cima. Null = fica onde está.
+    /// </summary>
+    /// <param name="cresceuX">Quantos pixels a janela ganhou na largura pelo mínimo.</param>
+    /// <param name="cresceuY">Quantos pixels a janela ganhou na altura pelo mínimo.</param>
+    public static Retangulo? PuxarParaDentro(Retangulo janela, Retangulo area, int cresceuX, int cresceuY)
+    {
+        int dx = Math.Max(0, Math.Min(Math.Min(janela.Direita - area.Direita, cresceuX), janela.Esquerda - area.Esquerda));
+        int dy = Math.Max(0, Math.Min(Math.Min(janela.Baixo - area.Baixo, cresceuY), janela.Topo - area.Topo));
+        return dx == 0 && dy == 0 ? null : Retangulo.De(janela.Esquerda - dx, janela.Topo - dy, janela.Largura, janela.Altura);
+    }
 }

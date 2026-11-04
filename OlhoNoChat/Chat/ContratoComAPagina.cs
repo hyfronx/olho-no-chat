@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using OlhoNoChat.Atalhos;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.TikTok;
 using OlhoNoChat.YouTube;
@@ -52,8 +53,19 @@ public static class ContratoComAPagina
             multiplatform = opcoes.ChatMultiplataforma,
             // Chat Multiplataforma: o canal da Kick que a página lê ("" = nenhum)
             kick = ChatMultiplataforma.KickALer(opcoes),
+            // Pausar o chat: a velocidade de continuar em linhas por segundo (0 = no ritmo de leitura) e o atalho, que o
+            // aviso da pausa mostra
+            resumeSpeed = opcoes.VelocidadeAutomaticaAoContinuar ? 0 : opcoes.LinhasPorSegundoAoContinuar,
+            pauseHotkey = Atalho.Existe(opcoes.AtalhoPausar) ? opcoes.AtalhoPausar.ToString() : string.Empty,
         });
     }
+
+    /// <summary>
+    /// O botão e o atalho de pausar: pausa o chat do Padrão, ou continua o pausado. A página responde com o estado novo
+    /// (<see cref="MensagemDaPagina.ChatPausado"/>, <see cref="MensagemDaPagina.ChatContinuando"/> ou
+    /// <see cref="MensagemDaPagina.ChatAoVivo"/>).
+    /// </summary>
+    public const string AlternarPausa = "window.oncChat && window.oncChat.togglePause && window.oncChat.togglePause();";
 
     /// <summary>Põe o CSS no elemento do app (criado se ainda não existe).</summary>
     public static string PorOCss(string css) => $$"""
@@ -311,6 +323,9 @@ public static class ContratoComAPagina
             "onc:exit-scroll-mode" => MensagemDaPagina.SairDoModoRolagem,
             "onc:compose-sent" => MensagemDaPagina.EscritaEnviada,
             "onc:compose-cancel" => MensagemDaPagina.EscritaCancelada,
+            "onc:pause-state:paused" => MensagemDaPagina.ChatPausado,
+            "onc:pause-state:reading" => MensagemDaPagina.ChatContinuando,
+            "onc:pause-state:live" => MensagemDaPagina.ChatAoVivo,
             // "unavailable" chega como "disconnected"; qualquer outro estado conta como conectando
             _ when mensagem != null && mensagem.StartsWith(estado, StringComparison.Ordinal) => mensagem[estado.Length..] switch
             {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
@@ -54,6 +55,29 @@ public sealed partial class LogicaChat : LogicaDaPagina
     /// <summary>Aceita qualquer texto; só um número inteiro maior que 0 apaga as mensagens.</summary>
     [ObservableProperty]
     private string _segundosParaApagar = string.Empty;
+
+    /// <summary>Continuar a pausa no ritmo de leitura (pela quantidade de texto); desligado, na velocidade fixa.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VelocidadeFixa))]
+    private bool _velocidadeAutomaticaAoContinuar;
+
+    /// <summary>A velocidade fixa, em mensagens de uma linha por segundo (0,5 a 6, de 0,5 em 0,5 no deslizante).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaVelocidade))]
+    private double _linhasPorSegundoAoContinuar;
+
+    public bool VelocidadeFixa => !VelocidadeAutomaticaAoContinuar;
+
+    /// <summary>"1,5 linhas/s", "1 linha/s".</summary>
+    public string TextoDaVelocidade => LinhasPorSegundo(LinhasPorSegundoAoContinuar);
+
+    public static string LinhasPorSegundo(double valor)
+    {
+        double redondo = Math.Round(valor, 1);
+        return redondo.ToString("0.#", Pt) + (redondo < 2 ? " linha/s" : " linhas/s");
+    }
+
+    private static readonly CultureInfo Pt = new("pt-BR");
 
     [ObservableProperty]
     private bool _esconderBots;
@@ -118,6 +142,8 @@ public sealed partial class LogicaChat : LogicaDaPagina
         MostrarHistoricoDoYouTube = opcoes.MostrarHistoricoDoYouTube;
         ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
         SegundosParaApagar = opcoes.SegundosParaApagar;
+        VelocidadeAutomaticaAoContinuar = opcoes.VelocidadeAutomaticaAoContinuar;
+        LinhasPorSegundoAoContinuar = opcoes.LinhasPorSegundoAoContinuar;
         EsconderBots = opcoes.EsconderBots;
         EsconderGifs = opcoes.EsconderGifs;
         EsconderOutrosCanais = opcoes.EsconderOutrosCanais;
@@ -148,6 +174,9 @@ public sealed partial class LogicaChat : LogicaDaPagina
                 opcoes.EnderecoPersonalizado = string.Empty;
                 opcoes.ApagarMensagensAntigas = ApagarMensagensAntigas;
                 opcoes.SegundosParaApagar = SegundosParaApagar;
+                opcoes.VelocidadeAutomaticaAoContinuar = VelocidadeAutomaticaAoContinuar;
+                opcoes.LinhasPorSegundoAoContinuar = Math.Clamp(Math.Round(LinhasPorSegundoAoContinuar * 2) / 2,
+                    Opcoes.LinhasPorSegundoMinimo, Opcoes.LinhasPorSegundoMaximo);
                 opcoes.EsconderBots = EsconderBots;
                 opcoes.EsconderGifs = EsconderGifs;
                 opcoes.EsconderOutrosCanais = EsconderOutrosCanais;
@@ -180,6 +209,8 @@ public sealed partial class LogicaChat : LogicaDaPagina
         estado["Chat.MostrarHistoricoDoYouTube"] = MostrarHistoricoDoYouTube.ToString();
         estado["Chat.ApagarMensagensAntigas"] = ApagarMensagensAntigas.ToString();
         estado["Chat.SegundosParaApagar"] = SegundosParaApagar;
+        estado["Chat.VelocidadeAutomaticaAoContinuar"] = VelocidadeAutomaticaAoContinuar.ToString();
+        estado["Chat.LinhasPorSegundoAoContinuar"] = TextoDaVelocidade;
         estado["Chat.EsconderBots"] = EsconderBots.ToString();
         estado["Chat.EsconderGifs"] = EsconderGifs.ToString();
         estado["Chat.EsconderOutrosCanais"] = EsconderOutrosCanais.ToString();

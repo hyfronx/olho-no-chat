@@ -298,6 +298,119 @@ body.onc-links-on .onc-link {
     bottom: 10px;
 }
 
+/* Pause (chat.js "Pause"): the marker under the last message on screen, an orange line with the label in the
+   middle. While paused it stays at the bottom (also scrolled back) and, with the borders shown, a click continues.
+   After continuing it is a quiet divider ("Pausado às 21:34"). Not a .chat_line: the app's CSS doesn't touch it. */
+.onc-pause-marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    padding: 4px 3px;
+    font: 600 15px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+    color: #fff;
+}
+
+.onc-pause-marker::before,
+.onc-pause-marker::after {
+    content: '';
+    flex: 1 1 10px;
+    height: 2px;
+    border-radius: 1px;
+    background: #FF8A65;
+}
+
+.onc-pause-label {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: center;
+    background: #141414;
+    border: 2px solid #FF8A65;
+    border-radius: 12px;
+    padding: 4px 12px 5px;
+}
+
+.onc-pause-marker.paused {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    border-radius: 10px;
+    background: rgba(14, 14, 14, .82);
+}
+
+body.onc-links-on .onc-pause-marker.paused {
+    cursor: pointer;
+}
+
+/* The two bars of the pause sign */
+.onc-pause-icon {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 10px;
+    height: 12px;
+    margin: 0 7px -1px 0;
+    border-left: 3px solid #FF8A65;
+    border-right: 3px solid #FF8A65;
+}
+
+.onc-pause-count {
+    color: #FF8A65;
+}
+
+.onc-pause-hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: #C8C8C8;
+}
+
+/* The hint for a click only when the window takes clicks (the borders shown: body.onc-links-on) */
+.onc-when-click,
+body.onc-links-on .onc-when-no-click {
+    display: none;
+}
+
+body.onc-links-on .onc-when-click {
+    display: inline;
+}
+
+.onc-pause-marker.read {
+    font-size: 12px;
+    font-weight: 400;
+    color: #A8A8A8;
+}
+
+.onc-pause-marker.read::before,
+.onc-pause-marker.read::after {
+    height: 1px;
+    background: rgba(255, 138, 101, .55);
+}
+
+.onc-pause-marker.read .onc-pause-label {
+    background: none;
+    border: none;
+    padding: 0 2px;
+}
+
+.onc-pause-marker.read .onc-pause-icon,
+.onc-pause-marker.read .onc-pause-hint {
+    display: none;
+}
+
+/* While the chat reads on by itself: how many messages are still below, small in the corner */
+#onc-reading {
+    left: auto;
+    right: 10px;
+    bottom: 8px;
+    transform: none;
+    padding: 3px 10px 4px;
+    border-width: 1px;
+    border-radius: 12px;
+    font-size: 13px;
+    opacity: .92;
+}
+
 /* Connection status: a dot at the top, yellow and pulsing while connecting, green when connected
    (shown for a moment, then it fades out), red while the connection is lost */
 #onc-status {

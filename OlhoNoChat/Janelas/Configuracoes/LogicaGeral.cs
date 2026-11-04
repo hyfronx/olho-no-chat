@@ -45,6 +45,9 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     [ObservableProperty]
     private Atalho? _atalhoEscrever;
 
+    [ObservableProperty]
+    private Atalho? _atalhoPausar;
+
     /// <summary>A versão instalada, ou "de desenvolvimento".</summary>
     public string Versao => InfoDoApp.Versao;
 
@@ -84,6 +87,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         AtalhoModoRolagem = opcoes.AtalhoModoRolagem;
         AtalhoSempreNoTopo = opcoes.AtalhoSempreNoTopo;
         AtalhoEscrever = opcoes.AtalhoEscrever;
+        AtalhoPausar = opcoes.AtalhoPausar;
     }
 
     public override void Gravar(Opcoes opcoes)
@@ -97,6 +101,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         opcoes.AtalhoModoRolagem = SoSeExiste(AtalhoModoRolagem);
         opcoes.AtalhoSempreNoTopo = SoSeExiste(AtalhoSempreNoTopo);
         opcoes.AtalhoEscrever = SoSeExiste(AtalhoEscrever);
+        opcoes.AtalhoPausar = SoSeExiste(AtalhoPausar);
     }
 
     private static Atalho? SoSeExiste(Atalho? atalho) => Atalho.Existe(atalho) ? atalho : null;
@@ -111,5 +116,6 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         estado["Geral.AtalhoModoRolagem"] = Atalho.TextoOuNenhum(AtalhoModoRolagem);
         estado["Geral.AtalhoSempreNoTopo"] = Atalho.TextoOuNenhum(AtalhoSempreNoTopo);
         estado["Geral.AtalhoEscrever"] = Atalho.TextoOuNenhum(AtalhoEscrever);
+        estado["Geral.AtalhoPausar"] = Atalho.TextoOuNenhum(AtalhoPausar);
     }
 }

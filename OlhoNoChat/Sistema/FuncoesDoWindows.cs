@@ -196,6 +196,10 @@ internal static partial class FuncoesDoWindows
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
 
+    /// <summary>Os pontos por polegada do monitor da janela (96 = 100%).</summary>
+    [LibraryImport("user32.dll")]
+    public static partial uint GetDpiForWindow(IntPtr janela);
+
     // Teclado
     public const uint KEYEVENTF_KEYUP = 0x2;
 

@@ -18,6 +18,12 @@
                     Click="OcultarBordas_Click">
                 <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xED1A;" />
             </Button>
+            <!-- Pausar o chat (só no Padrão), junto do olho: os dois são para a hora do jogo. Pausado: aceso, com o ▶ de
+                 continuar; senão o ⏸ (a janela troca o ícone e a dica) -->
+            <ToggleButton x:Name="botaoPausar" Style="{StaticResource BotaoDaBarraLigaDesliga}" AutomationProperties.Name="Pausar o chat"
+                          Checked="Pausar_Mudou" Unchecked="Pausar_Mudou">
+                <TextBlock x:Name="iconePausar" Style="{StaticResource IconeDaBarra}" Text="&#xE769;" />
+            </ToggleButton>
 
             <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
@@ -49,8 +55,8 @@
             <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
             <!-- Chat Multiplataforma (Twitch, YouTube, Kick e TikTok) ou só a Twitch: os logos das quatro plataformas em
-                 bolinhas sobrepostas do tamanho da engrenagem (opção "C", escolhida pelo usuário em 2026-10-23; por ela a
-                 janela tem largura mínima de 376). Ligado: todos coloridos; só Twitch: o do
+                 bolinhas sobrepostas do tamanho da engrenagem (opção "C", escolhida pelo usuário em 2026-10-23; por ela e
+                 pelo botão de pausar a janela tem largura mínima de 412). Ligado: todos coloridos; só Twitch: o do
                  YouTube, o da Kick e o do TikTok ficam apagados, em branco e laranja. O anel da cor da barra separa as
                  bolinhas. -->
             <ToggleButton x:Name="botaoMultiplataforma" Style="{StaticResource BotaoDaBarraLigaDesliga}" Width="76"
@@ -160,6 +166,38 @@
                     <TextBlock Style="{StaticResource Icone}" Text="&#xE8D2;" FontSize="15" />
                 </chat:PainelDeAjuste.Icone>
             </chat:PainelDeAjuste>
+        </Popup>
+
+        <!-- A novidade da pausa, uma vez só (Novidades): um balão apontando para o botão de pausar, por cima do chat. Não
+             fecha com um clique fora: só pelos botões dele (ou quando a janela o esconde) -->
+        <Popup x:Name="balaoNovidade" PlacementTarget="{Binding ElementName=botaoPausar}" Placement="Bottom"
+               VerticalOffset="2" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+            <StackPanel Width="290">
+                <!-- A ponta no meio do botão (34 px de largura) -->
+                <Path Data="M0,9 L9,0 L18,9 Z" Fill="{StaticResource LaranjaClaro}" Margin="8,0,0,-2" HorizontalAlignment="Left" />
+                <Border Background="#1B1B1B" BorderBrush="{StaticResource LaranjaClaro}" BorderThickness="2" CornerRadius="10"
+                        Padding="14,11,14,13">
+                    <StackPanel>
+                        <TextBlock Text="Novo: pausar o chat" FontSize="15" FontWeight="SemiBold" Foreground="White" />
+                        <TextBlock Margin="0,5,0,0" FontSize="13" LineHeight="19" Foreground="#E6E6E6" TextWrapping="Wrap"
+                                   Text="Momento tenso na partida? Pause o chat: as mensagens continuam chegando e esperam você. Ao continuar, elas aparecem uma por uma, no ritmo de leitura (a velocidade muda em Configurações &gt; Chat)." />
+                        <StackPanel x:Name="linhaAtalhoDaNovidade" Orientation="Horizontal" Margin="0,9,0,0">
+                            <TextBlock Text="No jogo:" FontSize="12" Foreground="#BDBDBD" VerticalAlignment="Center" />
+                            <Border Margin="6,0,0,0" Padding="7,1,7,2" CornerRadius="5" Background="#2B2B2B" BorderBrush="#555555"
+                                    BorderThickness="1">
+                                <TextBlock x:Name="atalhoDaNovidade" FontSize="12" Foreground="White" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <!-- Pausa o chat de verdade: o aviso da pausa, na tela, diz como continuar -->
+                            <Button x:Name="botaoTestarPausa" Style="{StaticResource BotaoPrincipal}" Content="Testar agora" Height="30"
+                                    Padding="14,0" Click="TestarPausa_Click" />
+                            <Button x:Name="botaoEntendiNovidade" Content="Entendi" Height="30" Padding="14,0" Margin="8,0,0,0"
+                                    Click="EntendiNovidade_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Popup>
 
         <Popup x:Name="painelFundo" PlacementTarget="{Binding ElementName=botaoFundo}" Placement="Bottom"

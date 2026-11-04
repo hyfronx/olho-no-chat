@@ -10,7 +10,7 @@ using OlhoNoChat.Configuracoes;
 namespace OlhoNoChat.Janelas.Chat;
 
 /// <summary>
-/// A barra laranja da janela do chat: ocultar bordas, tamanho do texto e fundo (com os painéis e a rodinha), sempre no
+/// A barra laranja da janela do chat: ocultar bordas, pausar, tamanho do texto e fundo (com os painéis e a rodinha), sempre no
 /// topo, Chat Multiplataforma, escrever, Configurações e fechar. Arrastar a barra (fora dos botões) move a janela; clique duplo não maximiza.
 /// Quem decide e aplica é a janela: a barra só avisa o que foi pedido e mostra o estado que a janela passa.
 /// </summary>
@@ -20,6 +20,7 @@ public partial class BarraDeCima : UserControl
     private static readonly TimeSpan ProtecaoDoClique = TimeSpan.FromMilliseconds(300);
 
     private bool _mostrando;
+    private bool _acompanhaAJanela;
     private Popup? _painelFechado;
     private DateTime _fechouEm = DateTime.MinValue;
 
@@ -35,6 +36,21 @@ public partial class BarraDeCima : UserControl
         ajusteFundo.FecharPedido += FecharPaineis;
         ajusteTamanhoDoTexto.DicaDoPadrao = $"Voltar ao padrão ({Math.Round(Opcoes.TamanhoDoTextoPadrao * 100)}%)";
         ajusteFundo.DicaDoPadrao = $"Voltar ao padrão ({Math.Round(Opcoes.FundoPadrao / 2.55)}%)";
+
+        // Um popup não acompanha a janela sozinho: arrastando a janela, o balão da novidade é posto de novo embaixo do botão
+        Loaded += (_, _) =>
+        {
+            if (_acompanhaAJanela || Window.GetWindow(this) is not Window janela)
+                return;
+            _acompanhaAJanela = true;
+            janela.LocationChanged += (_, _) =>
+            {
+                if (!balaoNovidade.IsOpen)
+                    return;
+                balaoNovidade.HorizontalOffset += 0.01;
+                balaoNovidade.HorizontalOffset -= 0.01;
+            };
+        };
 
         // O Closed do painel só vem depois da animação de sumir: o clique que o fechou já teria aberto de novo
         var aberto = DependencyPropertyDescriptor.FromProperty(Popup.IsOpenProperty, typeof(Popup));
@@ -64,6 +80,18 @@ public partial class BarraDeCima : UserControl
 
     /// <summary>O botão Escrever foi clicado: a janela abre ou fecha a caixa e depois mostra o estado.</summary>
     public event Action? EscreverPedido;
+
+    /// <summary>O botão de pausar foi clicado: a janela pausa ou continua o chat, e a página diz o estado novo.</summary>
+    public event Action? PausarPedido;
+
+    /// <summary>"Testar agora" no balão da novidade da pausa: a janela pausa o chat (e dá a novidade por vista).</summary>
+    public event Action? TestarPausaPedido;
+
+    /// <summary>"Entendi" no balão da novidade da pausa.</summary>
+    public event Action? NovidadeEntendida;
+
+    /// <summary>O balão da novidade da pausa está na tela.</summary>
+    public bool NovidadeAberta => balaoNovidade.IsOpen;
 
     /// <summary>O tamanho do texto escolhido (0,5 a 2,5).</summary>
     public event Action<double>? TamanhoDoTextoEscolhido;
@@ -121,6 +149,36 @@ public partial class BarraDeCima : UserControl
         botaoEscrever.ToolTip = dica;
     }
 
+    /// <summary>
+    /// O botão de pausar só existe no chat Padrão. Pausado, fica aceso com o ▶ (continuar); ao vivo e enquanto o chat
+    /// rola até a última mensagem, mostra o ⏸. O estado também vai para a automação (HelpText).
+    /// </summary>
+    public void MostrarPausa(bool existe, bool pausado, bool continuando, Atalho? atalho)
+    {
+        botaoPausar.Visibility = existe ? Visibility.Visible : Visibility.Collapsed;
+        _mostrando = true;
+        botaoPausar.IsChecked = pausado;
+        _mostrando = false;
+        iconePausar.Text = pausado ? "" : "";
+        AutomationProperties.SetHelpText(botaoPausar, pausado ? "pausado" : continuando ? "continuando" : "ao vivo");
+        botaoPausar.ToolTip = Atalho.NaDica(pausado
+                ? "Continuar: o chat rola sozinho até a última mensagem"
+                : continuando
+                    ? "Pausar de novo (o chat está rolando até a última mensagem)"
+                    : "Pausar o chat\nAs mensagens continuam chegando; ao continuar, ele rola sozinho até a última.",
+            atalho);
+    }
+
+    /// <summary>O balão da novidade da pausa, apontando para o botão, com o atalho (sem atalho, a linha dele some).</summary>
+    public void MostrarNovidadeDaPausa(Atalho? atalho)
+    {
+        linhaAtalhoDaNovidade.Visibility = Atalho.Existe(atalho) ? Visibility.Visible : Visibility.Collapsed;
+        atalhoDaNovidade.Text = Atalho.TextoOuNenhum(atalho);
+        balaoNovidade.IsOpen = true;
+    }
+
+    public void FecharNovidade() => balaoNovidade.IsOpen = false;
+
     public void MostrarAtalhoDasBordas(Atalho? atalho) =>
         botaoOcultarBordas.ToolTip = Atalho.NaDica(
             "Ocultar bordas\nPara mostrar de novo: o atalho ou o ícone do Olho no Chat perto do relógio.", atalho);
@@ -163,6 +221,16 @@ public partial class BarraDeCima : UserControl
         if (!_mostrando)
             EscreverPedido?.Invoke();
     }
+
+    private void Pausar_Mudou(object sender, RoutedEventArgs e)
+    {
+        if (!_mostrando)
+            PausarPedido?.Invoke();
+    }
+
+    private void TestarPausa_Click(object sender, RoutedEventArgs e) => TestarPausaPedido?.Invoke();
+
+    private void EntendiNovidade_Click(object sender, RoutedEventArgs e) => NovidadeEntendida?.Invoke();
 
     // --- Painéis ---------------------------------------------------------------------------------------------
 

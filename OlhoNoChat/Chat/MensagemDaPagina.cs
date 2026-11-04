@@ -41,4 +41,13 @@ public enum MensagemDaPagina
 
     /// <summary>Padrão: sem canal da Kick para ler.</summary>
     KickDesligado,
+
+    /// <summary>Padrão: o chat foi pausado (as mensagens continuam chegando embaixo do aviso da pausa).</summary>
+    ChatPausado,
+
+    /// <summary>Padrão: a pausa acabou e o chat está rolando sozinho até a última mensagem.</summary>
+    ChatContinuando,
+
+    /// <summary>Padrão: o chat acompanha as mensagens novas (chegou na última depois de uma pausa).</summary>
+    ChatAoVivo,
 }

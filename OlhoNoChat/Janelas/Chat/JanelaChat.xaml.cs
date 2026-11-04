@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Chat;
@@ -47,6 +48,9 @@ public partial class JanelaChat : Window
     private readonly AtalhosGlobais _atalhos;
     private readonly TocadorDeAviso _som = new();
     private JanelaConfiguracoes? _janelaDeConfiguracoes;
+    // A pausa do chat Padrão como a página contou (ChatAoVivo, ChatPausado ou ChatContinuando)
+    private MensagemDaPagina _pausa = MensagemDaPagina.ChatAoVivo;
+    private DispatcherTimer? _esperaDaNovidade;
     private bool _temWebView2;
     private bool _fechando;
 
@@ -120,6 +124,21 @@ public partial class JanelaChat : Window
         {
             if (WindowState == WindowState.Maximized)
                 WindowState = WindowState.Normal;
+            // Um popup ficaria solto na tela com a janela minimizada
+            if (WindowState == WindowState.Minimized)
+                EsconderNovidade();
+            else
+                MostrarNovidadeSeFaltar();
+        };
+        _faixa.PropertyChanged += (_, e) =>
+        {
+            // O balão ficaria por cima das caixas da faixa aberta
+            if (e.PropertyName != nameof(LogicaFaixaDoCanal.EditorAberto))
+                return;
+            if (_faixa.EditorAberto)
+                EsconderNovidade();
+            else
+                MostrarNovidadeSeFaltar();
         };
         Deactivated += (_, _) =>
         {
@@ -167,8 +186,33 @@ public partial class JanelaChat : Window
                 JanelaDoWindows.AreaDoMonitorPrincipal());
             if (lugar is Retangulo novo)
                 JanelaDoWindows.MoverPara(hwnd, novo);
+            else if (PuxarParaDentro(hwnd, agora) is Retangulo dentro)
+            {
+                // Pelo próprio WPF: ao aparecer, ele põe a janela no Left/Top dele (o gravado), por cima de um SetWindowPos
+                double escala = JanelaDoWindows.EscalaDe(hwnd);
+                Left = dentro.Esquerda / escala;
+                Top = dentro.Topo / escala;
+            }
         }
         AplicarEstado(); // o clique atravessa precisa da janela do Windows
+    }
+
+    // Gravada menor que o mínimo de agora (de uma versão antiga), a janela cresce para a direita e para baixo: o que
+    // cresce para fora do monitor volta para dentro. Aqui ela ainda pode estar com o tamanho gravado (o WPF aplica o
+    // mínimo depois), então a conta é feita com o tamanho já crescido
+    private Retangulo? PuxarParaDentro(IntPtr hwnd, Retangulo agora)
+    {
+        if (Opcoes.Janela is not PosicaoDaJanela gravada || JanelaDoWindows.AreaDoMonitorDe(hwnd) is not Retangulo area)
+            return null;
+        double escala = JanelaDoWindows.EscalaDe(hwnd);
+        int minimaX = (int)Math.Ceiling(MinWidth * escala);
+        int minimaY = (int)Math.Ceiling(MinHeight * escala);
+        int cresceuX = Math.Max(0, minimaX - (int)Math.Round(gravada.Largura * escala));
+        int cresceuY = Math.Max(0, minimaY - (int)Math.Round(gravada.Altura * escala));
+        if (cresceuX == 0 && cresceuY == 0)
+            return null;
+        Retangulo crescida = Retangulo.De(agora.Esquerda, agora.Topo, Math.Max(agora.Largura, minimaX), Math.Max(agora.Altura, minimaY));
+        return PosicaoNaTela.PuxarParaDentro(crescida, area, cresceuX, cresceuY);
     }
 
     private async Task PrepararNavegadorAsync()
@@ -280,6 +324,7 @@ public partial class JanelaChat : Window
         if (!_logica.CaixaDoAppNaTela && caixaDeEscrever.EmotesAbertos)
             caixaDeEscrever.FecharEmotes();
         barraDeCima.MostrarEscrever(_caixa.BotaoEscreverNaTela,_caixa.Aberta(bordas), _caixa.DicaDoBotaoEscrever(bordas));
+        MostrarPausa();
 
         desenhoDoCanto.Visibility = _logica.CantoLivre ? Visibility.Visible : Visibility.Collapsed;
         _canto.Atualizar(_navegador.Controle, _logica.CantoLivre, margem);
@@ -316,6 +361,7 @@ public partial class JanelaChat : Window
         _avisos.EsconderBordasOcultas();
         _sempreNaFrente.Ativar();
         _sempreNaFrente.Rajada();
+        MostrarNovidadeSeFaltar();
     }
 
     private void OcultarBordas()
@@ -326,6 +372,7 @@ public partial class JanelaChat : Window
         _caixa.BordasOcultas();
         _logica.OcultarBordas();
         barraDeCima.FecharPaineis();
+        EsconderNovidade(); // volta com as bordas
         AplicarEstado();
         AtualizarPagina();
         _avisos.PedirBordasOcultas();
@@ -432,6 +479,14 @@ public partial class JanelaChat : Window
                 AplicarSempreNoTopo();
         };
         barraDeCima.EscreverPedido += ClicarEmEscrever;
+        barraDeCima.PausarPedido += AlternarPausa;
+        barraDeCima.NovidadeEntendida += NovidadeVista;
+        barraDeCima.TestarPausaPedido += () =>
+        {
+            NovidadeVista();
+            if (_pausa != MensagemDaPagina.ChatPausado)
+                AlternarPausa();
+        };
         barraDeCima.MultiplataformaPedido += ligado => _ = AlternarMultiplataformaAsync(ligado);
         barraDeCima.TamanhoDoTextoEscolhido += EscolherTamanhoDoTexto;
         barraDeCima.FundoEscolhido += EscolherFundo;
@@ -456,7 +511,9 @@ public partial class JanelaChat : Window
         _atalhos.Definir("ModoRolagem", Opcoes.AtalhoModoRolagem, AlternarModoRolagem);
         _atalhos.Definir("SempreNoTopo", Opcoes.AtalhoSempreNoTopo, AlternarSempreNoTopo);
         _atalhos.Definir("EscreverNoChat", Opcoes.AtalhoEscrever, AtalhoDeEscrever);
+        _atalhos.Definir("PausarChat", Opcoes.AtalhoPausar, AlternarPausa);
         barraDeCima.MostrarAtalhoDasBordas(Opcoes.AtalhoBordas);
+        MostrarPausa();
     }
 
     // Uma mensagem para a janela antes do WPF
@@ -481,6 +538,66 @@ public partial class JanelaChat : Window
             }
         }
         return IntPtr.Zero;
+    }
+
+    // --- Pausar o chat ---------------------------------------------------------------------------------------
+
+    // O botão da barra e o atalho. Só o Padrão pausa: a página para de rolar, guarda as mensagens que chegam embaixo do
+    // aviso da pausa e, ao continuar, rola sozinha até a última (browser/chat.js, "Pause"); ela conta o estado novo
+    private void AlternarPausa()
+    {
+        if (!_temWebView2)
+            return;
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.AlternarPausa);
+        else if (_navegador.Pagina is ChatOficialDaTwitch or ChatEnderecoPersonalizado)
+            _avisos.Mostrar("Pausar o chat só funciona com o tipo de chat Padrão.");
+        MostrarPausa(); // o botão volta ao estado de verdade até a página responder
+    }
+
+    private void MostrarPausa() =>
+        barraDeCima.MostrarPausa(_temWebView2 && _navegador.Pagina is ChatPadrao, _pausa == MensagemDaPagina.ChatPausado,
+            _pausa == MensagemDaPagina.ChatContinuando, Opcoes.AtalhoPausar);
+
+    // --- Novidades (o balão que aparece uma vez só) -------------------------------------------------------------
+
+    // Quando pode ter passado a dar para mostrar o balão da pausa (a página carregou, as bordas voltaram, as
+    // Configurações ou a faixa fecharam): espera um pouco, porque a página acabou de aparecer, e confere de novo
+    private void MostrarNovidadeSeFaltar()
+    {
+        if (!PodeMostrarANovidade() || barraDeCima.NovidadeAberta)
+            return;
+        _esperaDaNovidade?.Stop();
+        _esperaDaNovidade = new DispatcherTimer { Interval = Novidades.Espera };
+        _esperaDaNovidade.Tick += (_, _) =>
+        {
+            _esperaDaNovidade?.Stop();
+            if (PodeMostrarANovidade() && !barraDeCima.NovidadeAberta)
+                barraDeCima.MostrarNovidadeDaPausa(Opcoes.AtalhoPausar);
+        };
+        _esperaDaNovidade.Start();
+    }
+
+    private bool PodeMostrarANovidade() =>
+        _temWebView2 && !_fechando && WindowState != WindowState.Minimized
+        && Novidades.PodeMostrarAPausa(Opcoes.NovidadesVistas, _navegador.Pagina is ChatPadrao && _navegador.PaginaPronta,
+            _logica.BordasVisiveis, _faixa.EditorAberto, _janelaDeConfiguracoes != null);
+
+    // O app tira o balão da tela (bordas ocultas, Configurações, outra página, faixa aberta): ele volta quando der
+    private void EsconderNovidade()
+    {
+        _esperaDaNovidade?.Stop();
+        barraDeCima.FecharNovidade();
+    }
+
+    // A pessoa viu: "Entendi", "Testar agora" ou pausou com o balão aberto. Não aparece mais
+    private void NovidadeVista()
+    {
+        EsconderNovidade();
+        if (Opcoes.NovidadesVistas.Contains(Novidades.Pausa))
+            return;
+        Opcoes.NovidadesVistas.Add(Novidades.Pausa);
+        _arquivo.Gravar();
     }
 
     // --- Caixa de escrever -----------------------------------------------------------------------------------
@@ -724,6 +841,9 @@ public partial class JanelaChat : Window
                 TerminarEscrita(devolverFoco: false);
             _faixa.PaginaComecouACarregar(_navegador.Pagina?.Canal != null);
             _faixa.ConexaoDaKick = EstadoDaKick.Desligado; // a página nova conecta de novo (e avisa)
+            _pausa = MensagemDaPagina.ChatAoVivo; // a página nova começa acompanhando as mensagens
+            MostrarPausa();
+            EsconderNovidade(); // volta quando a página nova carregar, se ela for a do Padrão
         };
 
         _navegador.Carregou += sucesso =>
@@ -737,6 +857,7 @@ public partial class JanelaChat : Window
             ContarAPaginaOsEstados();
             MostrarAvisosQueEsperam();
             _ = LigarResgatesAsync();
+            MostrarNovidadeSeFaltar();
         };
 
         _navegador.Mensagem += mensagem =>
@@ -768,6 +889,14 @@ public partial class JanelaChat : Window
                     break;
                 case MensagemDaPagina.SairDoModoRolagem:
                     SairDoModoRolagem();
+                    break;
+                case MensagemDaPagina.ChatPausado or MensagemDaPagina.ChatContinuando or MensagemDaPagina.ChatAoVivo
+                    when _navegador.Pagina is ChatPadrao:
+                    _pausa = mensagem;
+                    MostrarPausa();
+                    // Pausou (o botão ou o atalho) com o balão da novidade aberto: já aprendeu
+                    if (mensagem == MensagemDaPagina.ChatPausado && barraDeCima.NovidadeAberta)
+                        NovidadeVista();
                     break;
                 case MensagemDaPagina.EscritaEnviada or MensagemDaPagina.EscritaCancelada:
                     // A caixa da Twitch: Esc fecha; enviar fecha só se aberta pelo atalho com "Fechar a caixa depois de enviar"
@@ -872,6 +1001,7 @@ public partial class JanelaChat : Window
             _ = AplicarOpcoesSalvasAsync();
         };
 
+        EsconderNovidade(); // ficaria por cima das Configurações
         try
         {
             janela.ShowDialog();
@@ -882,6 +1012,7 @@ public partial class JanelaChat : Window
         }
         MostrarAvisosQueEsperam();
         _atalhos.Ligados = true;
+        MostrarNovidadeSeFaltar();
     }
 
     // "Salvar" nas Configurações (ou nos Filtros do chat): aplica na hora, recarregando o chat só quando precisa
@@ -918,7 +1049,7 @@ public partial class JanelaChat : Window
         WindowState = WindowState.Normal;
         Left = 10;
         Top = 10;
-        Width = 380; // o mesmo tamanho da primeira abertura (decisão 7; 380 desde que o botão do Chat Multiplataforma cresceu)
+        Width = 416; // o mesmo tamanho da primeira abertura (decisão 7; 416 desde o botão de pausar)
         Height = 530;
 
         if (MessageBox.Show("Abrir a pasta de configurações?", "Pasta de configurações", MessageBoxButton.YesNo, MessageBoxImage.Question)

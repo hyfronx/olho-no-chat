@@ -27,6 +27,10 @@ public sealed class Opcoes
     // Texto em 80% e fundo escuro em 65% (o fundo vai de 0 a 255: 165 aparece como 65%)
     public const double TamanhoDoTextoPadrao = 0.8;
     public const byte FundoPadrao = 165;
+    // A velocidade fixa de continuar a pausa, em mensagens de uma linha por segundo (aba Chat)
+    public const double LinhasPorSegundoMinimo = 0.5;
+    public const double LinhasPorSegundoMaximo = 6;
+    public const double LinhasPorSegundoPadrao = 1.5;
 
     public int Versao { get; set; } = VersaoAtual;
 
@@ -51,6 +55,12 @@ public sealed class Opcoes
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Do jeito que foi digitado na aba Chat.</summary>
     public string SegundosParaApagar { get; set; } = "120";
+    /// <summary>
+    /// Pausar o chat (só no Padrão): ao continuar, ele rola sozinho até a última mensagem no ritmo de leitura, pela
+    /// quantidade de texto que vai aparecendo; desligado, na velocidade fixa <see cref="LinhasPorSegundoAoContinuar"/>.
+    /// </summary>
+    public bool VelocidadeAutomaticaAoContinuar { get; set; } = true;
+    public double LinhasPorSegundoAoContinuar { get; set; } = LinhasPorSegundoPadrao;
     public bool EsconderBots { get; set; } = true;
     public bool EsconderGifs { get; set; } = false;
     public bool EsconderOutrosCanais { get; set; } = false;
@@ -127,6 +137,7 @@ public sealed class Opcoes
     public Atalho? AtalhoSempreNoTopo { get; set; } = new(Key.F8, ModifierKeys.Control | ModifierKeys.Alt);
     // F10 não: Alt + F10 é um atalho comum de gravação de jogo
     public Atalho? AtalhoEscrever { get; set; } = new(Key.F11, ModifierKeys.Control | ModifierKeys.Alt);
+    public Atalho? AtalhoPausar { get; set; } = new(Key.F6, ModifierKeys.Control | ModifierKeys.Alt);
 
     // Twitch
     public bool MostrarResgates { get; set; } = false;
@@ -149,6 +160,9 @@ public sealed class Opcoes
     /// <summary>Onde a janela do chat estava quando fechou; null = nunca fechou (primeira abertura).</summary>
     public PosicaoDaJanela? Janela { get; set; }
 
+    /// <summary>As novidades já apresentadas (o balão que aparece uma vez só, ver <see cref="Janelas.Chat.Novidades"/>).</summary>
+    public List<string> NovidadesVistas { get; set; } = [];
+
     /// <summary>
     /// Valores que o app não sabe usar (arquivo editado à mão, ou valores de versões antigas) voltam para um que ele
     /// sabe: tema e tipo de chat que não existem mais, tamanho do texto zerado, listas e textos vazios (null).
@@ -169,6 +183,14 @@ public sealed class Opcoes
             TamanhoDoTexto = TamanhoDoTextoPadrao;
         if (float.IsNaN(Volume))
             Volume = padrao.Volume;
+        // A pausa chegou na 2.6.0 com Ctrl + Alt + F6: se essa combinação já era de outro atalho, ela não funcionaria
+        // (o outro fica com ela), então a pausa fica sem atalho e a pessoa escolhe outro na aba Geral
+        if (Atalho.Existe(AtalhoPausar)
+            && new[] { AtalhoBordas, AtalhoModoRolagem, AtalhoSempreNoTopo, AtalhoEscrever }.Contains(AtalhoPausar))
+            AtalhoPausar = null;
+        LinhasPorSegundoAoContinuar = double.IsNaN(LinhasPorSegundoAoContinuar)
+            ? LinhasPorSegundoPadrao
+            : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);
 
         if (EsconderAvisosAntigo == true)
         {
@@ -194,6 +216,8 @@ public sealed class Opcoes
         PastaDosSons ??= padrao.PastaDosSons;
         ListaDeUsuarios ??= [];
         UsuariosBloqueados ??= [];
+        NovidadesVistas ??= [];
+        NovidadesVistas.RemoveAll(novidade => novidade == null);
         ListaDeUsuarios.RemoveAll(nome => nome == null);
         UsuariosBloqueados.RemoveAll(nome => nome == null);
 
@@ -204,7 +228,7 @@ public sealed class Opcoes
 
     /// <summary>
     /// "Restaurar tudo para o padrão": as opções da primeira instalação, menos o que não é opção: os canais, a conta da
-    /// Twitch, as listas de nomes dos filtros e a posição da janela.
+    /// Twitch, as listas de nomes dos filtros, a posição da janela e as novidades já vistas.
     /// </summary>
     public Opcoes RestauradasParaOPadrao() => new()
     {
@@ -216,5 +240,6 @@ public sealed class Opcoes
         ListaDeUsuarios = ListaDeUsuarios,
         UsuariosBloqueados = UsuariosBloqueados,
         Janela = Janela,
+        NovidadesVistas = NovidadesVistas,
     };
 }

@@ -66,6 +66,16 @@ internal static class JanelaDoWindows
     public static Retangulo AreaDoMonitorPrincipal() =>
         AreaDoMonitor(MonitorFromPoint(new POINT(), MONITOR_DEFAULTTOPRIMARY)) ?? new Retangulo(0, 0, 1280, 720);
 
+    /// <summary>A área útil do monitor onde está a janela (o mais perto, se ela estiver fora de todos), em pixels.</summary>
+    public static Retangulo? AreaDoMonitorDe(IntPtr janela) => AreaDoMonitor(MonitorFromWindow(janela, MONITOR_DEFAULTTONEAREST));
+
+    /// <summary>A escala do monitor da janela (1,5 = 150%). Vale já na criação, antes de o WPF saber a dele.</summary>
+    public static double EscalaDe(IntPtr janela)
+    {
+        uint dpi = GetDpiForWindow(janela);
+        return dpi > 0 ? dpi / 96.0 : 1;
+    }
+
     private static Retangulo? AreaDoMonitor(IntPtr monitor)
     {
         var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };

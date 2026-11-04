@@ -18,6 +18,17 @@ public class LogicaGeralTestes
         Assert.Equal(aceitaClique, geral.ProcurarAgoraCommand.CanExecute(null));
     }
 
+    [Theory]
+    [InlineData(0.5, "0,5 linha/s")]
+    [InlineData(1, "1 linha/s")]
+    [InlineData(1.5, "1,5 linha/s")]
+    [InlineData(2, "2 linhas/s")]
+    [InlineData(6, "6 linhas/s")]
+    public void VelocidadeDeContinuar_EmLinhasPorSegundo(double valor, string texto)
+    {
+        Assert.Equal(texto, LogicaChat.LinhasPorSegundo(valor));
+    }
+
     [Fact]
     public void ProcurarAgora_EnquantoProcuraNaoPedeDeNovo()
     {
