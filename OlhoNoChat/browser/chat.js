@@ -1504,6 +1504,15 @@
             if (line.classList.contains('chat_line')) count++;
         readingPill.textContent = '↓ ' + messagesText(count);
         readingPill.style.display = count ? 'block' : 'none';
+        if (!count) return;
+        // At the top, under what is already there: the connection pill (while not faded) and the scroll mode banner
+        let top = 6;
+        for (const above of [pill, scrollBanner]) {
+            if (!above.isConnected || above.classList.contains('faded') || getComputedStyle(above).display === 'none') continue;
+            const rect = above.getBoundingClientRect();
+            if (rect.height) top = Math.max(top, rect.bottom + 4);
+        }
+        readingPill.style.top = top + 'px';
     }
 
     if (window.oncScrollModeWanted) window.oncSetScrollMode(window.oncScrollModeWanted);

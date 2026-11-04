@@ -398,11 +398,13 @@ body.onc-links-on .onc-when-click {
     display: none;
 }
 
-/* While the chat reads on by itself: how many messages are still below, small in the corner */
+/* While the chat reads on by itself: how many messages are still below, small in the top corner. Not at the bottom:
+   there each new message comes in to be read (it covered them); at the top the lines on screen were read already and
+   are going away. Below the connection pill or the scroll mode banner when they are there (chat.js) */
 #onc-reading {
     left: auto;
     right: 10px;
-    bottom: 8px;
+    top: 6px;
     transform: none;
     padding: 3px 10px 4px;
     border-width: 1px;
