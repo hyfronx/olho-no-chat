@@ -45,7 +45,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
 
         var conta = Montar.Conta(new TwitchFalsa(), new ContaSalvaNaMemoria());
         var twitch = new LogicaTwitch(new AutorizacaoNoNavegador(NullLogger<AutorizacaoNoNavegador>.Instance), conta,
-            new ResgatesDePontos(new ApiDaTwitch(new TwitchFalsa()), conta, NullLogger<ResgatesDePontos>.Instance));
+            new EventSubDaTwitch(new ApiDaTwitch(new TwitchFalsa()), conta, NullLogger<EventSubDaTwitch>.Instance));
         return new LogicaConfiguracoes(_arquivo, twitch, (arquivo, volume, saida) => _previas.Add((arquivo, volume, saida)));
     }
 

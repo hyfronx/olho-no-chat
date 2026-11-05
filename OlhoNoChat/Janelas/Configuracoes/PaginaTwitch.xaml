@@ -138,6 +138,31 @@
                     </Grid>
                 </Border>
             </StackPanel>
+
+            <!-- Fora de recursosDaTwitch: o AutoMod também vale no Chat Multiplataforma (só a Twitch tem AutoMod) -->
+            <TextBlock Text="Mensagens barradas pelo AutoMod" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE83D;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Aprovar ou recusar no chat" Style="{DynamicResource Rotulo}" />
+                        <TextBlock x:Name="dicaAutoMod" Text="{Binding DicaDoAutoMod}" Style="{DynamicResource Dica}" />
+                        <TextBlock x:Name="problemaDoAutoMod" Text="{Binding ProblemaDoAutoMod}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
+                                   Visibility="{Binding ProblemaDoAutoMod, Converter={StaticResource VisivelSe}}" />
+                        <!-- Se a Twitch aceitou no canal aberto agora (ou por que não) -->
+                        <TextBlock x:Name="situacaoDoAutoMod" Text="{Binding SituacaoDoAutoMod}" Style="{DynamicResource Dica}" Margin="0,6,0,0"
+                                   Foreground="{DynamicResource LaranjaClaro}"
+                                   Visibility="{Binding SituacaoDoAutoMod, Converter={StaticResource VisivelSe}}" />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorAutoMod" Grid.Column="2" IsChecked="{Binding AprovarAutoMod}"
+                                     AutomationProperties.Name="Aprovar ou recusar no chat" />
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

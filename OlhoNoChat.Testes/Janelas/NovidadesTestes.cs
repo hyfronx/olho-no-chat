@@ -3,20 +3,44 @@ using OlhoNoChat.Janelas.Chat;
 
 namespace OlhoNoChat.Testes.Janelas;
 
-/// <summary>O balão da novidade da pausa: uma vez só, e só quando o botão de pausar está na tela.</summary>
+/// <summary>Os balões das novidades: uma vez só cada, todas as que faltam em sequência, e só quando o botão delas está na tela.</summary>
 public class NovidadesTestes
 {
+    private static string? Proxima(IReadOnlyCollection<string> vistas, bool autoMod = true,
+        bool padrao = true, bool bordas = true, bool faixa = false, bool configuracoes = false) =>
+        Novidades.Proxima(vistas, autoMod, padrao, bordas, faixa, configuracoes);
+
     [Fact]
-    public void ChatPadraoComBordas_AindaNaoVista_Aparece()
+    public void NenhumaVista_APausaPrimeiro()
     {
-        Assert.True(Novidades.PodeMostrarAPausa([], chatPadraoCarregado: true, bordasVisiveis: true, faixaAberta: false,
-            configuracoesAbertas: false));
+        Assert.Equal(Novidades.Pausa, Proxima([]));
     }
 
     [Fact]
-    public void JaVista_NuncaMais()
+    public void PausaVista_DepoisOAutoMod()
     {
-        Assert.False(Novidades.PodeMostrarAPausa([Novidades.Pausa], true, true, false, false));
+        Assert.Equal(Novidades.AutoMod, Proxima([Novidades.Pausa]));
+    }
+
+    [Fact]
+    public void AutoMod_EsperaAOpcaoEAConferenciaDaConta()
+    {
+        // Opção desligada, ou a conta conectada ainda sem as permissões conferidas
+        Assert.Null(Proxima([Novidades.Pausa], autoMod: false));
+        // A da pausa não depende disso
+        Assert.Equal(Novidades.Pausa, Proxima([], autoMod: false));
+    }
+
+    [Fact]
+    public void TodasVistas_NuncaMais()
+    {
+        Assert.Null(Proxima([Novidades.Pausa, Novidades.AutoMod]));
+    }
+
+    [Fact]
+    public void QuemSoViuADoAutoMod_AindaVeAPausa()
+    {
+        Assert.Equal(Novidades.Pausa, Proxima([Novidades.AutoMod]));
     }
 
     [Theory]
@@ -26,15 +50,16 @@ public class NovidadesTestes
     [InlineData(true, true, false, true)]   // Configurações abertas
     public void SemOBotaoNaTela_Espera(bool padrao, bool bordas, bool faixa, bool configuracoes)
     {
-        Assert.False(Novidades.PodeMostrarAPausa([], padrao, bordas, faixa, configuracoes));
+        Assert.Null(Proxima([], padrao: padrao, bordas: bordas, faixa: faixa, configuracoes: configuracoes));
+        Assert.Null(Proxima([Novidades.Pausa], padrao: padrao, bordas: bordas, faixa: faixa, configuracoes: configuracoes));
     }
 
     [Fact]
     public void RestaurarTudo_NaoMostraDeNovo()
     {
-        var opcoes = new Opcoes { NovidadesVistas = [Novidades.Pausa] };
+        var opcoes = new Opcoes { NovidadesVistas = [Novidades.Pausa, Novidades.AutoMod] };
 
-        Assert.Equal([Novidades.Pausa], opcoes.RestauradasParaOPadrao().NovidadesVistas);
+        Assert.Equal([Novidades.Pausa, Novidades.AutoMod], opcoes.RestauradasParaOPadrao().NovidadesVistas);
     }
 
     [Fact]

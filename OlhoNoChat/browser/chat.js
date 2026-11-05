@@ -836,8 +836,13 @@
         return VISIBLE.test(line.name || '') || !line.login ? line.name : line.login;
     }
 
-    // One chat line: time, name, ":" and the message (a /me message has no ":" and is in the user's color)
     function addLine(line) {
+        newLines.appendChild(buildLine(line));
+        scheduleLayout();
+    }
+
+    // One chat line: time, name, ":" and the message (a /me message has no ":" and is in the user's color)
+    function buildLine(line) {
         const div = document.createElement('div');
         div.className = 'chat_line';
         if (line.highlight) div.classList.add(line.highlight);
@@ -965,9 +970,7 @@
             message.prepend(amount, ' ');
         }
         div.append(' ', message);
-
-        newLines.appendChild(div);
-        scheduleLayout();
+        return div;
     }
 
     // --- Oversized characters ----------------------------------------------------------------------
@@ -1530,6 +1533,89 @@
         }
     }, 1000);
 
+    // --- AutoMod -------------------------------------------------------------------------------------
+    // Messages AutoMod held in the open channel, when the connected account owns or moderates it: the app reads them
+    // (EventSub) and keeps them in a queue, oldest first (Twitch/AutoModDoCanal.cs), and sends the state here. A card under
+    // the chat shows the oldest one ("1 de 3") with why it was held. With the borders shown (the window takes clicks) its
+    // buttons approve or deny it (onc:automod:allow|deny:<id>); without, the hint names the app's hotkeys, which act on
+    // that same message. The chat above gets shorter while the card is there, so it never covers the newest message.
+    // After a decision the card says how it went for a moment, also with the queue empty.
+
+    const AUTOMOD_NOTICE_MS = 2500;
+    const automodCard = document.createElement('div');
+    automodCard.id = 'onc-automod';
+    automodCard.innerHTML = '<div class="onc-automod-title"><span class="onc-automod-icon"></span>' +
+        '<span class="onc-automod-text"></span><span class="onc-automod-count"></span></div>' +
+        '<div class="onc-automod-body"><div class="onc-automod-message"></div><div class="onc-automod-actions">' +
+        '<button class="onc-automod-allow" title="Aprovar">✓</button><button class="onc-automod-deny" title="Recusar">✕</button>' +
+        '</div></div><div class="onc-automod-hint"></div><div class="onc-automod-notice"></div>';
+    document.body.append(automodCard);
+    let automodState = null;
+    let automodNoticeTimer = 0;
+
+    automodCard.querySelector('.onc-automod-allow').addEventListener('click', () => decideAutomod('allow'));
+    automodCard.querySelector('.onc-automod-deny').addEventListener('click', () => decideAutomod('deny'));
+
+    function decideAutomod(action) {
+        const current = automodState && automodState.current;
+        if (current) postToApp('onc:automod:' + action + ':' + current.id);
+    }
+
+    // The color the person had in the chat (their messages before this one), or one of Twitch's default colors
+    function chatColor(login) {
+        const lines = box.querySelectorAll(`.chat_line[data-nick="${CSS.escape(login)}"] .nick`);
+        const last = lines[lines.length - 1];
+        return last && last.style.color ? last.style.color : userColor(login, '');
+    }
+
+    function showAutomod() {
+        const state = automodState || {};
+        const current = state.current;
+        const text = automodCard.querySelector('.onc-automod-text');
+        const count = automodCard.querySelector('.onc-automod-count');
+        const message = automodCard.querySelector('.onc-automod-message');
+        const hint = automodCard.querySelector('.onc-automod-hint');
+        automodCard.querySelector('.onc-automod-notice').textContent = state.notice || '';
+        automodCard.classList.toggle('waiting', !!current);
+        automodCard.classList.toggle('shown', !!(current || state.notice));
+
+        message.textContent = '';
+        if (current) {
+            text.textContent = 'AutoMod segurou' + (current.reason ? ' · ' + current.reason : '');
+            count.textContent = state.total > 1 ? ' · 1 de ' + state.total : '';
+            const parts = addOtherEmotes(current.parts.map(part => typeof part === 'string'
+                ? part : { emote: twitchEmoteUrls(part.emoteId), name: part.name }));
+            message.append(buildLine({ login: current.login, name: current.name, color: chatColor(current.login), parts }));
+            // Each hotkey in the color of its button (green approves, red denies)
+            hint.textContent = '';
+            [[state.allowHotkey, 'aprova', 'allow'], [state.denyHotkey, 'recusa', 'deny']].filter(([key]) => key)
+                .forEach(([key, verb, kind], i) => {
+                    if (i > 0) hint.append(' · ');
+                    const part = document.createElement('span');
+                    part.className = 'onc-automod-key-' + kind;
+                    const keys = document.createElement('span');
+                    keys.className = 'onc-automod-key';
+                    keys.textContent = key;
+                    part.append(keys, ' ' + verb);
+                    hint.append(part);
+                });
+            if (!hint.firstChild) hint.textContent = 'Mostre as bordas para aprovar ou recusar';
+        } else {
+            text.textContent = 'AutoMod';
+            count.textContent = '';
+            hint.textContent = '';
+        }
+        fitAutomod();
+    }
+
+    // The chat ends where the card begins
+    function fitAutomod() {
+        const shown = automodCard.classList.contains('shown');
+        box.style.height = shown ? `calc(100% - ${10 + automodCard.offsetHeight + 6}px)` : '';
+        if (pinned && pause === 'live') scrollToBottom();
+    }
+    new ResizeObserver(fitAutomod).observe(automodCard);
+
     // --- YouTube (Chat Multiplataforma) -------------------------------------------------------------
     // The app reads the chat of a YouTube live (YouTube/LeitorDoYouTube.cs) and sends each message here
     // (ContratoComAPagina.AdicionarDoYouTube). It goes through the same filters and sound as the Twitch ones: the
@@ -1900,6 +1986,22 @@
                 reward.paired = true;
             }
             showLine({ login, name, color: userColor(login, color), action: true, redemption: true, reward, parts: addOtherEmotes([text]) }, '');
+        },
+
+        // The AutoMod queue (see "AutoMod"): { current: { id, login, name, parts, reason } or null, total, allowHotkey,
+        // denyHotkey, notice }. The notice (how the last decision went) shows for a moment.
+        automod(state) {
+            automodState = state;
+            clearTimeout(automodNoticeTimer);
+            if (state && state.notice) {
+                automodNoticeTimer = setTimeout(() => {
+                    if (automodState === state) {
+                        automodState = Object.assign({}, state, { notice: '' });
+                        showAutomod();
+                    }
+                }, AUTOMOD_NOTICE_MS);
+            }
+            showAutomod();
         },
 
         // For the app's watchdog: "open:<ms since Twitch last sent something>" or the state

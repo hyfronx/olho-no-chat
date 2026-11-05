@@ -142,9 +142,15 @@ public sealed class Opcoes
     // F10 não: Alt + F10 é um atalho comum de gravação de jogo
     public Atalho? AtalhoEscrever { get; set; } = new(Key.F11, ModifierKeys.Control | ModifierKeys.Alt);
     public Atalho? AtalhoPausar { get; set; } = new(Key.F6, ModifierKeys.Control | ModifierKeys.Alt);
+    // AutoMod: registrados só enquanto há mensagem esperando. Não F1 a F3 nem F12 (atalhos comuns de gravação e de
+    // captura de tela de jogo) nem F4 (soltar o Ctrl antes vira Alt + F4, que fecha o jogo); Home e End ficam juntos
+    public Atalho? AtalhoAprovarAutoMod { get; set; } = new(Key.Home, ModifierKeys.Control | ModifierKeys.Alt);
+    public Atalho? AtalhoRecusarAutoMod { get; set; } = new(Key.End, ModifierKeys.Control | ModifierKeys.Alt);
 
     // Twitch
     public bool MostrarResgates { get; set; } = false;
+    /// <summary>As mensagens que o AutoMod segurou aparecem no Padrão para aprovar ou recusar (só nos canais que a conta modera).</summary>
+    public bool AprovarAutoMod { get; set; } = true;
     /// <summary>false = a caixa "Escrever no chat…" do app; true = a caixa da própria Twitch (só no chat oficial).</summary>
     public bool CaixaDaTwitch { get; set; } = false;
     public bool FecharCaixaDepoisDeEnviar { get; set; } = false;
@@ -192,6 +198,12 @@ public sealed class Opcoes
         if (Atalho.Existe(AtalhoPausar)
             && new[] { AtalhoBordas, AtalhoModoRolagem, AtalhoSempreNoTopo, AtalhoEscrever }.Contains(AtalhoPausar))
             AtalhoPausar = null;
+        // Os do AutoMod chegaram na 2.7.0 do mesmo jeito
+        var anteriores = new[] { AtalhoBordas, AtalhoModoRolagem, AtalhoSempreNoTopo, AtalhoEscrever, AtalhoPausar };
+        if (Atalho.Existe(AtalhoAprovarAutoMod) && anteriores.Contains(AtalhoAprovarAutoMod))
+            AtalhoAprovarAutoMod = null;
+        if (Atalho.Existe(AtalhoRecusarAutoMod) && anteriores.Append(AtalhoAprovarAutoMod).Contains(AtalhoRecusarAutoMod))
+            AtalhoRecusarAutoMod = null;
         LinhasPorSegundoAoContinuar = double.IsNaN(LinhasPorSegundoAoContinuar)
             ? LinhasPorSegundoPadrao
             : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);

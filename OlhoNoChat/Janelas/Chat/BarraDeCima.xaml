@@ -168,32 +168,32 @@
             </chat:PainelDeAjuste>
         </Popup>
 
-        <!-- A novidade da pausa, uma vez só (Novidades): um balão apontando para o botão de pausar, por cima do chat. Não
-             fecha com um clique fora: só pelos botões dele (ou quando a janela o esconde) -->
+        <!-- As novidades, uma vez só cada (Novidades): um balão apontando para o botão delas, por cima do chat (a pausa no
+             botão de pausar, o AutoMod na engrenagem). Não fecha com um clique fora: só pelo "Entendi" (ou quando a janela
+             o esconde). O título, o texto e os atalhos vêm do código -->
         <Popup x:Name="balaoNovidade" PlacementTarget="{Binding ElementName=botaoPausar}" Placement="Bottom"
                VerticalOffset="2" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
             <StackPanel Width="290">
-                <!-- A ponta no meio do botão (34 px de largura) -->
-                <Path Data="M0,9 L9,0 L18,9 Z" Fill="{StaticResource LaranjaClaro}" Margin="8,0,0,-2" HorizontalAlignment="Left" />
+                <!-- A ponta no meio do botão (34 px de largura): na esquerda para a pausa, na direita para a engrenagem -->
+                <Path x:Name="pontaDaNovidade" Data="M0,9 L9,0 L18,9 Z" Fill="{StaticResource LaranjaClaro}" Margin="8,0,8,-2"
+                      HorizontalAlignment="Left" />
                 <Border Background="#1B1B1B" BorderBrush="{StaticResource LaranjaClaro}" BorderThickness="2" CornerRadius="10"
                         Padding="14,11,14,13">
                     <StackPanel>
-                        <TextBlock Text="Novo: pausar o chat" FontSize="15" FontWeight="SemiBold" Foreground="White" />
-                        <TextBlock Margin="0,5,0,0" FontSize="13" LineHeight="19" Foreground="#E6E6E6" TextWrapping="Wrap"
-                                   Text="Momento tenso na partida? Pause o chat: as mensagens continuam chegando e esperam você. Ao continuar, elas aparecem uma por uma, no ritmo de leitura (a velocidade muda em Configurações &gt; Chat)." />
-                        <StackPanel x:Name="linhaAtalhoDaNovidade" Orientation="Horizontal" Margin="0,9,0,0">
-                            <TextBlock Text="No jogo:" FontSize="12" Foreground="#BDBDBD" VerticalAlignment="Center" />
-                            <Border Margin="6,0,0,0" Padding="7,1,7,2" CornerRadius="5" Background="#2B2B2B" BorderBrush="#555555"
-                                    BorderThickness="1">
-                                <TextBlock x:Name="atalhoDaNovidade" FontSize="12" Foreground="White" />
-                            </Border>
-                        </StackPanel>
+                        <TextBlock x:Name="tituloDaNovidade" FontSize="15" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" />
+                        <TextBlock x:Name="textoDaNovidade" Margin="0,5,0,0" FontSize="13" LineHeight="19" Foreground="#E6E6E6"
+                                   TextWrapping="Wrap" />
+                        <!-- "No jogo:" e cada atalho numa tecla, um por linha, com o que ele faz depois -->
+                        <Grid x:Name="linhaAtalhoDaNovidade" Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                        </Grid>
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <!-- Pausa o chat de verdade: o aviso da pausa, na tela, diz como continuar -->
-                            <Button x:Name="botaoTestarPausa" Style="{StaticResource BotaoPrincipal}" Content="Testar agora" Height="30"
-                                    Padding="14,0" Click="TestarPausa_Click" />
-                            <Button x:Name="botaoEntendiNovidade" Content="Entendi" Height="30" Padding="14,0" Margin="8,0,0,0"
-                                    Click="EntendiNovidade_Click" />
+                            <Button x:Name="botaoEntendiNovidade" Style="{StaticResource BotaoPrincipal}" Content="Entendi" Height="30"
+                                    Padding="14,0" Click="EntendiNovidade_Click" />
                         </StackPanel>
                     </StackPanel>
                 </Border>

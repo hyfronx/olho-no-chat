@@ -81,10 +81,10 @@ public sealed class CssDoChatTestes
         Assert.DoesNotContain(".time_stamp", padrao);
 
         string css = CssDoChat.DoChatPadrao(new Opcoes { CorDoTexto = "#B8F5B0", ContornoDasLetras = "soft", Fonte = "Segoe UI", MostrarHorario = true });
-        Assert.Contains("#chat_box .chat_line .message:not([style*=\"color\"]) { color: #B8F5B0 !important; }", css);
-        Assert.Contains("#chat_box, #chat_box .chat_line, #chat_box .chat_line .nick, #chat_box .chat_line .message { text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.8) !important; }", css);
+        Assert.Contains(":is(#chat_box, .onc-automod-message) .chat_line .message:not([style*=\"color\"]) { color: #B8F5B0 !important; }", css);
+        Assert.Contains("#chat_box, :is(#chat_box, .onc-automod-message) .chat_line, :is(#chat_box, .onc-automod-message) .chat_line .nick, :is(#chat_box, .onc-automod-message) .chat_line .message { text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.8) !important; }", css);
         Assert.Contains("font-family: 'Segoe UI', sans-serif !important; letter-spacing: normal !important;", css);
-        Assert.Contains("#chat_box .chat_line .time_stamp { display: inline !important; color: #A8A8A8 !important; font-size: 15px !important;", css);
+        Assert.Contains(":is(#chat_box, .onc-automod-message) .chat_line .time_stamp { display: inline !important; color: #A8A8A8 !important; font-size: 15px !important;", css);
 
         // "Nenhum" (o padrão da primeira instalação) tira até o contorno do tema
         Assert.Contains("text-shadow: none !important;", CssDoChat.DoChatPadrao(new Opcoes()));

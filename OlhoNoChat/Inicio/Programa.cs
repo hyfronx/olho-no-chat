@@ -126,7 +126,7 @@ public static class Programa
         servicos.AddSingleton(sp => new ListaDeEmotes(sp.GetRequiredService<ApiDaTwitch>(), sp.GetRequiredService<ContaDaTwitch>(),
             sp.GetRequiredService<ILogger<ListaDeEmotes>>(), pastaDosEmotes));
         servicos.AddSingleton(sp => new ImagensDeEmotes(pastaDosEmotes, sp.GetRequiredService<ILogger<ImagensDeEmotes>>()));
-        servicos.AddSingleton<ResgatesDePontos>();
+        servicos.AddSingleton<EventSubDaTwitch>();
         servicos.AddSingleton(sp => new LeitorDoYouTube(sp.GetRequiredService<ILogger<LeitorDoYouTube>>()));
         servicos.AddSingleton(sp => new LeitorDoTikTok(sp.GetRequiredService<ILogger<LeitorDoTikTok>>()));
         servicos.AddSingleton(sp => new ProcuraDeAtualizacoes(sp.GetRequiredService<ILogger<ProcuraDeAtualizacoes>>(),
@@ -134,7 +134,7 @@ public static class Programa
         servicos.AddSingleton<IconeDaBandeja>();
         servicos.AddSingleton<JanelaChat>();
 #if DEBUG
-        SimuladorDoEventSub.RegistrarSeLigado(servicos); // resgates de mentira da Twitch CLI
+        SimuladorDoEventSub.RegistrarSeLigado(servicos); // eventos de mentira da Twitch CLI
 #endif
         return servicos.BuildServiceProvider();
     }

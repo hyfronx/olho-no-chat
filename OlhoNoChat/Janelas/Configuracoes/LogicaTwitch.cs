@@ -7,8 +7,8 @@ using OlhoNoChat.Twitch;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A aba Twitch: a conta (conectar e desconectar acontecem na hora, sem "Salvar"), a caixa de escrever e os resgates de
-/// pontos. As dicas citam o atalho de "Escrever no chat" salvo (não o que está sendo editado na aba Geral).
+/// A aba Twitch: a conta (conectar e desconectar acontecem na hora, sem "Salvar"), a caixa de escrever, os resgates de
+/// pontos e o AutoMod. As dicas citam os atalhos salvos (não os que estão sendo editados na aba Geral).
 /// </summary>
 public sealed partial class LogicaTwitch : LogicaDaPagina
 {
@@ -17,14 +17,16 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     private readonly AutorizacaoNoNavegador _autorizacao;
     private readonly ContaDaTwitch _conta;
-    private readonly ResgatesDePontos _resgates;
+    private readonly EventSubDaTwitch _resgates;
     // Os avisos da conta e dos resgates chegam de outras threads: a tela é atualizada na da janela
     private readonly SynchronizationContext? _tela = SynchronizationContext.Current;
     private Atalho? _atalhoEscreverSalvo;
+    private Atalho? _atalhoAprovarSalvo;
+    private Atalho? _atalhoRecusarSalvo;
     private bool _conferindo;
     private bool _ligada;
 
-    public LogicaTwitch(AutorizacaoNoNavegador autorizacao, ContaDaTwitch conta, ResgatesDePontos resgates)
+    public LogicaTwitch(AutorizacaoNoNavegador autorizacao, ContaDaTwitch conta, EventSubDaTwitch resgates)
     {
         _autorizacao = autorizacao;
         _conta = conta;
@@ -50,6 +52,42 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     [ObservableProperty]
     private bool _mostrarResgates;
+
+    [ObservableProperty]
+    private bool _aprovarAutoMod;
+
+    public string DicaDoAutoMod => TextoDaDicaDoAutoMod(_atalhoAprovarSalvo, _atalhoRecusarSalvo);
+
+    /// <summary>Por que o AutoMod não funciona com a conta ("" = funciona, ou sem conta: a dica da conta já diz).</summary>
+    public string ProblemaDoAutoMod => _conta.EstaConectada && _conta.PermissoesConferidas && !_conta.PodeModerarAutoMod
+        ? "Falta uma permissão nova: clique em \"Conectar de novo\", acima."
+        : string.Empty;
+
+    /// <summary>Se o AutoMod funciona no canal aberto agora ("" = não pedido: opção desligada, sem conta ou sem chat Padrão).</summary>
+    public string SituacaoDoAutoMod => TextoDaSituacao(_resgates.AutoMod);
+
+    public static string TextoDaSituacao(EventSubDaTwitch.SituacaoDoAutoMod situacao) => situacao switch
+    {
+        EventSubDaTwitch.SituacaoDoAutoMod.Funcionando => "Funcionando no canal aberto agora.",
+        EventSubDaTwitch.SituacaoDoAutoMod.NaoModera => "A sua conta não é dona nem moderadora do canal aberto: nada aparece nele.",
+        EventSubDaTwitch.SituacaoDoAutoMod.Falhou => "Não deu para falar com a Twitch agora. O AutoMod volta quando o chat carregar de novo ou você clicar em Salvar.",
+        _ => string.Empty,
+    };
+
+    /// <summary>A dica do AutoMod. A frase dos atalhos só cita os que existem.</summary>
+    public static string TextoDaDicaDoAutoMod(Atalho? aprovar, Atalho? recusar)
+    {
+        const string comum = "Quando o AutoMod segura uma mensagem num canal em que a sua conta é dona ou moderadora, ela " +
+                             "aparece embaixo do chat Padrão, uma por vez (a mais antiga primeiro). Com as bordas, use os botões";
+        string atalhos = (Atalho.Existe(aprovar), Atalho.Existe(recusar)) switch
+        {
+            (true, true) => $"; no jogo, {aprovar} aprova e {recusar} recusa.",
+            (true, false) => $"; no jogo, {aprovar} aprova.",
+            (false, true) => $"; no jogo, {recusar} recusa.",
+            _ => ".",
+        };
+        return comum + atalhos;
+    }
 
     public string DicaDaCaixa => TextoDaDicaDaCaixa(CaixaDeDigitar == 1, _atalhoEscreverSalvo);
 
@@ -88,6 +126,10 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         CaixaDeDigitar = opcoes.CaixaDaTwitch ? 1 : 0;
         FecharCaixaDepoisDeEnviar = opcoes.FecharCaixaDepoisDeEnviar;
         MostrarResgates = opcoes.MostrarResgates;
+        AprovarAutoMod = opcoes.AprovarAutoMod;
+        _atalhoAprovarSalvo = opcoes.AtalhoAprovarAutoMod;
+        _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
+        OnPropertyChanged(nameof(DicaDoAutoMod));
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
 
@@ -102,14 +144,18 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         opcoes.CaixaDaTwitch = CaixaDeDigitar == 1;
         opcoes.FecharCaixaDepoisDeEnviar = FecharCaixaDepoisDeEnviar;
         opcoes.MostrarResgates = MostrarResgates;
+        opcoes.AprovarAutoMod = AprovarAutoMod;
     }
 
     /// <summary>Depois de "Salvar": as dicas passam a citar o atalho que acabou de ser salvo.</summary>
     public void Salvou(Opcoes opcoes)
     {
         _atalhoEscreverSalvo = opcoes.AtalhoEscrever;
+        _atalhoAprovarSalvo = opcoes.AtalhoAprovarAutoMod;
+        _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
+        OnPropertyChanged(nameof(DicaDoAutoMod));
     }
 
     public override void Estado(IDictionary<string, string> estado)
@@ -117,6 +163,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         estado["Twitch.CaixaDeDigitar"] = CaixaDeDigitar.ToString();
         estado["Twitch.FecharCaixaDepoisDeEnviar"] = FecharCaixaDepoisDeEnviar.ToString();
         estado["Twitch.MostrarResgates"] = MostrarResgates.ToString();
+        estado["Twitch.AprovarAutoMod"] = AprovarAutoMod.ToString();
     }
 
     // ----- Conta -----
@@ -134,7 +181,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     [ObservableProperty]
     private bool _mostrarConectar;
 
-    /// <summary>"Conectar", ou "Conectar de novo" para pedir a permissão nova (emotes).</summary>
+    /// <summary>"Conectar", ou "Conectar de novo" para pedir uma permissão nova (emotes, AutoMod).</summary>
     [ObservableProperty]
     private string _textoConectar = "Conectar";
 
@@ -154,6 +201,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _resgates.ProblemaMudou += ProblemaMudou;
         MostrarConta();
         OnPropertyChanged(nameof(ProblemaDosResgates));
+        OnPropertyChanged(nameof(SituacaoDoAutoMod));
     }
 
     public void Desligar()
@@ -167,7 +215,11 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     private void ContaMudou() => NaTela(MostrarConta);
 
-    private void ProblemaMudou() => NaTela(() => OnPropertyChanged(nameof(ProblemaDosResgates)));
+    private void ProblemaMudou() => NaTela(() =>
+    {
+        OnPropertyChanged(nameof(ProblemaDosResgates));
+        OnPropertyChanged(nameof(SituacaoDoAutoMod));
+    });
 
     private void NaTela(Action acao)
     {
@@ -181,10 +233,11 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     {
         bool esperando = _autorizacao.EstaEsperando;
         bool conectada = _conta.EstaConectada;
-        // Conectada antes da 1.0.18: a lista de emotes precisa de uma permissão nova, dada ao conectar de novo
+        // Conectada antes da 1.0.18 (emotes) ou da 2.7.0 (AutoMod): falta uma permissão, dada ao conectar de novo
         bool semPermissaoDeEmotes = conectada && _conta.PermissoesConferidas && !_conta.PodeLerEmotes;
+        bool semPermissaoDoAutoMod = conectada && _conta.PermissoesConferidas && !_conta.PodeModerarAutoMod;
 
-        MostrarConectar = (!conectada || semPermissaoDeEmotes) && !esperando;
+        MostrarConectar = (!conectada || semPermissaoDeEmotes || semPermissaoDoAutoMod) && !esperando;
         TextoConectar = conectada ? "Conectar de novo" : "Conectar";
         MostrarCancelar = esperando;
         MostrarDesconectar = conectada && !esperando;
@@ -199,7 +252,9 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
             TituloDaConta = "Conectado como " + _conta.NomeMostrado;
             DicaDaConta = semPermissaoDeEmotes
                 ? "Para ver os seus emotes na caixa de escrever, clique em \"Conectar de novo\" (a Twitch pede uma permissão nova)."
-                : "Você pode escrever no chat, usar os seus emotes e mostrar os resgates de pontos.";
+                : semPermissaoDoAutoMod
+                    ? "Para aprovar as mensagens barradas pelo AutoMod, clique em \"Conectar de novo\" (a Twitch pede uma permissão nova)."
+                    : "Você pode escrever no chat, usar os seus emotes, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
         }
         else
         {
@@ -208,6 +263,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         }
 
         Foto = conectada && _conta.Foto.Length > 0 ? _conta.Foto : null;
+        OnPropertyChanged(nameof(ProblemaDoAutoMod));
     }
 
     [RelayCommand]

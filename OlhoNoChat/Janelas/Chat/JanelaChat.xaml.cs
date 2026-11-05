@@ -33,7 +33,11 @@ public partial class JanelaChat : Window
     private readonly ArquivoDeConfiguracoes _arquivo;
     private readonly ContaDaTwitch _conta;
     private readonly AutorizacaoNoNavegador _autorizacao;
-    private readonly ResgatesDePontos _resgates;
+    private readonly ApiDaTwitch _api;
+    private readonly EventSubDaTwitch _eventSub;
+    private readonly AutoModDoCanal _autoMod;
+    // Cada atualização do EventSub ganha um número: uma que terminou depois de outra mais nova não vale
+    private int _versaoDoEventSub;
     private readonly LeitorDoYouTube _youTube;
     private readonly LeitorDoTikTok _tikTok;
     private readonly ProcuraDeAtualizacoes _atualizacoes;
@@ -51,12 +55,14 @@ public partial class JanelaChat : Window
     // A pausa do chat Padrão como a página contou (ChatAoVivo, ChatPausado ou ChatContinuando)
     private MensagemDaPagina _pausa = MensagemDaPagina.ChatAoVivo;
     private DispatcherTimer? _esperaDaNovidade;
+    // A novidade no balão agora (null = nenhuma)
+    private string? _novidadeNaTela;
     private bool _temWebView2;
     private bool _fechando;
 
     public JanelaChat(ILogger<JanelaChat> log, ArquivoDeConfiguracoes arquivo, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao,
-        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ResgatesDePontos resgates, LeitorDoYouTube youTube,
-        LeitorDoTikTok tikTok, ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja)
+        EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ApiDaTwitch api, EventSubDaTwitch eventSub,
+        LeitorDoYouTube youTube, LeitorDoTikTok tikTok, ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja)
     {
         InitializeComponent();
 
@@ -64,7 +70,9 @@ public partial class JanelaChat : Window
         _arquivo = arquivo;
         _conta = conta;
         _autorizacao = autorizacao;
-        _resgates = resgates;
+        _api = api;
+        _eventSub = eventSub;
+        _autoMod = new AutoModDoCanal(api, conta, log);
         _youTube = youTube;
         _tikTok = tikTok;
         _atualizacoes = atualizacoes;
@@ -96,7 +104,8 @@ public partial class JanelaChat : Window
         LigarBarra();
         LigarBandeja();
         LigarNavegador();
-        _resgates.Resgatado += resgate => Dispatcher.InvokeAsync(() => MostrarResgate(resgate));
+        _eventSub.Resgatado += resgate => Dispatcher.InvokeAsync(() => MostrarResgate(resgate));
+        LigarAutoMod();
         LigarYouTube();
         LigarTikTok();
         _som.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
@@ -150,7 +159,7 @@ public partial class JanelaChat : Window
         Closed += (_, _) =>
         {
             _atalhos.Dispose();
-            _resgates.Desligar();
+            _eventSub.Desligar();
             _youTube.Desligar();
             _tikTok.Desligar();
             _som.Dispose();
@@ -481,12 +490,6 @@ public partial class JanelaChat : Window
         barraDeCima.EscreverPedido += ClicarEmEscrever;
         barraDeCima.PausarPedido += AlternarPausa;
         barraDeCima.NovidadeEntendida += NovidadeVista;
-        barraDeCima.TestarPausaPedido += () =>
-        {
-            NovidadeVista();
-            if (_pausa != MensagemDaPagina.ChatPausado)
-                AlternarPausa();
-        };
         barraDeCima.MultiplataformaPedido += ligado => _ = AlternarMultiplataformaAsync(ligado);
         barraDeCima.TamanhoDoTextoEscolhido += EscolherTamanhoDoTexto;
         barraDeCima.FundoEscolhido += EscolherFundo;
@@ -512,6 +515,7 @@ public partial class JanelaChat : Window
         _atalhos.Definir("SempreNoTopo", Opcoes.AtalhoSempreNoTopo, AlternarSempreNoTopo);
         _atalhos.Definir("EscreverNoChat", Opcoes.AtalhoEscrever, AtalhoDeEscrever);
         _atalhos.Definir("PausarChat", Opcoes.AtalhoPausar, AlternarPausa);
+        DefinirAtalhosDoAutoMod();
         barraDeCima.MostrarAtalhoDasBordas(Opcoes.AtalhoBordas);
         MostrarPausa();
     }
@@ -561,27 +565,41 @@ public partial class JanelaChat : Window
 
     // --- Novidades (o balão que aparece uma vez só) -------------------------------------------------------------
 
-    // Quando pode ter passado a dar para mostrar o balão da pausa (a página carregou, as bordas voltaram, as
-    // Configurações ou a faixa fecharam): espera um pouco, porque a página acabou de aparecer, e confere de novo
-    private void MostrarNovidadeSeFaltar()
+    // Quando pode ter passado a dar para mostrar um balão (a página carregou, as bordas voltaram, as Configurações ou a
+    // faixa fecharam, a conta foi conferida, a anterior foi vista): espera um pouco, porque a página acabou de aparecer,
+    // e confere de novo
+    private void MostrarNovidadeSeFaltar() => MostrarNovidadeSeFaltar(Novidades.Espera);
+
+    private void MostrarNovidadeSeFaltar(TimeSpan espera)
     {
-        if (!PodeMostrarANovidade() || barraDeCima.NovidadeAberta)
+        if (ProximaNovidade() == null || barraDeCima.NovidadeAberta)
             return;
         _esperaDaNovidade?.Stop();
-        _esperaDaNovidade = new DispatcherTimer { Interval = Novidades.Espera };
+        _esperaDaNovidade = new DispatcherTimer { Interval = espera };
         _esperaDaNovidade.Tick += (_, _) =>
         {
             _esperaDaNovidade?.Stop();
-            if (PodeMostrarANovidade() && !barraDeCima.NovidadeAberta)
+            if (barraDeCima.NovidadeAberta)
+                return;
+            _novidadeNaTela = ProximaNovidade();
+            if (_novidadeNaTela == Novidades.Pausa)
                 barraDeCima.MostrarNovidadeDaPausa(Opcoes.AtalhoPausar);
+            else if (_novidadeNaTela == Novidades.AutoMod)
+                barraDeCima.MostrarNovidadeDoAutoMod(!_conta.EstaConectada ? BarraDeCima.FaltaParaOAutoMod.Conectar
+                    : !_conta.PodeModerarAutoMod ? BarraDeCima.FaltaParaOAutoMod.ConectarDeNovo
+                    : BarraDeCima.FaltaParaOAutoMod.Nada);
         };
         _esperaDaNovidade.Start();
     }
 
-    private bool PodeMostrarANovidade() =>
-        _temWebView2 && !_fechando && WindowState != WindowState.Minimized
-        && Novidades.PodeMostrarAPausa(Opcoes.NovidadesVistas, _navegador.Pagina is ChatPadrao && _navegador.PaginaPronta,
-            _logica.BordasVisiveis, _faixa.EditorAberto, _janelaDeConfiguracoes != null);
+    private string? ProximaNovidade() =>
+        !_temWebView2 || _fechando || WindowState == WindowState.Minimized
+            ? null
+            : Novidades.Proxima(Opcoes.NovidadesVistas,
+                // Conectada, espera a conferência das permissões (o balão diz se falta conectar de novo)
+                autoModPronto: Opcoes.AprovarAutoMod && (!_conta.EstaConectada || _conta.PermissoesConferidas),
+                _navegador.Pagina is ChatPadrao && _navegador.PaginaPronta, _logica.BordasVisiveis, _faixa.EditorAberto,
+                _janelaDeConfiguracoes != null);
 
     // O app tira o balão da tela (bordas ocultas, Configurações, outra página, faixa aberta): ele volta quando der
     private void EsconderNovidade()
@@ -590,14 +608,18 @@ public partial class JanelaChat : Window
         barraDeCima.FecharNovidade();
     }
 
-    // A pessoa viu: "Entendi", "Testar agora" ou pausou com o balão aberto. Não aparece mais
+    // A pessoa viu: "Entendi", ou pausou com o balão da pausa aberto. Não aparece mais, e a próxima que falta vem em seguida
     private void NovidadeVista()
     {
+        string? vista = _novidadeNaTela;
         EsconderNovidade();
-        if (Opcoes.NovidadesVistas.Contains(Novidades.Pausa))
-            return;
-        Opcoes.NovidadesVistas.Add(Novidades.Pausa);
-        _arquivo.Gravar();
+        _novidadeNaTela = null;
+        if (vista != null && !Opcoes.NovidadesVistas.Contains(vista))
+        {
+            Opcoes.NovidadesVistas.Add(vista);
+            _arquivo.Gravar();
+        }
+        MostrarNovidadeSeFaltar(Novidades.EsperaDaSeguinte);
     }
 
     // --- Caixa de escrever -----------------------------------------------------------------------------------
@@ -696,14 +718,11 @@ public partial class JanelaChat : Window
     {
         if (!_conta.EstaConectada)
         {
-            _resgates.Desligar();
             TerminarEscrita(devolverFoco: false);
             caixaDeEscrever.DescartarEmotes();
         }
-        else if (ChatMultiplataforma.ResgatesLigados(Opcoes))
-        {
-            _ = _resgates.LigarAsync(); // com um acesso novo, assina de novo
-        }
+        _ = AtualizarEventSubAsync(); // sem conta desliga; com um acesso novo, assina de novo
+        MostrarNovidadeSeFaltar(); // conferida, a conta pode ter a novidade do AutoMod
 
         _caixa.Atualizar();
         AplicarEstado();
@@ -856,7 +875,8 @@ public partial class JanelaChat : Window
             AtualizarPagina();
             ContarAPaginaOsEstados();
             MostrarAvisosQueEsperam();
-            _ = LigarResgatesAsync();
+            MostrarAutoMod(aviso: null); // a página nova mostra a fila (o mesmo canal: as mensagens continuam esperando)
+            _ = AtualizarEventSubAsync();
             MostrarNovidadeSeFaltar();
         };
 
@@ -894,8 +914,8 @@ public partial class JanelaChat : Window
                     when _navegador.Pagina is ChatPadrao:
                     _pausa = mensagem;
                     MostrarPausa();
-                    // Pausou (o botão ou o atalho) com o balão da novidade aberto: já aprendeu
-                    if (mensagem == MensagemDaPagina.ChatPausado && barraDeCima.NovidadeAberta)
+                    // Pausou (o botão ou o atalho) com o balão da novidade da pausa aberto: já aprendeu
+                    if (mensagem == MensagemDaPagina.ChatPausado && barraDeCima.NovidadeAberta && _novidadeNaTela == Novidades.Pausa)
                         NovidadeVista();
                     break;
                 case MensagemDaPagina.EscritaEnviada or MensagemDaPagina.EscritaCancelada:
@@ -907,6 +927,8 @@ public partial class JanelaChat : Window
             }
         };
 
+        _navegador.PedidoDoAutoMod += (id, aprovar) => _ = _autoMod.DecidirAsync(id, aprovar);
+
         _navegador.FalhouDeVez += texto =>
         {
             _atalhos.Ligados = false; // o chat antigo não pode mais ser usado
@@ -916,7 +938,7 @@ public partial class JanelaChat : Window
     }
 
     // Os resgates são do canal da conta: só aparecem quando o chat aberto é o desse canal (e só o Padrão os mostra)
-    private void MostrarResgate(ResgatesDePontos.Resgate resgate)
+    private void MostrarResgate(EventSubDaTwitch.Resgate resgate)
     {
         if (_navegador.Pagina is not ChatPadrao || !ChatMultiplataforma.ResgatesLigados(Opcoes)
             || !string.Equals(_caixa.Canal, _conta.Login, StringComparison.OrdinalIgnoreCase))
@@ -928,11 +950,68 @@ public partial class JanelaChat : Window
             _navegador.Executar(ContratoComAPagina.AdicionarAcao(resgate.Nome ?? string.Empty, cor, resgate.TextoDigitado));
     }
 
-    // Depois de a página carregar e de verificar o acesso salvo à Twitch
-    private async Task LigarResgatesAsync()
+    // O que o EventSub recebe: os resgates (do canal da conta) e o AutoMod do canal aberto no Padrão. Depois de a página
+    // carregar, de salvar e de a conta mudar; o acesso salvo é conferido antes (uma vez por execução)
+    private async Task AtualizarEventSubAsync()
     {
-        if (ChatMultiplataforma.ResgatesLigados(Opcoes) && await _conta.VerificarUmaVezAsync() && ChatMultiplataforma.ResgatesLigados(Opcoes))
-            await _resgates.LigarAsync();
+        int versao = ++_versaoDoEventSub;
+        bool querResgates = ChatMultiplataforma.ResgatesLigados(Opcoes);
+        string? canalDoAutoMod = Opcoes.AprovarAutoMod && _navegador.Pagina is ChatPadrao ? _navegador.Pagina.Canal : null;
+        if (!querResgates && canalDoAutoMod == null)
+        {
+            _autoMod.TrocarDeCanal(null);
+            _eventSub.Desligar();
+            return;
+        }
+
+        if (!await _conta.VerificarUmaVezAsync() || versao != _versaoDoEventSub)
+            return;
+
+        string? idDoAutoMod = null;
+        if (canalDoAutoMod != null && _conta.PodeModerarAutoMod)
+        {
+            try
+            {
+                idDoAutoMod = string.Equals(canalDoAutoMod, _conta.Login, StringComparison.OrdinalIgnoreCase)
+                    ? _conta.Id
+                    : await _api.IdDoCanalAsync(_conta.Token, canalDoAutoMod);
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "AutoMod: não deu para achar o id do canal.");
+            }
+            if (versao != _versaoDoEventSub)
+                return;
+        }
+
+        _autoMod.TrocarDeCanal(idDoAutoMod);
+        await _eventSub.LigarAsync(new EventSubDaTwitch.Pedido(querResgates, idDoAutoMod));
+    }
+
+    // --- AutoMod ---------------------------------------------------------------------------------------------
+
+    // As mensagens seguradas no canal aberto: um cartão embaixo do chat do Padrão mostra a mais antiga (browser/chat.js,
+    // "AutoMod"); os botões dele (com as bordas) e os atalhos (sem) aprovam ou recusam
+    private void LigarAutoMod()
+    {
+        _eventSub.MensagemFoiRetida += mensagem => Dispatcher.InvokeAsync(() => _autoMod.Receber(mensagem));
+        _eventSub.MensagemDecidida += decisao => Dispatcher.InvokeAsync(() => _autoMod.Decidida(decisao));
+        _autoMod.Mudou += MostrarAutoMod;
+        _autoMod.TemMensagensMudou += _ => DefinirAtalhosDoAutoMod();
+    }
+
+    private void MostrarAutoMod(string? aviso)
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.MostrarAutoMod(_autoMod, Opcoes.AtalhoAprovarAutoMod, Opcoes.AtalhoRecusarAutoMod, aviso));
+    }
+
+    // Só enquanto há mensagem esperando: sem nada na fila, as combinações ficam livres para os outros programas
+    private void DefinirAtalhosDoAutoMod()
+    {
+        bool esperando = _autoMod.Primeira != null;
+        _atalhos.Definir("AprovarAutoMod", esperando ? Opcoes.AtalhoAprovarAutoMod : null, () => _ = _autoMod.DecidirAsync(null, aprovar: true));
+        _atalhos.Definir("RecusarAutoMod", esperando ? Opcoes.AtalhoRecusarAutoMod : null, () => _ = _autoMod.DecidirAsync(null, aprovar: false));
     }
 
     // O som de mensagem nova do Padrão (o único tipo com som). Também a cada salvamento: o som, o volume ou a saída podem
@@ -983,7 +1062,7 @@ public partial class JanelaChat : Window
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
-        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _resgates));
+        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub));
         var janela = new JanelaConfiguracoes(logica, this);
         _janelaDeConfiguracoes = janela;
         logica.ProcurarAtualizacoesPedido += () => _ = _atualizacoes.ProcurarAsync(manual: true, dono: janela);
@@ -1024,10 +1103,8 @@ public partial class JanelaChat : Window
         AtualizarTikTok();
         ContarAPaginaOsEstados(); // o Chat Multiplataforma pode ter sido ligado agora
 
-        if (ChatMultiplataforma.ResgatesLigados(Opcoes))
-            _ = LigarResgatesAsync();
-        else
-            _resgates.Desligar();
+        _ = AtualizarEventSubAsync();
+        MostrarAutoMod(aviso: null); // os atalhos podem ser outros
 
         // Tamanho do texto, fundo e "Sempre no topo" mudam aqui só com "Restaurar tudo para o padrão"
         Opcoes.TamanhoDoTexto = _navegador.AplicarZoom(Opcoes.TamanhoDoTexto);

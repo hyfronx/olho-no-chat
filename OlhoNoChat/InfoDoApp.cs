@@ -31,8 +31,9 @@ public static class InfoDoApp
     // na verificação, e todo mundo teria que conectar de novo.
     public const string TwitchClientId = "zrqsilh31pbdlfjb81onhulkvzytgh";
 
-    // O que "Conectar" pede: escrever no chat, ler os resgates de pontos do canal e listar os emotes da conta
-    public const string PermissoesDaTwitch = "user:write:chat channel:read:redemptions user:read:emotes";
+    // O que "Conectar" pede: escrever no chat, ler os resgates de pontos do canal, listar os emotes da conta e aprovar ou
+    // recusar as mensagens que o AutoMod segurou (só vale nos canais em que a conta é moderadora)
+    public const string PermissoesDaTwitch = "user:write:chat channel:read:redemptions user:read:emotes moderator:manage:automod";
 
     /// <summary>Configurações e dados do navegador interno (%AppData%\OlhoNoChat).</summary>
     public static string PastaDeDados =>

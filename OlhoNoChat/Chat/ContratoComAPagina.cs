@@ -3,6 +3,7 @@ using System.Text.Json;
 using OlhoNoChat.Atalhos;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.TikTok;
+using OlhoNoChat.Twitch;
 using OlhoNoChat.YouTube;
 
 namespace OlhoNoChat.Chat;
@@ -107,6 +108,43 @@ public static class ContratoComAPagina
     public static string AdicionarAcao(string nome, string cor, string texto) =>
         $"window.oncChat && window.oncChat.addAction({JsonSerializer.Serialize(nome)}, {JsonSerializer.Serialize(cor)}, " +
         $"{JsonSerializer.Serialize(texto)});";
+
+    /// <summary>
+    /// O cartão do AutoMod embaixo do chat do Padrão: a mais antiga das mensagens seguradas, quantas são, os atalhos e
+    /// um aviso de como foi a última decisão (que fica um instante, mesmo com a fila vazia). Fila vazia e sem aviso:
+    /// o cartão some. Os botões do cartão respondem com <c>onc:automod:allow:&lt;id&gt;</c> ou <c>deny</c>.
+    /// </summary>
+    public static string MostrarAutoMod(AutoModDoCanal autoMod, Atalho? aprovar, Atalho? recusar, string? aviso)
+    {
+        EventSubDaTwitch.MensagemRetida? primeira = autoMod.Primeira;
+        string json = JsonSerializer.Serialize(new
+        {
+            current = primeira == null ? null : new
+            {
+                id = primeira.Id,
+                login = primeira.Login.ToLowerInvariant(),
+                name = primeira.Nome,
+                parts = primeira.Partes.Select(p => p.IdDoEmote == null ? (object)p.Texto : new { emoteId = p.IdDoEmote, name = p.Texto }),
+                reason = AutoModDoCanal.Motivo(primeira),
+            },
+            total = autoMod.Mensagens.Count,
+            allowHotkey = Atalho.Existe(aprovar) ? aprovar.ToString() : string.Empty,
+            denyHotkey = Atalho.Existe(recusar) ? recusar.ToString() : string.Empty,
+            notice = aviso ?? string.Empty,
+        });
+        return $"window.oncChat && window.oncChat.automod && window.oncChat.automod({json});";
+    }
+
+    /// <summary>Um botão do cartão do AutoMod: o id da mensagem e se é para aprovar; null se a mensagem for outra.</summary>
+    public static (string Id, bool Aprovar)? LerPedidoDoAutoMod(string? mensagem)
+    {
+        const string aprovar = "onc:automod:allow:", recusar = "onc:automod:deny:";
+        if (mensagem?.StartsWith(aprovar, StringComparison.Ordinal) == true && mensagem.Length > aprovar.Length)
+            return (mensagem[aprovar.Length..], true);
+        if (mensagem?.StartsWith(recusar, StringComparison.Ordinal) == true && mensagem.Length > recusar.Length)
+            return (mensagem[recusar.Length..], false);
+        return null;
+    }
 
     /// <summary>Uma mensagem do chat do YouTube (Chat Multiplataforma).</summary>
     public static string AdicionarDoYouTube(MensagemParaAPagina mensagem)

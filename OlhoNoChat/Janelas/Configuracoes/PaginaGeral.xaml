@@ -127,6 +127,28 @@
                             <Button x:Name="botaoMudarAtalhoPausar" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
                                     Tag="{Binding ElementName=atalhoPausar}" Click="MudarAtalho_Click" />
                         </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Aprovar a mensagem barrada pelo AutoMod" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoAprovarAutoMod" Grid.Column="1" Width="180" Atalho="{Binding AtalhoAprovarAutoMod}" />
+                            <Button x:Name="botaoMudarAtalhoAprovarAutoMod" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoAprovarAutoMod}" Click="MudarAtalho_Click" />
+                        </Grid>
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Recusar a mensagem barrada pelo AutoMod" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                            <atalhos:EditorDeAtalho x:Name="atalhoRecusarAutoMod" Grid.Column="1" Width="180" Atalho="{Binding AtalhoRecusarAutoMod}" />
+                            <Button x:Name="botaoMudarAtalhoRecusarAutoMod" Grid.Column="2" Margin="8,0,0,0" MinWidth="110" Content="Mudar atalho"
+                                    Tag="{Binding ElementName=atalhoRecusarAutoMod}" Click="MudarAtalho_Click" />
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
             </Border>

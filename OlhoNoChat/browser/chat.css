@@ -464,3 +464,129 @@ body.onc-links-on .onc-when-click {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: .3; transform: scale(.7); }
 }
+
+/* AutoMod (chat.js "AutoMod"): the card under the chat with the oldest message AutoMod held, in the colors of the pause
+   marker. The buttons only with the borders shown (the window takes clicks: body.onc-links-on); without, the hint with
+   the hotkeys. Not a .chat_line itself (the app's CSS doesn't move it), but the message inside is one, with the chat's look. */
+#onc-automod {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 6px;
+    z-index: 20;
+    display: none;
+    box-sizing: border-box;
+    background: rgba(14, 14, 14, .92);
+    border: 2px solid #FF8A65;
+    border-radius: 10px;
+    padding: 6px 10px 7px;
+    color: #fff;
+    font: 600 15px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+}
+
+#onc-automod.shown {
+    display: block;
+}
+
+/* Only the notice of the last decision, with the queue empty */
+#onc-automod:not(.waiting) .onc-automod-title,
+#onc-automod:not(.waiting) .onc-automod-body,
+#onc-automod:not(.waiting) .onc-automod-hint {
+    display: none;
+}
+
+/* A shield */
+.onc-automod-icon {
+    display: inline-block;
+    width: 11px;
+    height: 13px;
+    margin: 0 7px -1px 0;
+    background: #FF8A65;
+    clip-path: polygon(50% 0, 100% 18%, 100% 52%, 50% 100%, 0 52%, 0 18%);
+}
+
+.onc-automod-count {
+    color: #FF8A65;
+}
+
+.onc-automod-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.onc-automod-message {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.onc-automod-message .chat_line {
+    margin: 2px 0 0;
+}
+
+body.tema-padrao .onc-automod-message .chat_line {
+    color: #fff;
+    font: bold 18px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    letter-spacing: 1px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.onc-automod-actions {
+    display: none;
+    flex: none;
+    gap: 6px;
+}
+
+body.onc-links-on .onc-automod-actions {
+    display: flex;
+}
+
+.onc-automod-actions button {
+    width: 34px;
+    height: 30px;
+    border-radius: 8px;
+    border: 2px solid;
+    background: #141414;
+    font: bold 16px "Segoe UI", Arial, sans-serif;
+    cursor: pointer;
+}
+
+.onc-automod-allow { color: #3BD16F; border-color: #3BD16F !important; }
+.onc-automod-deny { color: #F04A4A; border-color: #F04A4A !important; }
+.onc-automod-allow:hover { background: #3BD16F; color: #141414; }
+.onc-automod-deny:hover { background: #F04A4A; color: #141414; }
+
+.onc-automod-hint {
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #C8C8C8;
+}
+
+body.onc-links-on .onc-automod-hint {
+    display: none;
+}
+
+/* The hotkeys in the colors of the buttons: the keys as a small key cap, the word after it in the same color */
+.onc-automod-key-allow { color: #3BD16F; }
+.onc-automod-key-deny { color: #F04A4A; }
+
+.onc-automod-key {
+    display: inline-block;
+    padding: 0 5px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-weight: 600;
+    line-height: 16px;
+}
+
+.onc-automod-notice {
+    font-size: 13px;
+    color: #FFD2C2;
+}
+
+.onc-automod-notice:empty {
+    display: none;
+}

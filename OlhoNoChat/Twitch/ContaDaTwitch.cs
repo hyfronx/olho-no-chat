@@ -43,6 +43,9 @@ public sealed class ContaDaTwitch
     /// <summary>A lista de emotes precisa de "user:read:emotes", que acessos de antes da 1.0.18 não têm.</summary>
     public bool PodeLerEmotes { get; private set; }
 
+    /// <summary>Aprovar e recusar no AutoMod precisa de "moderator:manage:automod", que acessos de antes da 2.7.0 não têm.</summary>
+    public bool PodeModerarAutoMod { get; private set; }
+
     /// <summary>As permissões acima foram lidas da Twitch nesta execução.</summary>
     public bool PermissoesConferidas { get; private set; }
 
@@ -137,13 +140,14 @@ public sealed class ContaDaTwitch
         }
 
         var salvoAntes = (_salva.Id, _salva.Login, _salva.NomeDeExibicao);
-        var estadoAntes = (Foto, PodeEnviar, PodeLerEmotes, PermissoesConferidas);
+        var estadoAntes = (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PermissoesConferidas);
 
         _salva.Id = (string?)info["user_id"] ?? string.Empty;
         _salva.Login = (string?)info["login"] ?? string.Empty;
         var permissoes = (info["scopes"] as JsonArray)?.Select(p => (string?)p).ToHashSet() ?? [];
         PodeEnviar = permissoes.Contains("user:write:chat");
         PodeLerEmotes = permissoes.Contains("user:read:emotes");
+        PodeModerarAutoMod = permissoes.Contains("moderator:manage:automod");
         PermissoesConferidas = true;
 
         await BuscarPerfilAsync(token);
@@ -151,7 +155,7 @@ public sealed class ContaDaTwitch
         bool salvoMudou = tokenNovo || salvoAntes != (_salva.Id, _salva.Login, _salva.NomeDeExibicao);
         if (salvoMudou)
             _salva.Gravar();
-        if (salvoMudou || estadoAntes != (Foto, PodeEnviar, PodeLerEmotes, PermissoesConferidas))
+        if (salvoMudou || estadoAntes != (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PermissoesConferidas))
             Mudou?.Invoke();
         return true;
     }
@@ -182,6 +186,7 @@ public sealed class ContaDaTwitch
         _salva.NomeDeExibicao = string.Empty;
         Foto = string.Empty;
         PodeLerEmotes = false;
+        PodeModerarAutoMod = false;
         PermissoesConferidas = false;
         _salva.Gravar();
         Mudou?.Invoke();

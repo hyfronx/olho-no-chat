@@ -81,12 +81,14 @@ public static class CssDoChat
     // As regras do tema (browser/chat.css) são mais específicas: tudo aqui precisa de !important
     private static string TextoDasMensagensNoPadrao(Opcoes opcoes)
     {
-        const string linhas = "#chat_box .chat_line, #chat_box .chat_line .nick, #chat_box .chat_line .message";
+        // As do chat e a do cartão do AutoMod (embaixo do chat), com o mesmo visual
+        const string onde = ":is(#chat_box, .onc-automod-message)";
+        const string linhas = onde + " .chat_line, " + onde + " .chat_line .nick, " + onde + " .chat_line .message";
         var css = new StringBuilder();
 
         // Só o texto: o nome fica na cor da Twitch, e as linhas /me e de resgate (a página pinta o texto delas) também
         if (CorValida(opcoes.CorDoTexto))
-            css.Append($"\n#chat_box .chat_line .message:not([style*=\"color\"]) {{ color: {opcoes.CorDoTexto} !important; }}");
+            css.Append($"\n{onde} .chat_line .message:not([style*=\"color\"]) {{ color: {opcoes.CorDoTexto} !important; }}");
 
         string? sombra = Sombra(opcoes);
         if (sombra != null)
@@ -98,7 +100,7 @@ public static class CssDoChat
 
         // A página escreve a hora em toda linha e a esconde
         if (opcoes.MostrarHorario)
-            css.Append($"\n#chat_box .chat_line .time_stamp {{ {VisualDoHorario} }}");
+            css.Append($"\n{onde} .chat_line .time_stamp {{ {VisualDoHorario} }}");
 
         return css.ToString();
     }

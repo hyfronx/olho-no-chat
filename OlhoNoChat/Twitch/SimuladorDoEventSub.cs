@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 namespace OlhoNoChat.Twitch;
 
 /// <summary>
-/// Só na versão de teste: com a variável OLHONOCHAT_SIMULADOR_EVENTSUB=ws://127.0.0.1:8080/ws, os resgates conectam ao
-/// servidor falso da Twitch CLI ("twitch event websocket start-server") e assinam nele, e "twitch event trigger" manda
-/// resgates de mentira. O resto (conta, envio, emotes) continua na Twitch de verdade.
+/// Só na versão de teste: com a variável OLHONOCHAT_SIMULADOR_EVENTSUB=ws://127.0.0.1:8080/ws, o EventSub conecta ao
+/// servidor falso da Twitch CLI ("twitch event websocket start-server") e assina nele, e "twitch event trigger" manda
+/// eventos de mentira (resgates, AutoMod). O resto (conta, envio, emotes, aprovar no AutoMod) continua na Twitch de verdade.
 /// </summary>
 internal sealed class SimuladorDoEventSub : DelegatingHandler
 {
@@ -22,16 +22,16 @@ internal sealed class SimuladorDoEventSub : DelegatingHandler
         _assinaturas = new Uri($"http://{simulador.Host}:{simulador.Port}/eventsub/subscriptions");
     }
 
-    /// <summary>Troca a API e os resgates registrados antes, se a variável estiver definida.</summary>
+    /// <summary>Troca a API e o EventSub registrados antes, se a variável estiver definida.</summary>
     public static void RegistrarSeLigado(IServiceCollection servicos)
     {
         if (Environment.GetEnvironmentVariable(Variavel) is not { Length: > 0 } endereco)
             return;
         var simulador = new Uri(endereco);
         servicos.AddSingleton(new ApiDaTwitch(new SimuladorDoEventSub(simulador)));
-        servicos.AddSingleton(provedor => new ResgatesDePontos(provedor.GetRequiredService<ApiDaTwitch>(),
-            provedor.GetRequiredService<ContaDaTwitch>(), provedor.GetRequiredService<ILogger<ResgatesDePontos>>(),
-            simulador, ResgatesDePontos.EsperaPadrao));
+        servicos.AddSingleton(provedor => new EventSubDaTwitch(provedor.GetRequiredService<ApiDaTwitch>(),
+            provedor.GetRequiredService<ContaDaTwitch>(), provedor.GetRequiredService<ILogger<EventSubDaTwitch>>(),
+            simulador, EventSubDaTwitch.EsperaPadrao));
     }
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage pedido, CancellationToken cancelar)

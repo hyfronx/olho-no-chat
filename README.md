@@ -28,6 +28,7 @@ O jogo precisa estar em modo **janela** ou **tela cheia sem bordas** para o chat
 - Reconexão automática: se a conexão do chat cair ou a página travar, o app conecta de novo sozinho.
 - Escrever no chat sem sair do jogo (precisa conectar a conta da Twitch), com a lista dos seus emotes (os animados se mexem). A lista fica guardada no computador e abre na hora.
 - Resgates de pontos do canal no chat Padrão (opcional, precisa conectar a conta da Twitch).
+- Mensagens barradas pelo AutoMod no chat Padrão, para aprovar ou recusar: com as bordas, nos botões; no jogo, com **Ctrl + Alt + Home** (aprovar) e **Ctrl + Alt + End** (recusar). Com várias, elas ficam numa fila e aparecem uma por vez. Só nos canais em que a sua conta é dona ou moderadora (precisa conectar a conta da Twitch).
 - Filtros e destaques por usuário, moderadores e VIPs.
 - No **Chat oficial da Twitch**, opções para esconder partes da página da Twitch: o título "Chat da live", o placar do topo e os destaques (enquetes, palpites, hype train, mensagem fixada e drops). Ficam em **Configurações > Chat > Página da Twitch**.
 

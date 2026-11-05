@@ -131,10 +131,41 @@ public sealed class EventSubFalso : IDisposable
                              "redeemed_at":"2020-07-15T17:16:03.17106713Z"} } }
         """;
 
-    public static string Revogacao(string status = "authorization_revoked") => $$"""
-        {"metadata":{"message_id":"rv1","message_type":"revocation","message_timestamp":"2022-11-16T10:11:12.464757833Z",
-                     "subscription_type":"channel.channel_points_custom_reward_redemption.add","subscription_version":"1"},
-         "payload":{"subscription":{"id":"f1c2a387","status":"{{status}}","type":"channel.channel_points_custom_reward_redemption.add","version":"1","cost":0,
+    // O exemplo da documentação da Twitch para automod.message.hold versão 2 (com um emote e o texto com acento)
+    public static string Retida(string id, string idDaMensagem = "bad-message-id", string motivo = "automod") => $$"""
+        {"metadata":{"message_id":"{{id}}","message_type":"notification","message_timestamp":"2022-11-16T10:11:12.464757833Z",
+                     "subscription_type":"automod.message.hold","subscription_version":"2"},
+         "payload":{"subscription":{"id":"e523cc0e","status":"enabled","type":"automod.message.hold","version":"2",
+                                    "condition":{"broadcaster_user_id":"777","moderator_user_id":"121292674"},
+                                    "transport":{"method":"websocket","session_id":"S1"},"created_at":"2024-11-16T10:11:12.464757833Z","cost":0},
+                    "event":{"broadcaster_user_id":"777","broadcaster_user_name":"Canal","broadcaster_user_login":"canal",
+                             "user_id":"456789012","user_name":"Viewer1","user_login":"viewer1","message_id":"{{idDaMensagem}}",
+                             "message":{"text":"você é feio Kappa","fragments":[
+                                 {"type":"text","text":"você é feio ","cheermote":null,"emote":null},
+                                 {"type":"emote","text":"Kappa","cheermote":null,"emote":{"id":"25","emote_set_id":"0"} }]},
+                             "reason":"{{motivo}}",
+                             "automod":{"category":"aggressive","level":1,"boundaries":[{"start_pos":0,"end_pos":10}]},
+                             "blocked_term":null,"held_at":"2022-12-02T15:00:00.00Z"} } }
+        """;
+
+    public static string Decisao(string id, string idDaMensagem = "bad-message-id", string status = "Approved") => $$"""
+        {"metadata":{"message_id":"{{id}}","message_type":"notification","message_timestamp":"2022-11-16T10:11:12.464757833Z",
+                     "subscription_type":"automod.message.update","subscription_version":"2"},
+         "payload":{"subscription":{"id":"e523cc0f","status":"enabled","type":"automod.message.update","version":"2",
+                                    "condition":{"broadcaster_user_id":"777","moderator_user_id":"121292674"},
+                                    "transport":{"method":"websocket","session_id":"S1"},"created_at":"2024-11-16T10:11:12.464757833Z","cost":0},
+                    "event":{"broadcaster_user_id":"777","broadcaster_user_name":"Canal","broadcaster_user_login":"canal",
+                             "user_id":"456789012","user_name":"Viewer1","user_login":"viewer1","moderator_user_id":"9001",
+                             "moderator_user_login":"mod","moderator_user_name":"Mod","message_id":"{{idDaMensagem}}",
+                             "message":{"text":"você é feio","fragments":[]},"status":"{{status}}","reason":"automod",
+                             "held_at":"2022-12-02T15:00:00.00Z"} } }
+        """;
+
+    public static string Revogacao(string status = "authorization_revoked", string tipo = "channel.channel_points_custom_reward_redemption.add",
+        string id = "rv1") => $$"""
+        {"metadata":{"message_id":"{{id}}","message_type":"revocation","message_timestamp":"2022-11-16T10:11:12.464757833Z",
+                     "subscription_type":"{{tipo}}","subscription_version":"1"},
+         "payload":{"subscription":{"id":"f1c2a387","status":"{{status}}","type":"{{tipo}}","version":"1","cost":0,
                                     "condition":{"broadcaster_user_id":"1337"},"transport":{"method":"websocket","session_id":"x"},"created_at":"2022-11-16T10:11:12.464757833Z"} } }
         """;
 

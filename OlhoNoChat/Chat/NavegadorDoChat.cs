@@ -74,6 +74,9 @@ public sealed class NavegadorDoChat
 
     public event Action<MensagemDaPagina>? Mensagem;
 
+    /// <summary>Padrão: um botão do cartão do AutoMod (o id da mensagem e se é para aprovar).</summary>
+    public event Action<string, bool>? PedidoDoAutoMod;
+
     /// <summary>O navegador não pôde ser recuperado: o texto para mostrar antes de o app fechar.</summary>
     public event Action<string>? FalhouDeVez;
 
@@ -129,7 +132,14 @@ public sealed class NavegadorDoChat
         }
 
         controle.NavigationCompleted += async (_, e) => await TerminouDeCarregarAsync(e.IsSuccess, e.WebErrorStatus);
-        navegador.WebMessageReceived += (_, e) => Mensagem?.Invoke(ContratoComAPagina.LerMensagem(TextoDaMensagem(e)));
+        navegador.WebMessageReceived += (_, e) =>
+        {
+            string? texto = TextoDaMensagem(e);
+            if (ContratoComAPagina.LerPedidoDoAutoMod(texto) is { } pedido)
+                PedidoDoAutoMod?.Invoke(pedido.Id, pedido.Aprovar);
+            else
+                Mensagem?.Invoke(ContratoComAPagina.LerMensagem(texto));
+        };
         navegador.NewWindowRequested += NovaJanelaPedida;
         navegador.ProcessFailed += async (_, e) => await ProcessoFalhouAsync(e);
     }

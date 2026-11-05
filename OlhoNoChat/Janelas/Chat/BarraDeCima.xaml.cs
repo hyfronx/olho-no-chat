@@ -4,6 +4,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using OlhoNoChat.Atalhos;
 using OlhoNoChat.Configuracoes;
 
@@ -84,13 +85,10 @@ public partial class BarraDeCima : UserControl
     /// <summary>O botão de pausar foi clicado: a janela pausa ou continua o chat, e a página diz o estado novo.</summary>
     public event Action? PausarPedido;
 
-    /// <summary>"Testar agora" no balão da novidade da pausa: a janela pausa o chat (e dá a novidade por vista).</summary>
-    public event Action? TestarPausaPedido;
-
-    /// <summary>"Entendi" no balão da novidade da pausa.</summary>
+    /// <summary>"Entendi" no balão da novidade.</summary>
     public event Action? NovidadeEntendida;
 
-    /// <summary>O balão da novidade da pausa está na tela.</summary>
+    /// <summary>O balão de uma novidade está na tela.</summary>
     public bool NovidadeAberta => balaoNovidade.IsOpen;
 
     /// <summary>O tamanho do texto escolhido (0,5 a 2,5).</summary>
@@ -170,12 +168,94 @@ public partial class BarraDeCima : UserControl
     }
 
     /// <summary>O balão da novidade da pausa, apontando para o botão, com o atalho (sem atalho, a linha dele some).</summary>
-    public void MostrarNovidadeDaPausa(Atalho? atalho)
+    public void MostrarNovidadeDaPausa(Atalho? atalho) =>
+        MostrarNovidade(botaoPausar, "Novo: pausar o chat",
+            "Momento tenso na partida? Pause o chat: as mensagens continuam chegando e esperam você. Ao continuar, elas " +
+            "aparecem uma por uma, no ritmo de leitura (a velocidade muda em Configurações > Chat).",
+            [(atalho, string.Empty, "#BDBDBD")]);
+
+    /// <summary>
+    /// O balão da novidade do AutoMod, apontando para a engrenagem (a conta fica na aba Twitch). Curto: como aprovar o
+    /// próprio aviso do chat mostra quando acontecer (escolha do usuário). O fim diz o que falta para usar.
+    /// </summary>
+    public void MostrarNovidadeDoAutoMod(FaltaParaOAutoMod falta) =>
+        MostrarNovidade(botaoConfiguracoes, "Novo: aprovar mensagens do AutoMod",
+            "Se você é dono ou moderador do canal, as mensagens que o AutoMod segurar aparecem no chat para você aprovar ou recusar." +
+            falta switch
+            {
+                FaltaParaOAutoMod.Conectar => " Precisa conectar a sua conta da Twitch em Configurações > Twitch.",
+                FaltaParaOAutoMod.ConectarDeNovo => " Para usar, clique em \"Conectar de novo\" em Configurações > Twitch.",
+                _ => string.Empty,
+            },
+            []);
+
+    /// <summary>O que falta para o AutoMod funcionar, para o fim do balão.</summary>
+    public enum FaltaParaOAutoMod
     {
-        linhaAtalhoDaNovidade.Visibility = Atalho.Existe(atalho) ? Visibility.Visible : Visibility.Collapsed;
-        atalhoDaNovidade.Text = Atalho.TextoOuNenhum(atalho);
+        Nada,
+        Conectar,
+        /// <summary>A conta foi conectada antes da permissão nova (2.7.0).</summary>
+        ConectarDeNovo,
+    }
+
+    // Os atalhos que não existem não aparecem (sem nenhum, a linha some). "No jogo:" só na primeira linha; as teclas ficam
+    // uma embaixo da outra
+    private void MostrarNovidade(FrameworkElement botao, string titulo, string texto,
+        (Atalho? Atalho, string OQueFaz, string Cor)[] atalhos)
+    {
+        tituloDaNovidade.Text = titulo;
+        textoDaNovidade.Text = texto;
+
+        Grid linhas = linhaAtalhoDaNovidade;
+        linhas.Children.Clear();
+        linhas.RowDefinitions.Clear();
+        var existem = atalhos.Where(a => Atalho.Existe(a.Atalho)).ToList();
+        if (existem.Count > 0)
+            linhas.Children.Add(TextoDaLinha("No jogo:", "#BDBDBD", new Thickness(0)));
+        for (int i = 0; i < existem.Count; i++)
+        {
+            var (atalho, oQueFaz, cor) = existem[i];
+            linhas.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var tecla = new Border
+            {
+                Margin = new Thickness(6, i > 0 ? 4 : 0, 0, 0),
+                Padding = new Thickness(7, 1, 7, 2),
+                CornerRadius = new CornerRadius(5),
+                Background = new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)),
+                BorderThickness = new Thickness(1),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Child = TextoDaLinha(atalho!.ToString(), "#FFFFFF", new Thickness(0)),
+            };
+            Grid.SetRow(tecla, i);
+            Grid.SetColumn(tecla, 1);
+            linhas.Children.Add(tecla);
+            if (oQueFaz.Length > 0)
+            {
+                TextBlock faz = TextoDaLinha(oQueFaz, cor, new Thickness(6, i > 0 ? 4 : 0, 0, 0));
+                Grid.SetRow(faz, i);
+                Grid.SetColumn(faz, 2);
+                linhas.Children.Add(faz);
+            }
+        }
+        linhas.Visibility = existem.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // Na pausa (esquerda da barra) o balão sai do botão para a direita; na engrenagem (direita), para a esquerda
+        bool naDireita = botao == botaoConfiguracoes;
+        balaoNovidade.PlacementTarget = botao;
+        balaoNovidade.HorizontalOffset = naDireita ? botao.ActualWidth - 290 : 0;
+        pontaDaNovidade.HorizontalAlignment = naDireita ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         balaoNovidade.IsOpen = true;
     }
+
+    private static TextBlock TextoDaLinha(string texto, string cor, Thickness margem) => new()
+    {
+        Text = texto,
+        FontSize = 12,
+        Foreground = (Brush)new BrushConverter().ConvertFromString(cor)!,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = margem,
+    };
 
     public void FecharNovidade() => balaoNovidade.IsOpen = false;
 
@@ -227,8 +307,6 @@ public partial class BarraDeCima : UserControl
         if (!_mostrando)
             PausarPedido?.Invoke();
     }
-
-    private void TestarPausa_Click(object sender, RoutedEventArgs e) => TestarPausaPedido?.Invoke();
 
     private void EntendiNovidade_Click(object sender, RoutedEventArgs e) => NovidadeEntendida?.Invoke();
 

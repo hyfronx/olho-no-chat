@@ -10,15 +10,17 @@ using Microsoft.Extensions.Logging;
 namespace OlhoNoChat.Twitch;
 
 /// <summary>
-/// Os resgates de pontos do canal da conta conectada, pelo EventSub da Twitch num websocket: a Twitch dá boas-vindas
-/// com o id da sessão, o app assina os resgates nessa sessão e a Twitch manda cada resgate, com um "estou vivo" nos
-/// intervalos. Se a conexão cai, tenta de novo até 7 vezes.
+/// Os eventos da Twitch que a conta conectada recebe, pelo EventSub num websocket: os resgates de pontos do canal da conta
+/// e as mensagens que o AutoMod segurou no canal aberto (quando a conta é dona ou moderadora dele). A Twitch dá
+/// boas-vindas com o id da sessão, o app assina os eventos nessa sessão e a Twitch manda cada um, com um "estou vivo"
+/// nos intervalos. Se a conexão cai, tenta de novo até 7 vezes.
 /// </summary>
 /// <remarks>
-/// Ligado na thread da tela, tudo aqui continua nela (os eventos chegam lá). A Twitch só deixa ler os resgates do
-/// próprio canal do acesso.
+/// Uma conexão só para tudo: a Twitch deixa cada conta ter no máximo 3 conexões com assinaturas (o app instalado e o de
+/// desenvolvimento abertos juntos já usam duas). Pedir outra coisa (outro canal, um evento a mais ou a menos) abre uma
+/// sessão nova com as assinaturas novas. Ligado na thread da tela, tudo aqui continua nela (os eventos chegam lá).
 /// </remarks>
-public sealed class ResgatesDePontos
+public sealed class EventSubDaTwitch
 {
     public sealed record Resgate(string Nome, string Titulo, int Custo, string TextoDigitado)
     {
@@ -29,32 +31,82 @@ public sealed class ResgatesDePontos
             custo.ToString("N0", CultureInfo.GetCultureInfo("pt-BR")) + (custo == 1 ? " ponto" : " pontos");
     }
 
+    /// <summary>Um pedaço da mensagem segurada: texto, ou um emote da Twitch (com o id dele).</summary>
+    public sealed record ParteDaMensagem(string Texto, string? IdDoEmote = null);
+
+    /// <summary>
+    /// Uma mensagem que o AutoMod segurou para um moderador decidir. <paramref name="Motivo"/>: "automod", "blocked_term"
+    /// ou "blocked_link"; <paramref name="Categoria"/> só com "automod" (como "swearing").
+    /// </summary>
+    public sealed record MensagemRetida(string Id, string Login, string Nome, IReadOnlyList<ParteDaMensagem> Partes,
+        string Motivo, string? Categoria)
+    {
+        public string Texto => string.Concat(Partes.Select(p => p.Texto));
+
+        // Os records comparam listas pela referência: duas mensagens iguais têm partes iguais
+        public bool Equals(MensagemRetida? outra) =>
+            outra is not null && Id == outra.Id && Login == outra.Login && Nome == outra.Nome && Motivo == outra.Motivo
+            && Categoria == outra.Categoria && Partes.SequenceEqual(outra.Partes);
+
+        public override int GetHashCode() => HashCode.Combine(Id, Login, Motivo);
+    }
+
+    /// <summary>
+    /// Uma mensagem do AutoMod saiu da fila: aprovada, recusada (por qualquer moderador) ou expirada. O status vem em
+    /// minúsculas: "approved", "denied" ou "expired".
+    /// </summary>
+    public sealed record Decisao(string Id, string Status);
+
+    /// <summary>Como está o AutoMod do canal pedido, para a aba Twitch.</summary>
+    public enum SituacaoDoAutoMod
+    {
+        /// <summary>Não foi pedido, ou a conexão está desligada.</summary>
+        Desligado,
+        /// <summary>A Twitch aceitou: as mensagens seguradas chegam.</summary>
+        Funcionando,
+        /// <summary>A conta não é dona nem moderadora do canal (a Twitch recusou com 403, ou cancelou depois).</summary>
+        NaoModera,
+        /// <summary>Sem internet ou outra recusa da Twitch.</summary>
+        Falhou,
+    }
+
+    /// <summary>O que receber: os resgates do canal da conta e/ou o AutoMod do canal com esse id (null = nenhum).</summary>
+    public sealed record Pedido(bool Resgates, string? CanalDoAutoMod)
+    {
+        public bool Vazio => !Resgates && CanalDoAutoMod == null;
+    }
+
     /// <summary>Uma mensagem do websocket, só com o que o app usa.</summary>
     public sealed record Mensagem(string Tipo, string Id, string? IdDaSessao = null, int? SegundosDeSilencio = null,
-        string? EnderecoDeReconexao = null, Resgate? Resgate = null, string? MotivoDaRevogacao = null);
+        string? EnderecoDeReconexao = null, string? TipoDaAssinatura = null, Resgate? Resgate = null,
+        MensagemRetida? Retida = null, Decisao? Decidida = null, string? MotivoDaRevogacao = null);
 
     public const string EnderecoDaTwitch = "wss://eventsub.wss.twitch.tv/ws";
+    public const string TipoDosResgates = "channel.channel_points_custom_reward_redemption.add";
+    public const string TipoDaRetida = "automod.message.hold";
+    public const string TipoDaDecisao = "automod.message.update";
     private const int TentativasDepoisDeCair = 7;
     private static readonly TimeSpan LimiteDasBoasVindas = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan FolgaDoSilencio = TimeSpan.FromSeconds(5);
 
     private readonly ApiDaTwitch _api;
     private readonly ContaDaTwitch _conta;
-    private readonly ILogger<ResgatesDePontos> _log;
+    private readonly ILogger<EventSubDaTwitch> _log;
     private readonly Uri _endereco;
     private readonly Func<int, TimeSpan> _esperaAntesDaTentativa;
 
     private CancellationTokenSource? _parar;
     private string _tokenDaAssinatura = string.Empty;
+    private Pedido _pedido = new(false, null);
 
     // As últimas mensagens recebidas: a Twitch pode mandar a mesma duas vezes (e na troca de conexão)
     private readonly Queue<string> _ultimasMensagens = new();
 
-    public ResgatesDePontos(ApiDaTwitch api, ContaDaTwitch conta, ILogger<ResgatesDePontos> log)
+    public EventSubDaTwitch(ApiDaTwitch api, ContaDaTwitch conta, ILogger<EventSubDaTwitch> log)
         : this(api, conta, log, new Uri(EnderecoDaTwitch), EsperaPadrao) { }
 
     /// <summary>Os testes usam um servidor local e esperas curtas.</summary>
-    public ResgatesDePontos(ApiDaTwitch api, ContaDaTwitch conta, ILogger<ResgatesDePontos> log, Uri endereco,
+    public EventSubDaTwitch(ApiDaTwitch api, ContaDaTwitch conta, ILogger<EventSubDaTwitch> log, Uri endereco,
         Func<int, TimeSpan> esperaAntesDaTentativa)
     {
         _api = api;
@@ -67,30 +119,45 @@ public sealed class ResgatesDePontos
     /// <summary>Alguém resgatou uma recompensa no canal da conta.</summary>
     public event Action<Resgate>? Resgatado;
 
-    /// <summary><see cref="Problema"/> mudou.</summary>
+    /// <summary>O AutoMod segurou uma mensagem no canal pedido.</summary>
+    public event Action<MensagemRetida>? MensagemFoiRetida;
+
+    /// <summary>Uma mensagem do AutoMod foi aprovada, recusada ou expirou (aqui, no site da Twitch ou por outro moderador).</summary>
+    public event Action<Decisao>? MensagemDecidida;
+
+    /// <summary><see cref="Problema"/> ou <see cref="AutoMod"/> mudou (em qualquer thread).</summary>
     public event Action? ProblemaMudou;
 
     /// <summary>Por que a Twitch recusou os resgates, para a aba Twitch ("" sem problema).</summary>
     public string Problema { get; private set; } = string.Empty;
 
+    /// <summary>Se as mensagens seguradas pelo AutoMod do canal pedido estão chegando.</summary>
+    public SituacaoDoAutoMod AutoMod { get; private set; }
+
     public bool EstaLigado => _parar != null;
 
     /// <summary>
-    /// Começa a receber os resgates (se já estiver recebendo com o mesmo acesso, nada muda). Termina quando a
-    /// primeira conexão e a assinatura deram certo ou não.
+    /// Começa a receber o que foi pedido (se já estiver recebendo isso com o mesmo acesso, nada muda; um pedido vazio
+    /// desliga). Termina quando a primeira conexão e as assinaturas deram certo ou não.
     /// </summary>
-    public async Task LigarAsync()
+    public async Task LigarAsync(Pedido pedido)
     {
-        if (!_conta.EstaConectada || (_parar != null && _tokenDaAssinatura == _conta.Token))
+        if (!_conta.EstaConectada || pedido.Vazio)
+        {
+            Desligar();
+            return;
+        }
+        if (_parar != null && _tokenDaAssinatura == _conta.Token && _pedido == pedido)
             return;
 
         Desligar();
         var parar = new CancellationTokenSource();
         _parar = parar;
         _tokenDaAssinatura = _conta.Token;
+        _pedido = pedido;
 
         var primeira = new TaskCompletionSource();
-        _ = RodarAsync(parar, primeira);
+        _ = RodarAsync(parar, pedido, primeira);
         await primeira.Task;
     }
 
@@ -100,14 +167,16 @@ public sealed class ResgatesDePontos
         _parar?.Cancel();
         _parar = null;
         _tokenDaAssinatura = string.Empty;
+        _pedido = new(false, null);
         DefinirProblema(string.Empty);
+        DefinirAutoMod(SituacaoDoAutoMod.Desligado);
     }
 
     /// <summary>A espera antes de cada nova tentativa: cerca de 1, 2, 4, 8, 16, 32 e 60 s.</summary>
     public static TimeSpan EsperaPadrao(int tentativa) =>
         TimeSpan.FromMilliseconds(Math.Min(1000 * Math.Pow(2, tentativa) + Random.Shared.Next(1000), 60_000));
 
-    private async Task RodarAsync(CancellationTokenSource parar, TaskCompletionSource primeira)
+    private async Task RodarAsync(CancellationTokenSource parar, Pedido pedido, TaskCompletionSource primeira)
     {
         CancellationToken cancelar = parar.Token;
         try
@@ -116,16 +185,16 @@ public sealed class ResgatesDePontos
             Ligacao? atual = await TentarAbrirAsync(_endereco, cancelar);
             while (atual != null)
             {
-                bool assinado = await AssinarAsync(atual.IdDaSessao);
+                HashSet<string> assinadas = await AssinarAsync(pedido, atual.IdDaSessao);
                 primeira.TrySetResult();
-                if (!assinado)
+                if (assinadas.Count == 0)
                 {
                     atual.Fechar();
                     break;
                 }
 
-                if (!await LerAsync(atual, cancelar))
-                    break; // a Twitch cancelou a assinatura
+                if (!await LerAsync(atual, assinadas, cancelar))
+                    break; // a Twitch cancelou as assinaturas
 
                 atual = null;
                 for (int tentativa = 0; tentativa < TentativasDepoisDeCair && atual == null; tentativa++)
@@ -134,7 +203,7 @@ public sealed class ResgatesDePontos
                     atual = await TentarAbrirAsync(_endereco, cancelar);
                 }
                 if (atual == null)
-                    _log.LogWarning("Resgates: a conexão caiu e não voltou depois de {Tentativas} tentativas.", TentativasDepoisDeCair);
+                    _log.LogWarning("EventSub: a conexão caiu e não voltou depois de {Tentativas} tentativas.", TentativasDepoisDeCair);
             }
         }
         catch (OperationCanceledException) when (cancelar.IsCancellationRequested)
@@ -147,35 +216,74 @@ public sealed class ResgatesDePontos
             {
                 _parar = null;
                 _tokenDaAssinatura = string.Empty;
+                _pedido = new(false, null);
+                DefinirAutoMod(SituacaoDoAutoMod.Desligado);
             }
             parar.Dispose();
         }
     }
 
-    private async Task<bool> AssinarAsync(string idDaSessao)
+    // Assina o que foi pedido na sessão; devolve os tipos que a Twitch aceitou (nenhum: a conexão não serve para nada)
+    private async Task<HashSet<string>> AssinarAsync(Pedido pedido, string idDaSessao)
+    {
+        var assinadas = new HashSet<string>();
+        if (pedido.Resgates)
+        {
+            ApiDaTwitch.Resposta? resposta = await AssinarUmAsync(TipoDosResgates, "1",
+                new Dictionary<string, string> { ["broadcaster_user_id"] = _conta.Id }, idDaSessao);
+            if (resposta?.Codigo == HttpStatusCode.Accepted)
+            {
+                assinadas.Add(TipoDosResgates);
+                DefinirProblema(string.Empty);
+            }
+            else if (resposta != null)
+            {
+                DefinirProblema(TextoDaRecusa(resposta));
+            }
+        }
+
+        if (pedido.CanalDoAutoMod is string canal)
+        {
+            var condicao = new Dictionary<string, string> { ["broadcaster_user_id"] = canal, ["moderator_user_id"] = _conta.Id };
+            SituacaoDoAutoMod situacao = SituacaoDoAutoMod.Funcionando;
+            foreach (string tipo in new[] { TipoDaRetida, TipoDaDecisao })
+            {
+                ApiDaTwitch.Resposta? resposta = await AssinarUmAsync(tipo, "2", condicao, idDaSessao);
+                if (resposta?.Codigo != HttpStatusCode.Accepted)
+                {
+                    // 403: a conta não é dona nem moderadora do canal aberto, o caso mais comum (nada aparece)
+                    situacao = resposta?.Codigo == HttpStatusCode.Forbidden ? SituacaoDoAutoMod.NaoModera : SituacaoDoAutoMod.Falhou;
+                    if (situacao == SituacaoDoAutoMod.NaoModera)
+                        _log.LogInformation("EventSub: a conta não modera o canal aberto; sem AutoMod.");
+                    break;
+                }
+                assinadas.Add(tipo);
+            }
+            DefinirAutoMod(situacao);
+        }
+        return assinadas;
+    }
+
+    // A resposta da Twitch, ou null sem internet
+    private async Task<ApiDaTwitch.Resposta?> AssinarUmAsync(string tipo, string versao, Dictionary<string, string> condicao,
+        string idDaSessao)
     {
         ApiDaTwitch.Resposta resposta;
         try
         {
-            resposta = await _api.AssinarResgatesAsync(_conta.Token, _conta.Id, idDaSessao);
+            resposta = await _api.AssinarAsync(_conta.Token, tipo, versao, condicao, idDaSessao);
         }
         catch (Exception ex)
         {
-            _log.LogWarning(ex, "Resgates: não deu para assinar (sem internet?).");
-            return false;
+            _log.LogWarning(ex, "EventSub: não deu para assinar {Tipo} (sem internet?).", tipo);
+            return null;
         }
 
-        if (resposta.Codigo == HttpStatusCode.Accepted)
-        {
-            DefinirProblema(string.Empty);
-            return true;
-        }
-
-        _log.LogWarning("Resgates: a Twitch recusou a assinatura: {Codigo} {Corpo}", (int)resposta.Codigo, resposta.Corpo);
+        if (resposta.Codigo != HttpStatusCode.Accepted && resposta.Codigo != HttpStatusCode.Forbidden)
+            _log.LogWarning("EventSub: a Twitch recusou {Tipo}: {Codigo} {Corpo}", tipo, (int)resposta.Codigo, resposta.Corpo);
         if (resposta.Codigo == HttpStatusCode.Unauthorized)
             _conta.AcessoRecusado();
-        DefinirProblema(TextoDaRecusa(resposta));
-        return false;
+        return resposta;
     }
 
     /// <summary>O aviso da aba Twitch quando a Twitch recusa a assinatura dos resgates.</summary>
@@ -194,6 +302,14 @@ public sealed class ResgatesDePontos
         };
     }
 
+    private void DefinirAutoMod(SituacaoDoAutoMod situacao)
+    {
+        if (AutoMod == situacao)
+            return;
+        AutoMod = situacao;
+        ProblemaMudou?.Invoke();
+    }
+
     private void DefinirProblema(string texto)
     {
         if (Problema == texto)
@@ -202,9 +318,9 @@ public sealed class ResgatesDePontos
         ProblemaMudou?.Invoke();
     }
 
-    // Lê até a conexão cair (true: tentar de novo) ou a Twitch cancelar a assinatura (false). Quando a Twitch pede
-    // para trocar de endereço, a conexão antiga continua recebendo até a nova dar as boas-vindas.
-    private async Task<bool> LerAsync(Ligacao atual, CancellationToken cancelar)
+    // Lê até a conexão cair (true: tentar de novo) ou a Twitch cancelar todas as assinaturas (false). Quando a Twitch
+    // pede para trocar de endereço, a conexão antiga continua recebendo até a nova dar as boas-vindas.
+    private async Task<bool> LerAsync(Ligacao atual, HashSet<string> assinadas, CancellationToken cancelar)
     {
         Task<Ligacao?>? nova = null;
         Task<string?> recebendo = ReceberAsync(atual, cancelar);
@@ -248,15 +364,39 @@ public sealed class ResgatesDePontos
                         case "notification" when mensagem.Resgate != null:
                             Resgatado?.Invoke(mensagem.Resgate);
                             break;
+                        case "notification" when mensagem.Retida != null:
+                            MensagemFoiRetida?.Invoke(mensagem.Retida);
+                            break;
+                        case "notification" when mensagem.Decidida != null:
+                            MensagemDecidida?.Invoke(mensagem.Decidida);
+                            break;
                         case "session_reconnect" when nova == null && mensagem.EnderecoDeReconexao != null:
                             nova = TentarAbrirAsync(new Uri(mensagem.EnderecoDeReconexao), cancelar);
                             break;
                         case "revocation":
-                            _log.LogWarning("Resgates: a Twitch cancelou a assinatura ({Motivo}).", mensagem.MotivoDaRevogacao);
+                            _log.LogWarning("EventSub: a Twitch cancelou {Tipo} ({Motivo}).", mensagem.TipoDaAssinatura, mensagem.MotivoDaRevogacao);
                             if (mensagem.MotivoDaRevogacao == "authorization_revoked")
+                            {
                                 _conta.AcessoRecusado();
-                            atual.Fechar();
-                            return false;
+                                assinadas.Clear();
+                            }
+                            // Sem a conta como moderadora, as duas do AutoMod vão juntas
+                            else if (mensagem.TipoDaAssinatura is TipoDaRetida or TipoDaDecisao)
+                            {
+                                assinadas.Remove(TipoDaRetida);
+                                assinadas.Remove(TipoDaDecisao);
+                                DefinirAutoMod(SituacaoDoAutoMod.NaoModera);
+                            }
+                            else if (mensagem.TipoDaAssinatura != null)
+                            {
+                                assinadas.Remove(mensagem.TipoDaAssinatura);
+                            }
+                            if (assinadas.Count == 0)
+                            {
+                                atual.Fechar();
+                                return false;
+                            }
+                            break;
                     }
                 }
                 recebendo = ReceberAsync(atual, cancelar);
@@ -297,6 +437,7 @@ public sealed class ResgatesDePontos
                 return null;
             string id = (string?)raiz?["metadata"]?["message_id"] ?? string.Empty;
             JsonNode? carga = raiz?["payload"];
+            string? assinatura = (string?)carga?["subscription"]?["type"];
 
             switch (tipo)
             {
@@ -307,17 +448,23 @@ public sealed class ResgatesDePontos
                         (string?)sessao?["reconnect_url"]);
 
                 case "notification":
-                    if ((string?)carga?["subscription"]?["type"] != "channel.channel_points_custom_reward_redemption.add")
-                        return new Mensagem(tipo, id);
                     JsonNode? evento = carga?["event"];
-                    return new Mensagem(tipo, id, Resgate: new Resgate(
-                        (string?)evento?["user_name"] ?? (string?)evento?["user_login"] ?? string.Empty,
-                        (string?)evento?["reward"]?["title"] ?? string.Empty,
-                        (int?)evento?["reward"]?["cost"] ?? 0,
-                        (string?)evento?["user_input"] ?? string.Empty));
+                    return assinatura switch
+                    {
+                        TipoDosResgates => new Mensagem(tipo, id, TipoDaAssinatura: assinatura, Resgate: new Resgate(
+                            (string?)evento?["user_name"] ?? (string?)evento?["user_login"] ?? string.Empty,
+                            (string?)evento?["reward"]?["title"] ?? string.Empty,
+                            (int?)evento?["reward"]?["cost"] ?? 0,
+                            (string?)evento?["user_input"] ?? string.Empty)),
+                        TipoDaRetida => new Mensagem(tipo, id, TipoDaAssinatura: assinatura, Retida: LerRetida(evento)),
+                        TipoDaDecisao when (string?)evento?["message_id"] is { Length: > 0 } idDaMensagem =>
+                            new Mensagem(tipo, id, TipoDaAssinatura: assinatura,
+                                Decidida: new Decisao(idDaMensagem, ((string?)evento?["status"] ?? string.Empty).ToLowerInvariant())),
+                        _ => new Mensagem(tipo, id, TipoDaAssinatura: assinatura),
+                    };
 
                 case "revocation":
-                    return new Mensagem(tipo, id, MotivoDaRevogacao: (string?)carga?["subscription"]?["status"]);
+                    return new Mensagem(tipo, id, TipoDaAssinatura: assinatura, MotivoDaRevogacao: (string?)carga?["subscription"]?["status"]);
 
                 default:
                     return new Mensagem(tipo, id);
@@ -327,6 +474,30 @@ public sealed class ResgatesDePontos
         {
             return null;
         }
+    }
+
+    // automod.message.hold versão 2; null sem o id da mensagem (não daria para decidir)
+    private static MensagemRetida? LerRetida(JsonNode? evento)
+    {
+        if ((string?)evento?["message_id"] is not { Length: > 0 } id)
+            return null;
+        JsonNode? mensagem = evento["message"];
+        var partes = new List<ParteDaMensagem>();
+        foreach (JsonNode? parte in mensagem?["fragments"] as JsonArray ?? [])
+        {
+            string textoDaParte = (string?)parte?["text"] ?? string.Empty;
+            if (textoDaParte.Length == 0)
+                continue;
+            string? emote = (string?)parte?["type"] == "emote" ? (string?)parte?["emote"]?["id"] : null;
+            partes.Add(new ParteDaMensagem(textoDaParte, string.IsNullOrEmpty(emote) ? null : emote));
+        }
+        // Sem os pedaços, o texto inteiro
+        if (partes.Count == 0 && (string?)mensagem?["text"] is { Length: > 0 } inteiro)
+            partes.Add(new ParteDaMensagem(inteiro));
+
+        string login = (string?)evento["user_login"] ?? string.Empty;
+        return new MensagemRetida(id, login, (string?)evento["user_name"] ?? login, partes,
+            (string?)evento["reason"] ?? "automod", (string?)evento["automod"]?["category"]);
     }
 
     // Uma conexão já com as boas-vindas; null se não deu (sem internet, Twitch fora do ar...)
@@ -359,7 +530,7 @@ public sealed class ResgatesDePontos
         }
         catch (Exception ex)
         {
-            _log.LogWarning(ex, "Resgates: não deu para conectar ao EventSub.");
+            _log.LogWarning(ex, "EventSub: não deu para conectar.");
             ws.Dispose();
             return null;
         }

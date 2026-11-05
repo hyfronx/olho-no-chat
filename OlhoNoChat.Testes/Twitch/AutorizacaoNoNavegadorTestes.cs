@@ -12,7 +12,7 @@ public class AutorizacaoNoNavegadorTestes
     private static readonly HttpClient Navegador = new() { Timeout = TimeSpan.FromSeconds(5) };
 
     [Fact]
-    public void Endereco_PedeAsTresPermissoesESempreMostraAPagina()
+    public void Endereco_PedeAsQuatroPermissoesESempreMostraAPagina()
     {
         string endereco = AutorizacaoNoNavegador.EnderecoDeAutorizacao(8981, "abc123");
 
@@ -21,7 +21,7 @@ public class AutorizacaoNoNavegadorTestes
         Assert.Equal("token", partes["response_type"]);
         Assert.Equal("zrqsilh31pbdlfjb81onhulkvzytgh", partes["client_id"]);
         Assert.Equal("http://localhost:8981/auth", partes["redirect_uri"]);
-        Assert.Equal("user:write:chat channel:read:redemptions user:read:emotes", partes["scope"]);
+        Assert.Equal("user:write:chat channel:read:redemptions user:read:emotes moderator:manage:automod", partes["scope"]);
         Assert.Equal("true", partes["force_verify"]);
         Assert.Equal("abc123", partes["state"]);
     }

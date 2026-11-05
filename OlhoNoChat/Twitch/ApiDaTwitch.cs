@@ -72,15 +72,24 @@ public sealed class ApiDaTwitch
     public Task<Resposta> EmotesGlobaisAsync(string token) =>
         MandarAsync(Pedido(HttpMethod.Get, "chat/emotes/global", token));
 
-    /// <summary>Assina os resgates de pontos do canal numa sessão do EventSub por websocket (202 = assinado).</summary>
-    public Task<Resposta> AssinarResgatesAsync(string token, string idDoCanal, string idDaSessao) =>
+    /// <summary>Assina um evento numa sessão do EventSub por websocket (202 = assinado).</summary>
+    public Task<Resposta> AssinarAsync(string token, string tipo, string versao, IReadOnlyDictionary<string, string> condicao,
+        string idDaSessao) =>
         MandarAsync(Pedido(HttpMethod.Post, "eventsub/subscriptions", token, new
         {
-            type = "channel.channel_points_custom_reward_redemption.add",
-            version = "1",
-            condition = new { broadcaster_user_id = idDoCanal },
+            type = tipo,
+            version = versao,
+            condition = condicao,
             transport = new { method = "websocket", session_id = idDaSessao }
         }));
+
+    /// <summary>
+    /// Aprova ou recusa uma mensagem que o AutoMod segurou (204 = feito; 403 = a conta não é moderadora do canal;
+    /// 404 = a mensagem não está mais na fila).
+    /// </summary>
+    public Task<Resposta> DecidirNoAutoModAsync(string token, string idDaConta, string idDaMensagem, bool aprovar) =>
+        MandarAsync(Pedido(HttpMethod.Post, "moderation/automod/message", token,
+            new { user_id = idDaConta, msg_id = idDaMensagem, action = aprovar ? "ALLOW" : "DENY" }));
 
     /// <summary>Cancela um acesso na Twitch.</summary>
     public Task<Resposta> RevogarAsync(string token) =>
