@@ -3,11 +3,37 @@
 
 Mostra o chat da sua live por cima do jogo, com fundo transparente. Feito para quem faz live com um monitor só e precisa ler o chat sem sair do jogo.
 
+![Escrever no chat, emotes da conta, pausar o chat, AutoMod, chat unido e GIFs](docs/recursos.png)
+
 ## Como instalar
 
 1. Baixe o `OlhoNoChat-win-Setup.exe` na página de [versões](https://github.com/hyfronx/olho-no-chat/releases/latest).
-2. Abra o instalador. Se aparecer o aviso "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**. Isso só acontece na primeira vez.
+2. Abra o instalador. Se o Windows mostrar um aviso de bloqueio, veja [Se o Windows bloquear o app](#se-o-windows-bloquear-o-app).
 3. Digite o nome do seu canal na faixa em cima do chat e clique em **Aplicar**.
+
+## Se o Windows bloquear o app
+
+O Windows confia de cara nos programas que têm uma **assinatura digital**: um certificado pago, de algumas centenas de dólares por ano, que identifica quem fez o programa. O Olho no Chat é gratuito e feito por uma pessoa só, e esse custo não cabe num projeto pequeno. Por isso o Windows trata o app como "desconhecido". Isso não quer dizer que ele tenha vírus: o código é aberto e qualquer pessoa pode conferir aqui no GitHub.
+
+Existem dois avisos diferentes:
+
+**"O Windows protegeu o computador"**: clique em **Mais informações** e depois em **Executar assim mesmo**. Pronto.
+
+**"O controle inteligente de aplicativos bloqueou um aplicativo que pode não ser seguro"**: é bem raro. Aconteceu uma vez, num computador só; nos outros o app funcionou normalmente, e a própria Microsoft respondeu à análise que não estava bloqueando o Olho no Chat. Se acontecer com você:
+
+1. **Desinstale e instale de novo.** Pode ter sido uma falha passageira. Desinstale em **Configurações > Aplicativos > Aplicativos instalados > Olho no Chat > Desinstalar** e baixe o instalador outra vez (as suas configurações ficam guardadas).
+2. Se continuar bloqueando, o aviso não tem botão para liberar, e o Windows não deixa abrir exceção para um app só. Sobram dois caminhos:
+   - **Esperar a Microsoft analisar o app.** Pode demorar bastante.
+   - **Desligar o Controle Inteligente de Aplicativos.** Ele bloqueia muitos programas que não têm problema nenhum. O antivírus continua funcionando normalmente: o importante é ter um antivírus de qualidade (o Microsoft Defender, que já vem no Windows, ou outro de sua confiança).
+
+Como desligar:
+
+1. Abra o menu Iniciar, digite **Segurança do Windows** e abra.
+2. Clique em **Controle de aplicativo e navegador**.
+3. Clique em **Configurações do Controle Inteligente de Aplicativos**.
+4. Escolha **Desativado**.
+
+Atenção: dependendo da versão do Windows, depois de desligado ele só volta reinstalando o Windows.
 
 ## Como usar
 

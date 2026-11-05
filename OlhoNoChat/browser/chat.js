@@ -211,6 +211,13 @@
     const PLATFORM_PROBLEMS = { waiting: 'esperando a live', failed: 'sem conexão', notfound: 'canal não encontrado' };
     const platformStates = {};
     let multiPillText = '';
+    // The pill tells how the chats are once, after the first connection (and again when the chats in use change). After
+    // that only good news brings it back: a chat that connects. A YouTube or TikTok live that isn't on yet is looked for
+    // again every so often (connecting, then waiting again), and a notice repeating "esperando a live" each time only
+    // bothered (user's choice, 2026-11-05); the dots of the channel strip keep telling it.
+    let multiSettled = false;
+    let multiUsed = '';
+    const lastSettled = {};      // each platform's last state that isn't 'connecting'
 
     function setPlatformState(platform, newState) {
         platformStates[platform] = newState;
@@ -220,15 +227,30 @@
     function showMultiPill() {
         if (!settings.multiplatform) return;
         const used = Object.keys(PLATFORM_NAMES).filter(p => platformStates[p] && platformStates[p] !== 'off');
+        if (used.join() !== multiUsed) {
+            multiUsed = used.join();
+            multiSettled = false;
+        }
         if (!used.length) {
             pill.remove();
             multiPillText = '';
             return;
         }
-        const connected = used.filter(p => platformStates[p] === 'connected').length;
-        const problems = used.filter(p => PLATFORM_PROBLEMS[platformStates[p]]);
+        let newlyConnected = false;
+        used.forEach(p => {
+            if (platformStates[p] === 'connecting') return;
+            if (platformStates[p] === 'connected' && lastSettled[p] !== 'connected') newlyConnected = true;
+            lastSettled[p] = platformStates[p];
+        });
+        // Settled: quiet, unless a chat just connected. Then the others count as they last were (one looking for its
+        // live again right now still counts as waiting)
+        const stateOf = p => multiSettled && platformStates[p] === 'connecting' && lastSettled[p] ? lastSettled[p] : platformStates[p];
+        if (multiSettled && !newlyConnected) return;
+
+        const connected = used.filter(p => stateOf(p) === 'connected').length;
+        const problems = used.filter(p => PLATFORM_PROBLEMS[stateOf(p)]);
         let className, text, fadeAfterMs;
-        if (used.some(p => platformStates[p] === 'connecting')) {
+        if (used.some(p => stateOf(p) === 'connecting')) {
             className = 'connecting';
             text = used.length === 1 ? 'Conectando ao chat…' : 'Conectando aos chats…';
             fadeAfterMs = 0;
@@ -239,14 +261,16 @@
         } else {
             // Waiting for a live isn't a failure: gray; a lost or wrong channel: red. It stays a while, then the dots
             // of the channel strip keep telling it
-            className = problems.some(p => platformStates[p] !== 'waiting') ? 'disconnected' : 'waiting';
-            const parts = problems.map(p => PLATFORM_NAMES[p] + ': ' + PLATFORM_PROBLEMS[platformStates[p]]);
+            className = problems.some(p => stateOf(p) !== 'waiting') ? 'disconnected' : 'waiting';
+            const parts = problems.map(p => PLATFORM_NAMES[p] + ': ' + PLATFORM_PROBLEMS[stateOf(p)]);
             if (connected) parts.unshift(`Conectado a ${connected} de ${used.length} chats`);
             text = parts.join(' · ');
             fadeAfterMs = 10000;
         }
-        // The same text again (a state that didn't change for the pill) doesn't show the pill again
-        if (text === multiPillText && pill.className.split(' ')[0] === className) return;
+        if (className !== 'connecting') multiSettled = true;
+        // The same text again (a state that didn't change for the pill) doesn't show the pill again; a chat that connected
+        // again does (dropped and came back: the same text as before the drop)
+        if (!newlyConnected && text === multiPillText && pill.className.split(' ')[0] === className) return;
         multiPillText = text;
         showPill(className + ' multi', text, fadeAfterMs);
     }
@@ -1743,6 +1767,7 @@
         if (settings.multiplatform) {
             if (state) platformStates.twitch = state === 'unavailable' ? 'notfound' : state === 'disconnected' ? 'failed' : state;
             multiPillText = '';
+            multiSettled = false; // just switched on: tell how the chats are once
             showMultiPill();
         } else if (channel && state) {
             showPill(state, stateTexts[state], state === 'connected' ? 4000 : 0);

@@ -121,7 +121,7 @@ public sealed partial class ListaDeEmotes
 
     private async Task<Lista> BuscarNaTwitchAsync(string canal, string chave)
     {
-        Lista lista = await BuscarNaTwitchAsync(canal);
+        Lista lista = ParaAsImagens(await BuscarNaTwitchAsync(canal));
         _guardada = (chave, _agora(), lista);
         GravarNoDisco(ChaveNoDisco(canal), lista);
         return lista;
@@ -207,6 +207,25 @@ public sealed partial class ListaDeEmotes
         return grupos;
     }
 
+    /// <summary>
+    /// Só na versão de teste, com a variável OLHONOCHAT_SO_EMOTES_GLOBAIS=1: só o grupo dos globais da Twitch, para as
+    /// imagens do README (os grupos das inscrições da conta mostrariam canais de verdade), também sem os emotes do Pride
+    /// (escolha do usuário: as imagens não entram nesse tema). Na versão lançada, a lista como veio.
+    /// </summary>
+    private static Lista ParaAsImagens(Lista lista)
+    {
+#if DEBUG
+        if (Environment.GetEnvironmentVariable("OLHONOCHAT_SO_EMOTES_GLOBAIS") == "1")
+            return lista with
+            {
+                Grupos = lista.Grupos.Where(g => g.Titulo == TituloGlobais)
+                    .Select(g => g with { Emotes = g.Emotes.Where(e => !e.Nome.Contains("Pride", StringComparison.OrdinalIgnoreCase)).ToList() })
+                    .ToList()
+            };
+#endif
+        return lista;
+    }
+
     private static bool EhGlobal(string dono) => dono.Length == 0 || dono == "0" || dono == "twitch";
 
     // "format": ["static", "animated"] quando o emote tem as duas versões
@@ -229,7 +248,7 @@ public sealed partial class ListaDeEmotes
                 .Where(g => g?.Emotes != null)
                 .Select(g => new Grupo(g.Titulo ?? "", g.Emotes.Where(e => e != null && !string.IsNullOrEmpty(e.Id) && !string.IsNullOrEmpty(e.Nome)).ToList()))
                 .ToList();
-            return (lida.Chave, new Lista(grupos, lida.SoGlobais));
+            return (lida.Chave, ParaAsImagens(new Lista(grupos, lida.SoGlobais)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
