@@ -18,21 +18,6 @@ public enum EstadoDaConexao
     SemConexao,
 }
 
-/// <summary>Como está a leitura do chat da Kick, que a página do Padrão faz sozinha (o ponto da Kick na faixa).</summary>
-public enum EstadoDaKick
-{
-    /// <summary>Sem Chat Multiplataforma ou sem canal da Kick.</summary>
-    Desligado,
-    Conectando,
-    Conectado,
-
-    /// <summary>Sem internet ou a Kick não respondeu: a página tenta de novo.</summary>
-    SemConexao,
-
-    /// <summary>A Kick disse que o canal não existe: não tenta de novo até trocar o canal.</summary>
-    CanalNaoExiste,
-}
-
 /// <summary>
 /// A faixa do canal sem a tela: o único lugar para trocar o canal. Fechada, mostra o canal e o ponto da conexão; aberta,
 /// a caixa do nome (sempre aberta enquanto não há canal). O nome é conferido antes de trocar e, com a conta conectada,
@@ -168,7 +153,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDoYouTube _conexaoDoYouTube;
 
-    /// <summary>A leitura do chat da Kick (o ponto da Kick na faixa), como a página do Padrão avisa.</summary>
+    /// <summary>A leitura do chat da Kick (o ponto da Kick na faixa).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDaKick _conexaoDaKick;

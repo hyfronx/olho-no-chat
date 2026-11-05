@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using OlhoNoChat.Controles;
+using OlhoNoChat.Kick;
 using OlhoNoChat.TikTok;
 using OlhoNoChat.YouTube;
 
@@ -83,7 +84,7 @@ public partial class FaixaDoCanal : UserControl
             EstadoDoYouTube.CanalNaoExiste or EstadoDoYouTube.SemConexao => Vermelho,
             _ => Cinza,
         };
-        // O da Kick também não pisca
+        // O da Kick também (sem esperar a live: o chat da Kick funciona com o canal fora do ar)
         pontoDaKick.Fill = (_logica?.ConexaoDaKick ?? EstadoDaKick.Desligado) switch
         {
             EstadoDaKick.Conectando => Amarelo,

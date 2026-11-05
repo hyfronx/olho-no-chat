@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using OlhoNoChat.Atalhos;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Kick;
 using OlhoNoChat.TikTok;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.YouTube;
@@ -52,8 +53,6 @@ public static class ContratoComAPagina
             blockList = opcoes.UsuariosBloqueados.Select(nome => nome.ToLowerInvariant()),
             // Chat Multiplataforma: cada mensagem mostra o ícone da plataforma
             multiplatform = opcoes.ChatMultiplataforma,
-            // Chat Multiplataforma: o canal da Kick que a página lê ("" = nenhum)
-            kick = ChatMultiplataforma.KickALer(opcoes),
             // Pausar o chat: a velocidade de continuar em linhas por segundo (0 = no ritmo de leitura) e o atalho, que o
             // aviso da pausa mostra
             resumeSpeed = opcoes.VelocidadeAutomaticaAoContinuar ? 0 : opcoes.LinhasPorSegundoAoContinuar,
@@ -234,7 +233,7 @@ public static class ContratoComAPagina
     }
 
     /// <summary>
-    /// Chat Multiplataforma: como está a leitura do YouTube ou do TikTok (que o app faz), para o aviso de conexão da página
+    /// Chat Multiplataforma: como está a leitura do YouTube, da Kick ou do TikTok (que o app faz), para o aviso de conexão da página
     /// juntar todas as plataformas.
     /// </summary>
     public static string EstadoDaPlataforma(string plataforma, string estado) =>
@@ -262,6 +261,52 @@ public static class ContratoComAPagina
         EstadoDoTikTok.SemConexao => "failed",
         _ => "off",
     };
+
+    /// <summary>O estado do leitor da Kick como a página entende.</summary>
+    public static string EstadoParaAPagina(EstadoDaKick estado) => estado switch
+    {
+        EstadoDaKick.Conectando => "connecting",
+        EstadoDaKick.Conectado => "connected",
+        EstadoDaKick.CanalNaoExiste => "notfound",
+        EstadoDaKick.SemConexao => "failed",
+        _ => "off",
+    };
+
+    /// <summary>
+    /// Uma mensagem do chat da Kick (Chat Multiplataforma): o texto e os emotes como <c>{ emote: { src }, name }</c>, os
+    /// papéis que valem para os filtros (dono, moderador, VIP) e os selos na ordem do site: <c>"moderator/1"</c> (um da
+    /// Twitch, que a página já tem) ou <c>{ src, name }</c> (uma imagem da Kick).
+    /// </summary>
+    public static string AdicionarDaKick(ItemDaKick item)
+    {
+        string json = JsonSerializer.Serialize(new
+        {
+            id = item.Id,
+            login = item.Login,
+            name = item.Nome,
+            color = item.Cor,
+            roles = item.Papeis,
+            badges = item.Selos.Select(s => s.DaTwitch != null ? (object)s.DaTwitch : new { src = s.Imagem, name = s.Nome }),
+            parts = item.Partes.Select(p => p.Imagem == null ? (object)p.Texto : new { emote = new { src = p.Imagem }, name = p.Texto }),
+        });
+        return $"window.oncChat && window.oncChat.addKick && window.oncChat.addKick({json});";
+    }
+
+    /// <summary>
+    /// Um moderador da Kick apagou uma mensagem (<c>{ id }</c>), baniu ou suspendeu alguém (<c>{ login }</c>: as mensagens
+    /// dele saem) ou limpou o chat (<c>{ all: true }</c>). Null para uma mensagem nova.
+    /// </summary>
+    public static string? ApagarDaKick(EventoDaKick evento)
+    {
+        object? oQue = evento.Tipo switch
+        {
+            TipoDeEventoDaKick.Apagada => new { id = evento.Id },
+            TipoDeEventoDaKick.Banido => new { login = evento.Login },
+            TipoDeEventoDaKick.Limpeza => new { all = true },
+            _ => null,
+        };
+        return oQue == null ? null : $"window.oncChat && window.oncChat.removeKick && window.oncChat.removeKick({JsonSerializer.Serialize(oQue)});";
+    }
 
     /// <summary>Um moderador do TikTok apagou mensagens: pelos ids delas e pelo @ de quem mandou.</summary>
     public static string ApagarDoTikTok(IReadOnlyList<string> ids, IReadOnlyList<string> logins) =>
@@ -354,7 +399,6 @@ public static class ContratoComAPagina
     public static MensagemDaPagina LerMensagem(string? mensagem)
     {
         const string estado = "onc:chat-state:";
-        const string estadoDaKick = "onc:kick-state:";
         return mensagem switch
         {
             "onc:play-sound" => MensagemDaPagina.TocarSom,
@@ -370,15 +414,6 @@ public static class ContratoComAPagina
                 "connected" => MensagemDaPagina.Conectado,
                 "disconnected" => MensagemDaPagina.Desconectado,
                 _ => MensagemDaPagina.Conectando,
-            },
-            _ when mensagem != null && mensagem.StartsWith(estadoDaKick, StringComparison.Ordinal) => mensagem[estadoDaKick.Length..] switch
-            {
-                "connecting" => MensagemDaPagina.KickConectando,
-                "connected" => MensagemDaPagina.KickConectado,
-                "disconnected" => MensagemDaPagina.KickDesconectado,
-                "notfound" => MensagemDaPagina.KickNaoExiste,
-                "off" => MensagemDaPagina.KickDesligado,
-                _ => MensagemDaPagina.Desconhecida,
             },
             _ => MensagemDaPagina.Desconhecida,
         };

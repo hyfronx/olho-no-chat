@@ -27,7 +27,7 @@
         fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
         twitchNotices: true, youTubeNotices: true, tiktokGifts: true, tiktokFollows: true, tiktokShares: false, tiktokSuperFans: true,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
-        vips: [], blockList: [], multiplatform: false, kick: '',
+        vips: [], blockList: [], multiplatform: false,
         // Pause: the speed when continuing (one-line messages a second; 0 = automatic) and the hotkey, for the marker
         resumeSpeed: 0, pauseHotkey: ''
     };
@@ -204,8 +204,8 @@
         if (fadeAfterMs) pillFadeTimer = setTimeout(() => pill.classList.add('faded'), fadeAfterMs);
     }
 
-    // Chat Multiplataforma: one pill for all the chats in use, not only Twitch's. Twitch and Kick are read here; the app
-    // tells the YouTube and TikTok states (oncChat.platformState). Each one is connecting, connected, waiting (YouTube
+    // Chat Multiplataforma: one pill for all the chats in use, not only Twitch's. Twitch is read here; the app tells the
+    // YouTube, Kick and TikTok states (oncChat.platformState). Each one is connecting, connected, waiting (YouTube
     // and TikTok: the channel isn't live), failed (no connection, trying again), notfound or off.
     const PLATFORM_NAMES = { twitch: 'Twitch', youtube: 'YouTube', kick: 'Kick', tiktok: 'TikTok' };
     const PLATFORM_PROBLEMS = { waiting: 'esperando a live', failed: 'sem conexão', notfound: 'canal não encontrado' };
@@ -485,7 +485,7 @@
         span.replaceChildren();
         span.dataset.badges.split(',').forEach(badge => {
             const [set, version] = badge.split('/');
-            const img = set === 'kicksub' ? kickSubBadge(Number(version)) : twitchBadge(set, version);
+            const img = set === 'kickimg' ? kickBadge(version) : twitchBadge(set, version);
             if (!img) return;
             img.className = 'tag ' + set + '-' + version;
             img.alt = set;
@@ -1708,58 +1708,53 @@
     }
 
     // --- Kick (Chat Multiplataforma) ----------------------------------------------------------------
-    // Read here, like the Twitch IRC: the channel's chat room id comes from Kick's site API (it answers this page),
-    // then the Pusher WebSocket the site itself uses sends the room's messages. Read-only, no account. The same
-    // filters and sound as the Twitch ones: the filter lists hold the Kick name, moderators count as Mods.
-    // The app shows the state in the channel strip (onc:kick-state, see LogicaFaixaDoCanal).
+    // The app reads the chat of a Kick channel (Kick/LeitorDaKick.cs) and sends each message here
+    // (ContratoComAPagina.AdicionarDaKick), with the emotes already as parts and the badges in the order of Kick's site:
+    // "moderator/1" (a Twitch badge picture) or { src, name } (a Kick picture: the new global badges, the channel's
+    // subscriber badge). The same filters and sound as the Twitch ones: the filter lists hold the Kick name, the
+    // broadcaster, moderators and VIPs count for the filters.
 
-    const KICK_API = 'https://kick.com/api/v2/channels/';
-    // Kick's Pusher key and cluster. The site gets them from web.kick.com/api/v1/realtime/channels/{id}/chat/connection
-    // (asking for "pusher" only), but that API doesn't answer this page (CORS), so they're written here. When Kick
-    // changes them, the connection is refused with "pusher:error" (in the DevTools console) and the strip shows red.
-    const KICK_PUSHER_URL = 'wss://ws-us2.pusher.com/app/34bf7a0ff419a2a775b9?protocol=7&client=js&version=8.4.0&flash=false';
-    const KICK_ACTIVITY_MS = 120000;   // Pusher's activity timeout: a ping when nothing came for this long...
-    const KICK_PONG_LIMIT_MS = 30000;  // ...and a new connection when even the pong doesn't come
-    const KICK_API_RETRY_MS = 20000;   // the site API didn't answer: try again
-    const KICK_BADGES = { broadcaster: 'broadcaster/1', moderator: 'moderator/1', vip: 'vip/1' };
+    const KICK_ROLES = { broadcaster: 'broadcaster/1', moderator: 'moderator/1', vip: 'vip/1' };
+    // Kick's badge pictures, by a number: the badges of a line are a text ("kickimg/3,moderator/1", see fillBadges)
+    const kickImages = [];
+    const kickImageIds = new Map();
 
-    const kick = {
-        channel: '',       // the channel being read ('' = none)
-        room: null,        // its chat room id
-        subBadges: [],     // the channel's subscriber badges, [{ months, src }] from the fewest months
-        socket: null,
-        lastData: 0,
-        pingSent: false,
-        retryDelay: RETRY_MIN_MS,
-        retryTimer: null,
-        state: ''
-    };
-
-    // The Kick channel in the settings, read only with the Chat Multiplataforma on
-    function updateKick() {
-        const wanted = started && settings.multiplatform ? String(settings.kick || '') : '';
-        if (wanted === kick.channel) return;
-        stopKick();
-        kick.channel = wanted;
-        if (wanted) loadKickChannel(wanted);
-        else setKickState('off');
+    function kickImage(src, name) {
+        let id = kickImageIds.get(src);
+        if (id === undefined) {
+            id = kickImages.push({ src, name: String(name || '') }) - 1;
+            kickImageIds.set(src, id);
+        }
+        return 'kickimg/' + id;
     }
 
-    function stopKick() {
-        clearTimeout(kick.retryTimer);
-        const old = kick.socket;
-        kick.socket = null;
-        kick.room = null;
-        kick.subBadges = [];
-        kick.retryDelay = RETRY_MIN_MS;
-        if (old) old.close();
+    function kickBadge(id) {
+        const badge = kickImages[Number(id)];
+        if (!badge) return null;
+        const img = document.createElement('img');
+        img.src = badge.src;
+        img.title = badge.name;
+        return img;
     }
 
-    function setKickState(newState) {
-        if (newState === kick.state) return;
-        kick.state = newState;
-        postToApp('onc:kick-state:' + newState);
-        setPlatformState('kick', newState === 'disconnected' ? 'failed' : newState);
+    function onKickMessage(m) {
+        const login = String(m.login || '').toLowerCase();
+        const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
+        if (!login) return;
+        // A bot by its name: Kick marks no bots (see "Bots")
+        if (settings.hideBots && (text[0] === '!' || /bot$/.test(login))) return;
+
+        const roles = (m.roles || []).map(role => KICK_ROLES[role]).filter(Boolean);
+        const shown = (m.badges || []).map(b => typeof b === 'string' ? b : b && b.src ? kickImage(b.src, b.name) : '').filter(Boolean);
+        showLine({
+            id: 'kick-' + m.id,
+            platform: 'kick',
+            login,
+            name: m.name || login,
+            color: userColor(login, m.color),
+            action: false,
+            parts: m.parts || []
+        }, roles.join(','), shown.join(','));
     }
 
     // The Chat Multiplataforma was switched on or off while the chat is open: the pill tells the new way
@@ -1774,161 +1769,6 @@
         } else {
             pill.remove();
         }
-    }
-
-    function loadKickChannel(name) {
-        setKickState('connecting');
-        fetch(KICK_API + encodeURIComponent(name))
-            .then(response => {
-                if (kick.channel !== name) return;
-                if (response.status === 404) {
-                    setKickState('notfound');
-                    return;
-                }
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                return response.json().then(data => {
-                    if (kick.channel !== name) return;
-                    kick.room = data.chatroom.id;
-                    kick.subBadges = (data.subscriber_badges || [])
-                        .filter(b => b.badge_image && b.badge_image.src)
-                        .map(b => ({ months: Number(b.months) || 0, src: b.badge_image.src }))
-                        .sort((a, b) => a.months - b.months);
-                    connectKick();
-                });
-            })
-            .catch(e => {
-                if (kick.channel !== name) return;
-                console.warn('[ONC] Could not find the Kick channel ' + name, e);
-                setKickState('disconnected');
-                kick.retryTimer = setTimeout(() => loadKickChannel(name), KICK_API_RETRY_MS);
-            });
-    }
-
-    function connectKick() {
-        clearTimeout(kick.retryTimer);
-        setKickState('connecting');
-        const ws = new WebSocket(KICK_PUSHER_URL);
-        kick.socket = ws;
-        kick.lastData = Date.now();
-        kick.pingSent = false;
-
-        const send = (event, data) => ws.send(JSON.stringify({ event, data }));
-        ws.onmessage = (message) => {
-            if (ws !== kick.socket) return;
-            kick.lastData = Date.now();
-            kick.pingSent = false;
-            let event, data;
-            try {
-                event = JSON.parse(message.data);
-                data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-            } catch (e) {
-                console.error('[ONC] Could not read the Kick event: ' + message.data, e);
-                return;
-            }
-            switch (event.event) {
-                case 'pusher:connection_established':
-                    send('pusher:subscribe', { auth: '', channel: 'chatrooms.' + kick.room + '.v2' });
-                    break;
-                case 'pusher_internal:subscription_succeeded':
-                    kick.retryDelay = RETRY_MIN_MS;
-                    setKickState('connected');
-                    break;
-                case 'pusher:ping':
-                    send('pusher:pong', {});
-                    break;
-                case 'pusher:error':
-                    console.warn('[ONC] Kick refused the connection: ' + message.data);
-                    break;
-                case 'App\\Events\\ChatMessageEvent':
-                    onKickMessage(data);
-                    break;
-                case 'App\\Events\\MessageDeletedEvent':
-                    if (data && data.message && data.message.id)
-                        removeLines(`.chat_line[data-id="${CSS.escape('kick-' + data.message.id)}"]`);
-                    break;
-                case 'App\\Events\\UserBannedEvent':
-                    if (data && data.user && data.user.username)
-                        removeLines(`.chat_line[data-id^="kick-"][data-nick="${CSS.escape(String(data.user.username).toLowerCase())}"]`);
-                    break;
-                case 'App\\Events\\ChatroomClearEvent':
-                    removeLines('.chat_line[data-id^="kick-"]');
-                    break;
-            }
-        };
-        ws.onclose = () => {
-            if (ws !== kick.socket) return;
-            kick.socket = null;
-            setKickState('disconnected');
-            kick.retryTimer = setTimeout(connectKick, kick.retryDelay);
-            kick.retryDelay = Math.min(kick.retryDelay * 2, RETRY_MAX_MS);
-        };
-    }
-
-    // Kick's chat can stay quiet for minutes: a ping keeps the connection, one that stopped answering is replaced
-    setInterval(() => {
-        const ws = kick.socket;
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-        const silentFor = Date.now() - kick.lastData;
-        if (kick.pingSent && silentFor > KICK_ACTIVITY_MS + KICK_PONG_LIMIT_MS) {
-            ws.close();
-        } else if (!kick.pingSent && silentFor > KICK_ACTIVITY_MS) {
-            kick.pingSent = true;
-            ws.send(JSON.stringify({ event: 'pusher:ping', data: {} }));
-        }
-    }, 5000);
-
-    // "[emote:37226:KEKW]" in the text is a Kick emote
-    function kickParts(text) {
-        const parts = [];
-        let last = 0;
-        for (const m of text.matchAll(/\[emote:(\d+):([^\]]*)\]/g)) {
-            if (m.index > last) parts.push(text.slice(last, m.index));
-            parts.push({ emote: { src: 'https://files.kick.com/emotes/' + m[1] + '/fullsize' }, name: m[2] });
-            last = m.index + m[0].length;
-        }
-        if (last < text.length) parts.push(text.slice(last));
-        return parts;
-    }
-
-    // The channel's subscriber badge for that many months (the one of the most months reached, at least the first)
-    function kickSubBadge(months) {
-        let badge = null;
-        kick.subBadges.forEach(b => { if (b.months <= months || !badge) badge = b; });
-        if (!badge) return null;
-        const img = document.createElement('img');
-        img.src = badge.src;
-        return img;
-    }
-
-    function onKickMessage(m) {
-        const sender = (m && m.sender) || {};
-        const identity = sender.identity || {};
-        const login = String(sender.username || sender.slug || '').toLowerCase();
-        const text = String(m.content || '');
-        if (!login || !text) return;
-        // A bot by its name: Kick marks no bots (see "Bots")
-        if (settings.hideBots && (text[0] === '!' || /bot$/.test(login))) return;
-
-        // Broadcaster, Mods and VIPs count for the filters; the subscriber badge is the channel's own picture
-        const badges = [], shown = [];
-        (identity.badges || []).forEach(b => {
-            if (KICK_BADGES[b.type]) {
-                badges.push(KICK_BADGES[b.type]);
-                shown.push(KICK_BADGES[b.type]);
-            } else if (b.type === 'subscriber') {
-                shown.push('kicksub/' + (Number(b.count) || 0));
-            }
-        });
-
-        showLine({
-            id: 'kick-' + m.id,
-            platform: 'kick',
-            login,
-            name: sender.username || login,
-            color: userColor(login, identity.color),
-            action: false,
-            parts: kickParts(text)
-        }, badges.join(','), shown.join(','));
     }
 
     // The platform icons only while the Chat Multiplataforma is on (also on the lines already shown)
@@ -1946,7 +1786,6 @@
             if (started) return;
             started = true;
             if (channel) connect();
-            updateKick();
         },
 
         // Settings saved while the chat is open (see MainWindow.LiveSettings.cs)
@@ -1963,7 +1802,6 @@
             });
             if (!settings.multiplatform) removeLines('.chat_line[data-id^="yt-"], .chat_line[data-id^="kick-"], .chat_line[data-id^="tt-"]');
             const wasMultiplatform = pill.classList.contains('multi');
-            updateKick();
             if (wasMultiplatform !== !!settings.multiplatform) refreshPill();
             refreshMarker(); // the pause hotkey may be another one
         },
@@ -1976,8 +1814,8 @@
             return pause;
         },
 
-        // Chat Multiplataforma: how the YouTube or the TikTok reading is (the app reads them): connecting, connected,
-        // waiting, failed, notfound or off
+        // Chat Multiplataforma: how the YouTube, the Kick or the TikTok reading is (the app reads them): connecting,
+        // connected, waiting, failed, notfound or off
         platformState(platform, newState) {
             setPlatformState(platform, newState);
         },
@@ -1986,6 +1824,21 @@
         addYouTube(message) {
             if (!started || !settings.multiplatform) return;
             onYouTubeMessage(message);
+        },
+
+        // A message of the Kick chat (Chat Multiplataforma)
+        addKick(message) {
+            if (!started || !settings.multiplatform) return;
+            onKickMessage(message);
+        },
+
+        // A Kick moderator deleted a message ({ id }), banned someone ({ login }: their messages go) or cleared the
+        // chat ({ all: true })
+        removeKick(what) {
+            if (!what) return;
+            if (what.all) removeLines('.chat_line[data-id^="kick-"]');
+            else if (what.id) removeLines(`.chat_line[data-id="${CSS.escape('kick-' + what.id)}"]`);
+            else if (what.login) removeLines(`.chat_line[data-id^="kick-"][data-nick="${CSS.escape(String(what.login).toLowerCase())}"]`);
         },
 
         // A message of the TikTok chat (Chat Multiplataforma)

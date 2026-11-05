@@ -30,8 +30,8 @@ public interface ISocketDoTikTok : IDisposable
 /// <summary>
 /// Os pedidos de verdade, como o site do TikTok faz para quem assiste sem conta: um cookie de visitante ("ttwid", que o
 /// TikTok dá na página das lives), a sala pelo <c>api-live/user/room</c> e o WebSocket do chat com esse cookie. Nada
-/// disso pede login nem assinatura. O WebSocket fica aqui, e não na página do chat como o da Kick, porque o navegador
-/// não deixa pôr o cookie num WebSocket para outro site.
+/// disso pede login nem assinatura. O WebSocket fica aqui, e não na página do chat, porque o navegador não deixa pôr o
+/// cookie num WebSocket para outro site.
 /// </summary>
 public sealed class ConexaoComOTikTok : IConexaoComOTikTok
 {

@@ -4,8 +4,9 @@ namespace OlhoNoChat.Kick;
 
 /// <summary>
 /// O canal da Kick digitado na faixa do canal: "nome", "@nome" ou o link do canal ("kick.com/nome", "https://kick.com/nome/videos").
-/// Gravado nas opções como o nome do endereço, em minúsculas e com "-" no lugar de "_" (o nome "Fulano_1" tem o endereço
-/// kick.com/fulano-1): é o que a página do chat procura na Kick (browser/chat.js).
+/// Gravado nas opções em minúsculas, como foi digitado: é o que o leitor procura na Kick (<see cref="LeitorDaKick"/>).
+/// O "_" fica: quase sempre o endereço troca o "_" do nome por "-" ("Fulano_1" tem o endereço kick.com/fulano-1), mas há
+/// canais em que o "_" ficou no endereço (kick.com/korekore_ch); o leitor tenta a outra forma (<see cref="OutraForma"/>).
 /// </summary>
 public static partial class CanalDaKick
 {
@@ -27,6 +28,15 @@ public static partial class CanalDaKick
         }
 
         string nome = texto.TrimStart('@');
-        return Nome().IsMatch(nome) ? nome.ToLowerInvariant().Replace('_', '-') : null;
+        return Nome().IsMatch(nome) ? nome.ToLowerInvariant() : null;
     }
+
+    /// <summary>
+    /// O mesmo canal com "_" no lugar de "-", ou o contrário (a Kick não achou o nome como está), ou null se não tem nenhum
+    /// dos dois. Com os dois, troca o "_" (o mais comum no endereço é o "-").
+    /// </summary>
+    public static string? OutraForma(string canal) =>
+        canal.Contains('_') ? canal.Replace('_', '-')
+        : canal.Contains('-') ? canal.Replace('-', '_')
+        : null;
 }

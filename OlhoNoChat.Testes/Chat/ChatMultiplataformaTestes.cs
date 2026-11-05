@@ -95,15 +95,13 @@ public class ChatMultiplataformaTestes
     }
 
     [Fact]
-    public void Pagina_RecebeOCanalDaKickSoComAFuncaoLigada()
+    public void Kick_LidaSoComAFuncaoLigada()
     {
         _opcoes.CanalDaKick = "https://kick.com/Gaules";
-        using JsonDocument ligado = JsonDocument.Parse(ContratoComAPagina.JsonDeConfiguracoes(_opcoes));
-        Assert.Equal("gaules", ligado.RootElement.GetProperty("kick").GetString());
+        Assert.Equal("gaules", ChatMultiplataforma.KickALer(_opcoes));
 
         _opcoes.ChatMultiplataforma = false;
-        using JsonDocument desligado = JsonDocument.Parse(ContratoComAPagina.JsonDeConfiguracoes(_opcoes));
-        Assert.Equal("", desligado.RootElement.GetProperty("kick").GetString());
+        Assert.Null(ChatMultiplataforma.KickALer(_opcoes));
     }
 
     [Fact]

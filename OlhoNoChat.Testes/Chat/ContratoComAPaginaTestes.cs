@@ -1,5 +1,6 @@
 using OlhoNoChat.Chat;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Kick;
 using OlhoNoChat.TikTok;
 
 namespace OlhoNoChat.Testes.Chat;
@@ -14,7 +15,7 @@ public sealed class ContratoComAPaginaTestes
     public void JsonDeConfiguracoes_PadraoDaPrimeiraInstalacao_Exato()
     {
         Assert.Equal(
-            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"kick":"","resumeSpeed":0,"pauseHotkey":"Ctrl \u002B Alt \u002B F6"}""",
+            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"resumeSpeed":0,"pauseHotkey":"Ctrl \u002B Alt \u002B F6"}""",
             ContratoComAPagina.JsonDeConfiguracoes(new Opcoes()));
     }
 
@@ -47,7 +48,7 @@ public sealed class ContratoComAPaginaTestes
         };
 
         Assert.Equal(
-            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"kick":"","resumeSpeed":2.5,"pauseHotkey":""}""",
+            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"resumeSpeed":2.5,"pauseHotkey":""}""",
             ContratoComAPagina.JsonDeConfiguracoes(opcoes));
     }
 
@@ -130,6 +131,42 @@ public sealed class ContratoComAPaginaTestes
     }
 
     [Fact]
+    public void AdicionarDaKick_TextoEmotesPapeisESelosNaOrdem()
+    {
+        var item = new ItemDaKick("abc", "viewer1", "Viewer1", "#FF6B6B",
+            [new ParteDaKick("boa "), new ParteDaKick("KEKW", "https://files.kick.com/emotes/37226/fullsize")],
+            ["moderator"],
+            [new SeloDaKick(null, "https://ext.cdn.kick.com/chat/badges/GoldenK_x.png", "GoldenK"), new SeloDaKick("moderator/1", null, "moderator")]);
+
+        Assert.Equal(
+            """window.oncChat && window.oncChat.addKick && window.oncChat.addKick({"id":"abc","login":"viewer1","name":"Viewer1","color":"#FF6B6B","roles":["moderator"],"badges":[{"src":"https://ext.cdn.kick.com/chat/badges/GoldenK_x.png","name":"GoldenK"},"moderator/1"],"parts":["boa ",{"emote":{"src":"https://files.kick.com/emotes/37226/fullsize"},"name":"KEKW"}]});""",
+            ContratoComAPagina.AdicionarDaKick(item));
+    }
+
+    [Fact]
+    public void ApagarDaKick_MensagemBanimentoELimpeza()
+    {
+        Assert.Equal("""window.oncChat && window.oncChat.removeKick && window.oncChat.removeKick({"id":"abc"});""",
+            ContratoComAPagina.ApagarDaKick(new EventoDaKick(TipoDeEventoDaKick.Apagada, Id: "abc")));
+        Assert.Equal("""window.oncChat && window.oncChat.removeKick && window.oncChat.removeKick({"login":"viewer2"});""",
+            ContratoComAPagina.ApagarDaKick(new EventoDaKick(TipoDeEventoDaKick.Banido, Login: "viewer2")));
+        Assert.Equal("""window.oncChat && window.oncChat.removeKick && window.oncChat.removeKick({"all":true});""",
+            ContratoComAPagina.ApagarDaKick(new EventoDaKick(TipoDeEventoDaKick.Limpeza)));
+        Assert.Null(ContratoComAPagina.ApagarDaKick(new EventoDaKick(TipoDeEventoDaKick.Mensagem)));
+    }
+
+    [Theory]
+    [InlineData(EstadoDaKick.Conectando, "connecting")]
+    [InlineData(EstadoDaKick.Conectado, "connected")]
+    [InlineData(EstadoDaKick.SemConexao, "failed")]
+    [InlineData(EstadoDaKick.CanalNaoExiste, "notfound")]
+    [InlineData(EstadoDaKick.Desligado, "off")]
+    public void EstadoDaKick_ParaAPagina(EstadoDaKick estado, string esperado)
+    {
+        Assert.Equal(esperado, ContratoComAPagina.EstadoParaAPagina(estado));
+    }
+
+    [Fact]
     public void ApagarDoTikTok_IdsELogins()
     {
         Assert.Equal(
@@ -181,12 +218,6 @@ public sealed class ContratoComAPaginaTestes
     [InlineData("onc:exit-scroll-mode", MensagemDaPagina.SairDoModoRolagem)]
     [InlineData("onc:compose-sent", MensagemDaPagina.EscritaEnviada)]
     [InlineData("onc:compose-cancel", MensagemDaPagina.EscritaCancelada)]
-    [InlineData("onc:kick-state:connecting", MensagemDaPagina.KickConectando)]
-    [InlineData("onc:kick-state:connected", MensagemDaPagina.KickConectado)]
-    [InlineData("onc:kick-state:disconnected", MensagemDaPagina.KickDesconectado)]
-    [InlineData("onc:kick-state:notfound", MensagemDaPagina.KickNaoExiste)]
-    [InlineData("onc:kick-state:off", MensagemDaPagina.KickDesligado)]
-    [InlineData("onc:kick-state:qualquer", MensagemDaPagina.Desconhecida)]
     [InlineData("onc:pause-state:paused", MensagemDaPagina.ChatPausado)]
     [InlineData("onc:pause-state:reading", MensagemDaPagina.ChatContinuando)]
     [InlineData("onc:pause-state:live", MensagemDaPagina.ChatAoVivo)]
