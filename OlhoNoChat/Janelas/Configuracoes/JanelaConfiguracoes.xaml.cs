@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using OlhoNoChat.Controles;
@@ -45,11 +46,19 @@ public partial class JanelaConfiguracoes : JanelaComMoldura
             paginas.Children[i].Visibility = i == listaDePaginas.SelectedIndex ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>Abre na aba Overlay, no endereço (o "Resolver" do balão da porta ocupada).</summary>
+    public void MostrarOverlay()
+    {
+        listaDePaginas.SelectedItem = listaDePaginas.Items.OfType<ListBoxItem>()
+            .First(item => AutomationProperties.GetName(item) == "Overlay");
+        Dispatcher.BeginInvoke(paginaOverlay.MostrarEndereco, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     private async void RestaurarTudo()
     {
         RespostaDoDialogo resposta = await PerguntarAsync("Restaurar tudo para o padrão?",
             "Todas as opções voltam como na primeira instalação (também o que você mudou e ainda não salvou). " +
-            "O canal, a conta da Twitch e as listas de nomes dos filtros continuam.",
+            "O canal, a conta da Twitch, as listas de nomes dos filtros, as palavras proibidas e o endereço do overlay continuam.",
             "Restaurar", null, "Cancelar", RespostaDoDialogo.Fechar);
         if (resposta != RespostaDoDialogo.Principal)
             return;

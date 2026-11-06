@@ -85,9 +85,7 @@ public class LogicaFaixaDoCanalTestes
     }
 
     [Theory]
-    [InlineData("", "Digite o nome do canal.")]
-    [InlineData("   @ ", "Digite o nome do canal.")]
-    [InlineData("nome inválido!", "Use o nome como aparece no endereço do canal (twitch.tv/nome): só letras, números e _.")]
+    [InlineData("nome inválido!","Use o nome como aparece no endereço do canal (twitch.tv/nome): só letras, números e _.")]
     public async Task NomeRuim_MostraOErroENaoTroca(string digitado, string erro)
     {
         var logica = Nova();
@@ -574,32 +572,60 @@ public class LogicaFaixaDoCanalTestes
         Assert.False(logica.VariosCanaisNaFaixa); // só a Kick: o "Trocar canal" aparece inteiro
     }
 
+    // Apagar todos e aplicar sai dos canais (pedido do usuário, 2026-11-06): nada fica conectado
     [Fact]
-    public async Task Multiplataforma_TudoVazio_PedePeloMenosUm()
+    public async Task Multiplataforma_ApagarTodos_SaiDeTodosOsCanais()
     {
-        _opcoes.Canal = string.Empty;
         _opcoes.ChatMultiplataforma = true;
+        _opcoes.CanalDoYouTube = "@seucanal";
+        _opcoes.CanalDaKick = "seucanal";
+        _opcoes.CanalDoTikTok = "seucanal";
         var logica = Nova();
+        logica.AbrirEditor();
+        logica.Texto = "";
+        logica.TextoDoYouTube = "";
+        logica.TextoDaKick = "";
+        logica.TextoDoTikTok = " ";
 
         await logica.ConfirmarAsync();
 
-        Assert.Equal("Digite pelo menos um canal.", logica.Dica);
-        Assert.True(logica.DicaEhErro);
-        Assert.Empty(_trocas);
+        Assert.Equal([""], _trocas);
+        Assert.Equal([""], _trocasDoYouTube);
+        Assert.Equal([""], _trocasDaKick);
+        Assert.Equal([""], _trocasDoTikTok);
+        Assert.False(logica.DicaEhErro);
+        Assert.False(logica.TemCanal);
+        Assert.True(logica.EditorAberto); // sem canal, a faixa fica aberta para entrar de novo
+        Assert.Empty(_perguntados);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   @ ")]
+    public async Task SoTwitch_ApagarOCanal_SaiDele(string digitado)
+    {
+        var logica = Nova();
+        logica.AbrirEditor();
+        logica.Texto = digitado;
+
+        await logica.ConfirmarAsync();
+
+        Assert.Equal([""], _trocas);
+        Assert.False(logica.DicaEhErro);
+        Assert.False(logica.TemCanal);
     }
 
     [Fact]
-    public async Task SemMultiplataforma_ATwitchContinuaObrigatoria()
+    public async Task SemCanalNenhum_AplicarVazio_NaoFazNada()
     {
         _opcoes.Canal = string.Empty;
-        _opcoes.CanalDaKick = "gaules";
         var logica = Nova();
 
-        Assert.False(logica.TemCanal);
         await logica.ConfirmarAsync();
 
-        Assert.Equal("Digite o nome do canal.", logica.Dica);
         Assert.Empty(_trocas);
+        Assert.False(logica.DicaEhErro);
+        Assert.True(logica.EditorAberto);
     }
 
     [Fact]

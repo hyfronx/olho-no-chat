@@ -10,6 +10,7 @@ using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Inicio;
 using OlhoNoChat.Janelas.Configuracoes;
 using OlhoNoChat.Kick;
+using OlhoNoChat.Overlay;
 using OlhoNoChat.Sistema;
 using OlhoNoChat.Som;
 using OlhoNoChat.Twitch;
@@ -42,6 +43,13 @@ public partial class JanelaChat : Window
     private readonly LeitorDoYouTube _youTube;
     private readonly LeitorDaKick _kick;
     private readonly LeitorDoTikTok _tikTok;
+    private readonly ServidorDoOverlay _overlay;
+    // O endereço do overlay ocupado: o balão (com as bordas) e o aviso na página (sem elas) ainda não apareceram. Um aviso
+    // por problema: volta só depois que o overlay abrir (ou for desligado) e der problema de novo
+    private bool _balaoDoOverlayPendente;
+    private bool _avisoDoOverlayNaPaginaPendente;
+    private bool _problemaDoOverlayAvisado;
+    private const string AvisoDoOverlay = "aviso-do-overlay";
     private readonly ProcuraDeAtualizacoes _atualizacoes;
     private readonly IconeDaBandeja _bandeja;
     private readonly LogicaJanelaChat _logica = new();
@@ -64,7 +72,8 @@ public partial class JanelaChat : Window
 
     public JanelaChat(ILogger<JanelaChat> log, ArquivoDeConfiguracoes arquivo, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao,
         EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ApiDaTwitch api, EventSubDaTwitch eventSub,
-        LeitorDoYouTube youTube, LeitorDaKick kick, LeitorDoTikTok tikTok, ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja)
+        LeitorDoYouTube youTube, LeitorDaKick kick, LeitorDoTikTok tikTok, ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja,
+        ServidorDoOverlay overlay)
     {
         InitializeComponent();
 
@@ -78,6 +87,7 @@ public partial class JanelaChat : Window
         _youTube = youTube;
         _kick = kick;
         _tikTok = tikTok;
+        _overlay = overlay;
         _atualizacoes = atualizacoes;
         _bandeja = bandeja;
         _atalhos = new AtalhosGlobais(log);
@@ -112,6 +122,7 @@ public partial class JanelaChat : Window
         LigarYouTube();
         LigarKick();
         LigarTikTok();
+        LigarOverlay();
         _som.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
         _conta.Mudou += () => Dispatcher.BeginInvoke(ContaMudou);
         // "Atualizar agora": o Velopack fecha o app sem passar pelo Closing, então a posição vai para as opções antes
@@ -167,6 +178,7 @@ public partial class JanelaChat : Window
             _youTube.Desligar();
             _kick.Desligar();
             _tikTok.Desligar();
+            _overlay.Desligar();
             _som.Dispose();
             _sempreNaFrente.Dispose();
         };
@@ -178,6 +190,7 @@ public partial class JanelaChat : Window
         barraDeCima.MostrarMultiplataforma(Opcoes.ChatMultiplataforma);
         AplicarEstado();
         _ = PrepararNavegadorAsync();
+        AtualizarOverlay();
         _ = _conta.VerificarUmaVezAsync(); // o acesso salvo pode ter expirado ou sido removido
     }
 
@@ -392,6 +405,7 @@ public partial class JanelaChat : Window
         AtualizarPagina();
         _avisos.PedirBordasOcultas();
         MostrarAvisosQueEsperam();
+        MostrarAvisoDoOverlayNaPagina(); // o balão não chegou a aparecer
         _sempreNaFrente.Ativar();
         _sempreNaFrente.Rajada();
     }
@@ -495,7 +509,8 @@ public partial class JanelaChat : Window
         };
         barraDeCima.EscreverPedido += ClicarEmEscrever;
         barraDeCima.PausarPedido += AlternarPausa;
-        barraDeCima.NovidadeEntendida += NovidadeVista;
+        barraDeCima.NovidadeEntendida += BalaoEntendido;
+        barraDeCima.NovidadeRecusada += BalaoRecusado;
         barraDeCima.MultiplataformaPedido += ligado => _ = AlternarMultiplataformaAsync(ligado);
         barraDeCima.TamanhoDoTextoEscolhido += EscolherTamanhoDoTexto;
         barraDeCima.FundoEscolhido += EscolherFundo;
@@ -521,6 +536,8 @@ public partial class JanelaChat : Window
         _atalhos.Definir("SempreNoTopo", Opcoes.AtalhoSempreNoTopo, AlternarSempreNoTopo);
         _atalhos.Definir("EscreverNoChat", Opcoes.AtalhoEscrever, AtalhoDeEscrever);
         _atalhos.Definir("PausarChat", Opcoes.AtalhoPausar, AlternarPausa);
+        // Só com o overlay ligado: sem ele, a combinação fica livre para outros programas
+        _atalhos.Definir("LimparOverlay", Opcoes.OverlayLigado ? Opcoes.AtalhoLimparOverlay : null, LimparOverlayPeloAtalho);
         DefinirAtalhosDoAutoMod();
         barraDeCima.MostrarAtalhoDasBordas(Opcoes.AtalhoBordas);
         MostrarPausa();
@@ -578,7 +595,7 @@ public partial class JanelaChat : Window
 
     private void MostrarNovidadeSeFaltar(TimeSpan espera)
     {
-        if (ProximaNovidade() == null || barraDeCima.NovidadeAberta)
+        if (ProximoBalao() == null || barraDeCima.NovidadeAberta)
             return;
         _esperaDaNovidade?.Stop();
         _esperaDaNovidade = new DispatcherTimer { Interval = espera };
@@ -587,8 +604,13 @@ public partial class JanelaChat : Window
             _esperaDaNovidade?.Stop();
             if (barraDeCima.NovidadeAberta)
                 return;
-            _novidadeNaTela = ProximaNovidade();
-            if (_novidadeNaTela == Novidades.Pausa)
+            _novidadeNaTela = ProximoBalao();
+            if (_novidadeNaTela == AvisoDoOverlay)
+            {
+                _avisoDoOverlayNaPaginaPendente = false; // o balão já disse
+                barraDeCima.MostrarAvisoDoOverlay(_overlay.Estado == EstadoDoOverlay.OutroOlhoNoChat);
+            }
+            else if (_novidadeNaTela == Novidades.Pausa)
                 barraDeCima.MostrarNovidadeDaPausa(Opcoes.AtalhoPausar);
             else if (_novidadeNaTela == Novidades.AutoMod)
                 barraDeCima.MostrarNovidadeDoAutoMod(!_conta.EstaConectada ? BarraDeCima.FaltaParaOAutoMod.Conectar
@@ -597,6 +619,13 @@ public partial class JanelaChat : Window
         };
         _esperaDaNovidade.Start();
     }
+
+    // O aviso do overlay vem antes das novidades: é um problema agora. Precisa das bordas (o botão "Resolver")
+    private string? ProximoBalao() =>
+        _balaoDoOverlayPendente && _temWebView2 && !_fechando && WindowState != WindowState.Minimized && _logica.BordasVisiveis
+        && !_faixa.EditorAberto && _janelaDeConfiguracoes == null
+            ? AvisoDoOverlay
+            : ProximaNovidade();
 
     private string? ProximaNovidade() =>
         !_temWebView2 || _fechando || WindowState == WindowState.Minimized
@@ -612,6 +641,29 @@ public partial class JanelaChat : Window
     {
         _esperaDaNovidade?.Stop();
         barraDeCima.FecharNovidade();
+    }
+
+    // O botão principal do balão: "Entendi" numa novidade, "Resolver" no aviso do overlay (abre a aba Overlay)
+    private void BalaoEntendido()
+    {
+        if (_novidadeNaTela != AvisoDoOverlay)
+        {
+            NovidadeVista();
+            return;
+        }
+        _balaoDoOverlayPendente = false;
+        EsconderNovidade();
+        _novidadeNaTela = null;
+        AbrirConfiguracoes(naAbaOverlay: true);
+    }
+
+    // "Agora não" no aviso do overlay: não volta até o overlay abrir e der problema de novo
+    private void BalaoRecusado()
+    {
+        _balaoDoOverlayPendente = false;
+        EsconderNovidade();
+        _novidadeNaTela = null;
+        MostrarNovidadeSeFaltar(Novidades.EsperaDaSeguinte);
     }
 
     // A pessoa viu: "Entendi", ou pausou com o balão da pausa aberto. Não aparece mais, e a próxima que falta vem em seguida
@@ -741,6 +793,9 @@ public partial class JanelaChat : Window
     private void TrocarCanal(string canal, string youTube, string kick, string tikTok)
     {
         _log.LogInformation("Canal trocado na faixa do canal.");
+        // Outro canal da Twitch: a página começa vazia, e o overlay também
+        if (!string.Equals(Opcoes.Canal, canal, StringComparison.OrdinalIgnoreCase))
+            _overlay.Limpar();
         Opcoes.Canal = canal;
         Opcoes.CanalDoYouTube = youTube;
         Opcoes.CanalDaKick = kick;
@@ -752,6 +807,111 @@ public partial class JanelaChat : Window
         AtualizarTikTok();
         _caixa.Atualizar();
         AplicarEstado();
+    }
+
+    // --- Overlay da live --------------------------------------------------------------------------------------
+
+    // O overlay é uma Fonte de navegador do OBS (Overlay/ServidorDoOverlay.cs) com as linhas que o Padrão mostrou: a
+    // página manda cada uma para cá, e o servidor passa para o OBS
+    private void LigarOverlay()
+    {
+        _navegador.ParaOOverlay += pedido =>
+        {
+            if (!Opcoes.OverlayLigado)
+                return;
+            switch (pedido.Tipo)
+            {
+                case ContratoDoOverlay.TipoDoPedido.Linha:
+                    _overlay.EnviarLinha(pedido.Valor);
+                    break;
+                case ContratoDoOverlay.TipoDoPedido.Remover:
+                    _overlay.EnviarRemocao(pedido.Valor);
+                    break;
+                case ContratoDoOverlay.TipoDoPedido.Teste:
+                    _overlay.EnviarTeste(pedido.Valor);
+                    break;
+                case ContratoDoOverlay.TipoDoPedido.Substituir:
+                    _overlay.EnviarSubstituicao(pedido.Valor, pedido.Html);
+                    break;
+                case ContratoDoOverlay.TipoDoPedido.Limpar:
+                    _overlay.Limpar();
+                    break;
+            }
+        };
+        _overlay.EstadoMudou += _ => Dispatcher.BeginInvoke(OverlayMudou);
+        _overlay.ConectadosMudaram += () => Dispatcher.BeginInvoke(() => _janelaDeConfiguracoes?.Logica.Overlay.AtualizarEstado());
+    }
+
+    // Abre (ou continua aberto, com as opções novas) só com a opção ligada; a porta é a gravada
+    private void AtualizarOverlay()
+    {
+        if (Opcoes.OverlayLigado)
+            _overlay.Ligar(Opcoes.PortaDoOverlay, ContratoDoOverlay.JsonDasOpcoes(Opcoes));
+        else
+            _overlay.Desligar();
+    }
+
+    private void OverlayMudou()
+    {
+        _janelaDeConfiguracoes?.Logica.Overlay.AtualizarEstado();
+        if (_overlay.Estado is EstadoDoOverlay.PortaOcupada or EstadoDoOverlay.OutroOlhoNoChat)
+        {
+            if (_problemaDoOverlayAvisado)
+                return;
+            _problemaDoOverlayAvisado = true;
+            _balaoDoOverlayPendente = true;
+            _avisoDoOverlayNaPaginaPendente = true;
+            MostrarAvisoDoOverlayNaPagina();
+            MostrarNovidadeSeFaltar();
+            return;
+        }
+        // Abriu (o outro programa soltou a porta, outro endereço) ou foi desligado: o balão sai sozinho
+        _problemaDoOverlayAvisado = false;
+        _balaoDoOverlayPendente = false;
+        _avisoDoOverlayNaPaginaPendente = false;
+        if (_novidadeNaTela == AvisoDoOverlay)
+        {
+            EsconderNovidade();
+            _novidadeNaTela = null;
+            MostrarNovidadeSeFaltar();
+        }
+    }
+
+    // Sem as bordas o balão não aparece (o botão dele não daria para clicar): um aviso na página diz como chegar nele
+    private void MostrarAvisoDoOverlayNaPagina()
+    {
+        // Com as bordas, o balão cuida; ele tira este pedido quando aparecer (as bordas podem sumir antes disso)
+        if (!_avisoDoOverlayNaPaginaPendente || _logica.BordasVisiveis || !_navegador.PaginaPronta)
+            return;
+        _avisoDoOverlayNaPaginaPendente = false;
+        Atalho? bordas = Opcoes.AtalhoBordas;
+        _avisos.Mostrar("O overlay da live não abriu: o endereço dele está ocupado. Mostre as bordas" +
+                        (Atalho.Existe(bordas) ? $" ({bordas})" : string.Empty) + " para ver como resolver.");
+    }
+
+    // "Mensagens de teste": quem monta é a página do Padrão, com o mesmo código das mensagens de verdade
+    private void MandarTesteDoOverlay()
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.TesteDoOverlay);
+    }
+
+    private void LimparOverlayPeloAtalho()
+    {
+        _overlay.Limpar();
+        _avisos.Mostrar("Overlay da live limpo.");
+    }
+
+    // "Encontrar outro endereço" (aba Overlay): grava a porta nova e abre o overlay nela
+    private int? EncontrarOutraPortaDoOverlay()
+    {
+        int? nova = ServidorDoOverlay.EncontrarPortaLivre(Opcoes.PortaDoOverlay);
+        if (nova == null)
+            return null;
+        Opcoes.PortaDoOverlay = nova.Value;
+        _arquivo.Gravar();
+        AtualizarOverlay();
+        return nova;
     }
 
     // --- YouTube (Chat Multiplataforma) ----------------------------------------------------------------------
@@ -911,6 +1071,7 @@ public partial class JanelaChat : Window
             MostrarAvisosQueEsperam();
             MostrarAutoMod(aviso: null); // a página nova mostra a fila (o mesmo canal: as mensagens continuam esperando)
             _ = AtualizarEventSubAsync();
+            MostrarAvisoDoOverlayNaPagina();
             MostrarNovidadeSeFaltar();
         };
 
@@ -1064,7 +1225,9 @@ public partial class JanelaChat : Window
 
     // --- Configurações ---------------------------------------------------------------------------------------
 
-    private void AbrirConfiguracoes()
+    private void AbrirConfiguracoes() => AbrirConfiguracoes(naAbaOverlay: false);
+
+    private void AbrirConfiguracoes(bool naAbaOverlay)
     {
         if (!_temWebView2)
         {
@@ -1078,6 +1241,8 @@ public partial class JanelaChat : Window
         if (_janelaDeConfiguracoes != null)
         {
             _janelaDeConfiguracoes.Activate();
+            if (naAbaOverlay)
+                _janelaDeConfiguracoes.MostrarOverlay();
             return;
         }
 
@@ -1085,8 +1250,12 @@ public partial class JanelaChat : Window
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
-        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub));
+        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub),
+            overlay: new AcoesDoOverlay(() => _overlay.Estado, () => _overlay.Conectados, _overlay.Limpar,
+                MandarTesteDoOverlay, EncontrarOutraPortaDoOverlay));
         var janela = new JanelaConfiguracoes(logica, this);
+        if (naAbaOverlay)
+            janela.MostrarOverlay();
         _janelaDeConfiguracoes = janela;
         logica.ProcurarAtualizacoesPedido += () => _ = _atualizacoes.ProcurarAsync(manual: true, dono: janela);
         // Uma procura que já está rodando (a da abertura do app, a do menu perto do relógio) também aparece no botão
@@ -1125,6 +1294,7 @@ public partial class JanelaChat : Window
         AtualizarYouTube();
         AtualizarKick();
         AtualizarTikTok();
+        AtualizarOverlay();
         ContarAPaginaOsEstados(); // o Chat Multiplataforma pode ter sido ligado agora
 
         _ = AtualizarEventSubAsync();

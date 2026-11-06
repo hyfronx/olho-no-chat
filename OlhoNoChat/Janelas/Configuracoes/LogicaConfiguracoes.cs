@@ -4,7 +4,7 @@ using OlhoNoChat.Configuracoes;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A janela Configurações sem a tela: as seis abas, o tipo de chat escolhido (que as abas Chat, Aparência e Som seguem
+/// A janela Configurações sem a tela: as sete abas, o tipo de chat escolhido (que as abas Chat, Aparência e Som seguem
 /// antes de salvar), "Salvar" (grava sem fechar), "Restaurar tudo para o padrão" e a conferência de mudanças. Nada vai
 /// para as opções antes de <see cref="Salvar"/>; conectar e desconectar a conta são na hora (aba Twitch).
 /// </summary>
@@ -13,13 +13,15 @@ public sealed class LogicaConfiguracoes
     private readonly ArquivoDeConfiguracoes _arquivo;
     private Dictionary<string, string> _estadoSalvo;
 
-    public LogicaConfiguracoes(ArquivoDeConfiguracoes arquivo, LogicaTwitch twitch, Action<string?, float, int>? tocarPrevia = null)
+    public LogicaConfiguracoes(ArquivoDeConfiguracoes arquivo, LogicaTwitch twitch, Action<string?, float, int>? tocarPrevia = null,
+        AcoesDoOverlay? overlay = null)
     {
         _arquivo = arquivo;
         Chat = new LogicaChat(() => _arquivo.Opcoes, _arquivo.Gravar);
         Aparencia = new LogicaAparencia();
         Som = new LogicaSom(tocarPrevia);
         Geral = new LogicaGeral();
+        Overlay = new LogicaOverlay(overlay);
         Twitch = twitch;
         Sobre = new LogicaSobre();
 
@@ -29,6 +31,8 @@ public sealed class LogicaConfiguracoes
 
         Carregar();
         _estadoSalvo = Estado();
+        // A porta nova já está gravada: não conta como mudança (o resto da tela continua como estava)
+        Overlay.PortaGravada += () => _estadoSalvo[LogicaOverlay.ChavePorta] = Overlay.Porta.Trim();
     }
 
     /// <summary>Depois de gravar (Salvar, Restaurar ou o Salvar da janela Filtros do chat): o chat aplica na hora.</summary>
@@ -41,10 +45,11 @@ public sealed class LogicaConfiguracoes
     public LogicaAparencia Aparencia { get; }
     public LogicaSom Som { get; }
     public LogicaGeral Geral { get; }
+    public LogicaOverlay Overlay { get; }
     public LogicaTwitch Twitch { get; }
     public LogicaSobre Sobre { get; }
 
-    private IEnumerable<LogicaDaPagina> Paginas => [Chat, Aparencia, Som, Geral, Twitch];
+    private IEnumerable<LogicaDaPagina> Paginas => [Chat, Aparencia, Som, Geral, Overlay, Twitch];
 
     // Trocar o tipo na lista muda na hora o que as abas mostram
     private void ChatMudou(object? sender, PropertyChangedEventArgs e)

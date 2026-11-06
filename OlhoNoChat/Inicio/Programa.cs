@@ -8,6 +8,7 @@ using OlhoNoChat.Atualizacoes;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.Chat;
 using OlhoNoChat.Kick;
+using OlhoNoChat.Overlay;
 using OlhoNoChat.TikTok;
 using OlhoNoChat.Twitch;
 using OlhoNoChat.YouTube;
@@ -134,6 +135,7 @@ public static class Programa
         servicos.AddSingleton(sp => new ProcuraDeAtualizacoes(sp.GetRequiredService<ILogger<ProcuraDeAtualizacoes>>(),
             () => arquivo.Opcoes, arquivo.Gravar));
         servicos.AddSingleton<IconeDaBandeja>();
+        servicos.AddSingleton<ServidorDoOverlay>();
         servicos.AddSingleton<JanelaChat>();
 #if DEBUG
         SimuladorDoEventSub.RegistrarSeLigado(servicos); // eventos de mentira da Twitch CLI

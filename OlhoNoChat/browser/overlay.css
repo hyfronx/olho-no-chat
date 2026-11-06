@@ -1,0 +1,203 @@
+/* The overlay for the live (overlay.js): an OBS Browser source. Transparent; the lines are the chat's own (chat.css),
+   sized from --ov-size so every option scales together. overlay.js sets the variables and the body classes. */
+
+html, body {
+    background: transparent;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+#ov-lines {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    overflow: hidden;
+    font-family: var(--ov-font, "Segoe UI"), Arial, sans-serif;
+    font-size: var(--ov-size, 22px);
+    font-weight: var(--ov-weight, bold);
+    color: #fff;
+    text-shadow: var(--ov-shadow, none);
+}
+
+/* "As novas em cima": the newest line is the first one */
+body.ov-top #ov-lines {
+    justify-content: flex-start;
+}
+
+body.ov-right #ov-lines {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.ov-line {
+    flex: none;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: .12em 0;
+    overflow: hidden;
+}
+
+/* "Fundo": each message on its own dark card */
+body.ov-card .ov-line {
+    padding: .2em .55em .25em;
+    border-radius: .45em;
+    background: rgb(0 0 0 / var(--ov-card-opacity, .55));
+}
+
+.ov-line .chat_line {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+.ov-line .time_stamp {
+    display: none;
+}
+
+body.ov-time .ov-line .time_stamp {
+    display: inline;
+    padding-right: .3em;
+    opacity: .75;
+}
+
+body:not(.ov-badges) .ov-line .badges {
+    display: none;
+}
+
+.ov-line .badges img,
+.ov-line .tag {
+    width: auto;
+    height: 1em;
+    margin: 0 .2em 0 0;
+    vertical-align: -.12em;
+}
+
+.ov-line .emoticon {
+    width: auto;
+    height: 1.5em;
+    margin: -.25em 0;
+    vertical-align: middle;
+}
+
+.ov-line .onc-gif {
+    max-height: 6em;
+}
+
+.ov-line .onc-source img {
+    width: 1.1em;
+    height: 1.1em;
+    vertical-align: -.2em;
+}
+
+body.onc-multi .ov-line .onc-platform {
+    width: 1em;
+    height: 1em;
+    margin: 0 .25em -.12em 0;
+}
+
+/* The notices and Super Chats keep their bar; the card already has rounded corners */
+body.ov-card .ov-line .onc-notice-line,
+body.ov-card .ov-line .onc-superchat {
+    margin: 0;
+    background: none;
+}
+
+/* Coming in and going away: each "Animação" has its way in (ov-enter-<name>) and a way out that matches it
+   (ov-leave-<name>, .45 s, overlay.js LEAVE_MS). On the right side the sideways ones go the other way. */
+.ov-line {
+    --ov-side: -1;
+    transform-origin: left center;
+}
+
+body.ov-right .ov-line {
+    --ov-side: 1;
+    transform-origin: right center;
+}
+
+.ov-enter-slide { animation: ov-slide-in .25s ease-out; }
+.ov-leave-slide { animation: ov-slide-out .45s ease-in forwards; }
+
+.ov-enter-fade { animation: ov-fade-in .4s ease-out; }
+.ov-leave-fade { animation: ov-fade-out .45s ease-in forwards; }
+
+.ov-enter-rise { animation: ov-rise-in .35s cubic-bezier(.2, .8, .3, 1); }
+.ov-leave-rise { animation: ov-rise-out .45s ease-in forwards; }
+
+.ov-enter-pop { animation: ov-pop-in .4s cubic-bezier(.3, 1.6, .5, 1); }
+.ov-leave-pop { animation: ov-pop-out .3s ease-in forwards; }
+
+.ov-enter-bounce { animation: ov-bounce-in .6s ease-out; }
+.ov-leave-bounce { animation: ov-fade-out .45s ease-in forwards; }
+
+.ov-enter-blur { animation: ov-blur-in .45s ease-out; }
+.ov-leave-blur { animation: ov-blur-out .45s ease-in forwards; }
+
+.ov-enter-flip { animation: ov-flip-in .45s ease-out; }
+.ov-leave-flip { animation: ov-flip-out .4s ease-in forwards; }
+
+@keyframes ov-slide-in {
+    from { opacity: 0; transform: translateX(calc(var(--ov-side) * 1.2em)); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes ov-slide-out {
+    to { opacity: 0; transform: translateX(calc(var(--ov-side) * 2em)); }
+}
+
+@keyframes ov-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ov-fade-out {
+    to { opacity: 0; }
+}
+
+@keyframes ov-rise-in {
+    from { opacity: 0; transform: translateY(.9em); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes ov-rise-out {
+    to { opacity: 0; transform: translateY(-.9em); }
+}
+
+@keyframes ov-pop-in {
+    from { opacity: 0; transform: scale(.5); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes ov-pop-out {
+    to { opacity: 0; transform: scale(.5); }
+}
+
+@keyframes ov-bounce-in {
+    0% { opacity: 0; transform: translateY(-1.4em); }
+    45% { opacity: 1; transform: translateY(.25em); }
+    70% { transform: translateY(-.12em); }
+    100% { transform: none; }
+}
+
+@keyframes ov-blur-in {
+    from { opacity: 0; filter: blur(8px); }
+    to { opacity: 1; filter: none; }
+}
+
+@keyframes ov-blur-out {
+    to { opacity: 0; filter: blur(8px); }
+}
+
+@keyframes ov-flip-in {
+    from { opacity: 0; transform: perspective(30em) rotateX(-90deg); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes ov-flip-out {
+    to { opacity: 0; transform: perspective(30em) rotateX(90deg); }
+}

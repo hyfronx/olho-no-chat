@@ -303,7 +303,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         if (Procurando)
             return;
 
-        // No Chat Multiplataforma a Twitch pode ficar vazia, se houver o YouTube, a Kick ou o TikTok
+        // Qualquer caixa pode ficar vazia, até todas (sair dos canais)
         string nome = NomesDaTwitch.Extrair(Texto);
         if (nome.Length > 0 && !NomesDaTwitch.EhValido(nome))
         {
@@ -365,12 +365,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
             }
         }
 
-        if (nome.Length == 0 && (!Multiplataforma || (youTube.Length == 0 && kick.Length == 0 && tikTok.Length == 0)))
-        {
-            Erro(Multiplataforma ? "Digite pelo menos um canal." : "Digite o nome do canal.");
-            return;
-        }
-
+        // Tudo vazio também vale: é sair dos canais (o chat para e volta às boas-vindas, como no "Sair do canal")
         bool mesmaTwitch = string.Equals(nome, CanalSalvo, StringComparison.OrdinalIgnoreCase);
         if (mesmaTwitch && youTube == YouTubeSalvo && kick == KickSalvo && tikTok == TikTokSalvo)
         {

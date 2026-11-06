@@ -85,8 +85,11 @@ public partial class BarraDeCima : UserControl
     /// <summary>O botão de pausar foi clicado: a janela pausa ou continua o chat, e a página diz o estado novo.</summary>
     public event Action? PausarPedido;
 
-    /// <summary>"Entendi" no balão da novidade.</summary>
+    /// <summary>"Entendi" no balão da novidade (no aviso do overlay, "Resolver").</summary>
     public event Action? NovidadeEntendida;
+
+    /// <summary>"Agora não" no aviso do overlay.</summary>
+    public event Action? NovidadeRecusada;
 
     /// <summary>O balão de uma novidade está na tela.</summary>
     public bool NovidadeAberta => balaoNovidade.IsOpen;
@@ -189,6 +192,17 @@ public partial class BarraDeCima : UserControl
             },
             []);
 
+    /// <summary>
+    /// O overlay da live não abriu (o endereço dele está ocupado): o balão na engrenagem, com "Resolver" (abre a aba
+    /// Overlay) e "Agora não". Outro Olho no Chat na porta: o texto diz para fechar o outro.
+    /// </summary>
+    public void MostrarAvisoDoOverlay(bool outroOlhoNoChat) =>
+        MostrarNovidade(botaoConfiguracoes, "O overlay da live não abriu",
+            outroOlhoNoChat
+                ? "Outro Olho no Chat aberto já está usando o endereço do overlay. Feche o outro, ou veja como usar outro endereço."
+                : "Outro programa está usando o endereço do overlay. O app acha outro endereço para você em um clique.",
+            [], principal: "Resolver", secundario: "Agora não");
+
     /// <summary>O que falta para o AutoMod funcionar, para o fim do balão.</summary>
     public enum FaltaParaOAutoMod
     {
@@ -201,10 +215,13 @@ public partial class BarraDeCima : UserControl
     // Os atalhos que não existem não aparecem (sem nenhum, a linha some). "No jogo:" só na primeira linha; as teclas ficam
     // uma embaixo da outra
     private void MostrarNovidade(FrameworkElement botao, string titulo, string texto,
-        (Atalho? Atalho, string OQueFaz, string Cor)[] atalhos)
+        (Atalho? Atalho, string OQueFaz, string Cor)[] atalhos, string principal = "Entendi", string? secundario = null)
     {
         tituloDaNovidade.Text = titulo;
         textoDaNovidade.Text = texto;
+        botaoEntendiNovidade.Content = principal;
+        botaoAgoraNaoNovidade.Content = secundario ?? string.Empty;
+        botaoAgoraNaoNovidade.Visibility = secundario == null ? Visibility.Collapsed : Visibility.Visible;
 
         Grid linhas = linhaAtalhoDaNovidade;
         linhas.Children.Clear();
@@ -309,6 +326,8 @@ public partial class BarraDeCima : UserControl
     }
 
     private void EntendiNovidade_Click(object sender, RoutedEventArgs e) => NovidadeEntendida?.Invoke();
+
+    private void AgoraNaoNovidade_Click(object sender, RoutedEventArgs e) => NovidadeRecusada?.Invoke();
 
     // --- Painéis ---------------------------------------------------------------------------------------------
 

@@ -104,6 +104,8 @@ public sealed class ImportacaoDoArquivoAntigoTestes
                 or nameof(Opcoes.VelocidadeAutomaticaAoContinuar) or nameof(Opcoes.LinhasPorSegundoAoContinuar)
                 or nameof(Opcoes.AtalhoPausar) or nameof(Opcoes.NovidadesVistas)
                 or nameof(Opcoes.AprovarAutoMod) or nameof(Opcoes.AtalhoAprovarAutoMod) or nameof(Opcoes.AtalhoRecusarAutoMod)))
+            // O overlay da live (2.9.0) e todas as opções dele
+            .Where(p => !p.Name.Contains("Overlay", StringComparison.Ordinal))
             .Where(p => JsonSerializer.Serialize(p.GetValue(convertidas), ArquivoDeConfiguracoes.Formato)
                         == JsonSerializer.Serialize(p.GetValue(padrao), ArquivoDeConfiguracoes.Formato))
             .Select(p => p.Name)

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Overlay;
 using OlhoNoChat.Sistema;
 
 namespace OlhoNoChat.Chat;
@@ -77,6 +78,9 @@ public sealed class NavegadorDoChat
     /// <summary>Padrão: um botão do cartão do AutoMod (o id da mensagem e se é para aprovar).</summary>
     public event Action<string, bool>? PedidoDoAutoMod;
 
+    /// <summary>Padrão: uma linha mostrada (ou tirada) que vai também para o overlay da live.</summary>
+    public event Action<ContratoDoOverlay.Pedido>? ParaOOverlay;
+
     /// <summary>O navegador não pôde ser recuperado: o texto para mostrar antes de o app fechar.</summary>
     public event Action<string>? FalhouDeVez;
 
@@ -137,12 +141,28 @@ public sealed class NavegadorDoChat
             string? texto = TextoDaMensagem(e);
             if (ContratoComAPagina.LerPedidoDoAutoMod(texto) is { } pedido)
                 PedidoDoAutoMod?.Invoke(pedido.Id, pedido.Aprovar);
+            else if (texto != null && texto.StartsWith(ContratoDoOverlay.Prefixo, StringComparison.Ordinal))
+            {
+                // Só a página do Padrão (a nossa) fala com o overlay: o chat oficial e um endereço personalizado são
+                // páginas de outros sites e nunca põem nada na live. E só a aberta agora: a do canal anterior ainda roda
+                // um instante enquanto a nova carrega
+                if (PaginaDoApp(e.Source) && MesmoEndereco(e.Source, Pagina?.Endereco)
+                    && ContratoDoOverlay.LerDaPagina(texto) is { } paraOOverlay)
+                    ParaOOverlay?.Invoke(paraOOverlay);
+            }
             else
                 Mensagem?.Invoke(ContratoComAPagina.LerMensagem(texto));
         };
         navegador.NewWindowRequested += NovaJanelaPedida;
         navegador.ProcessFailed += async (_, e) => await ProcessoFalhouAsync(e);
     }
+
+    private static bool MesmoEndereco(string? a, string? b) =>
+        Uri.TryCreate(a, UriKind.Absolute, out Uri? umUri) && Uri.TryCreate(b, UriKind.Absolute, out Uri? outroUri)
+        && Uri.Compare(umUri, outroUri, UriComponents.HttpRequestUrl, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) == 0;
+
+    private static bool PaginaDoApp(string? endereco) =>
+        endereco != null && endereco.StartsWith($"https://{InfoDoApp.HostDasPaginas}/", StringComparison.OrdinalIgnoreCase);
 
     private static string? TextoDaMensagem(CoreWebView2WebMessageReceivedEventArgs e)
     {

@@ -29,7 +29,9 @@
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
         vips: [], blockList: [], multiplatform: false,
         // Pause: the speed when continuing (one-line messages a second; 0 = automatic) and the hotkey, for the marker
-        resumeSpeed: 0, pauseHotkey: ''
+        resumeSpeed: 0, pauseHotkey: '',
+        // The overlay for the live is on: each line shown and each one taken out also go to the app (see "Overlay")
+        overlay: false
     };
     let started = false;
     let socket = null;
@@ -41,6 +43,23 @@
         try {
             if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(message);
         } catch (e) { /* not in the app */ }
+    }
+
+    // --- Overlay -------------------------------------------------------------------------------------
+    // With the overlay for the live on (an OBS Browser source the app serves, Overlay/ServidorDoOverlay.cs), every line
+    // this page shows goes to the app as it is built, already past the filters: { t: 'line', html }. So do the lines
+    // that leave ({ t: 'remove', selector }: a deleted message, a ban, a notice switched off) and a /clear
+    // ({ t: 'clear' }). Only chat lines: the AutoMod card, the pause marker, the banners and the pills never go. A
+    // line goes when it arrives, not when a paused chat gets to it: pausing never stops the live.
+    function toOverlay(event) {
+        if (settings.overlay) postToApp('onc:overlay:' + JSON.stringify(event));
+    }
+
+    // A line already sent changed (its badges or the shared chat picture arrived, a redemption got its message's id):
+    // the overlay swaps it where it is. Each line has a number of this page for that (data-ov).
+    let overlayLines = 0;
+    function toOverlayAgain(line) {
+        if (line && line.dataset.ov) toOverlay({ t: 'replace', selector: `.chat_line[data-ov="${line.dataset.ov}"]`, html: line.outerHTML });
     }
 
     // --- Connection ----------------------------------------------------------------------------------
@@ -140,6 +159,11 @@
                 else onTwitchNotice(message);
                 break;
             case 'CLEARCHAT':
+                // Comes in order after the held messages it may be about (see "Emotes": the first ones wait)
+                if (heldMessages) {
+                    heldMessages.push(message);
+                    break;
+                }
                 // A timeout or ban takes that user's messages out; without a user, /clear empties the chat
                 if (message.params[1]) removeLines(`.chat_line[data-nick="${CSS.escape(message.params[1].toLowerCase())}"]`);
                 else {
@@ -150,9 +174,14 @@
                     newLines.replaceChildren();
                     pauseLost = false;
                     refreshMarker();
+                    toOverlay({ t: 'clear' });
                 }
                 break;
             case 'CLEARMSG':
+                if (heldMessages) {
+                    heldMessages.push(message);
+                    break;
+                }
                 if (message.tags['target-msg-id']) removeLines(`.chat_line[data-id="${CSS.escape(message.tags['target-msg-id'])}"]`);
                 break;
             case 'NOTICE':
@@ -302,6 +331,10 @@
             const shown = unpairedRewardLine(reward, true);
             if (shown) {
                 shown.dataset.paired = '';
+                if (tags.id) {
+                    shown.dataset.id = tags.id;
+                    toOverlayAgain(shown);
+                }
                 return;
             }
         }
@@ -317,6 +350,7 @@
             color: userColor(login, tags.color),
             reward,
             action,
+            bot: isTwitchBot(login, tags.badges) || /bot$/.test(login),
             parts: addOtherEmotes(parts)
         }, tags.badges || '');
     }
@@ -375,10 +409,13 @@
         showLine({
             id: tags.id,
             sourceRoom,
+            // In the class of the line (onc-twitch-<kind>): the overlay has a switch for subs, raids and the others
+            kind: /^[a-z0-9_-]+$/.test(kind || '') ? kind : '',
             login,
             name: login === ANONYMOUS_GIFTER ? 'Anônimo' : tags['display-name'] || login,
             color: userColor(login, tags.color),
             action: false,
+            bot: kind === 'announcement' && (isTwitchBot(login, tags.badges) || /bot$/.test(login)),
             parts: addOtherEmotes(splitAtPlaces(text, twitchEmotePlaces(tags.emotes))),
             notice
         }, tags.badges || '');
@@ -504,8 +541,10 @@
     }
 
     function refreshBadges() {
-        box.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
-        newLines.querySelectorAll('.badges[data-badges]').forEach(fillBadges);
+        [...box.querySelectorAll('.badges[data-badges]'), ...newLines.querySelectorAll('.badges[data-badges]')].forEach(span => {
+            fillBadges(span);
+            toOverlayAgain(span.closest('.chat_line'));
+        });
     }
 
     // --- Shared chat ("chat unido") -----------------------------------------------------------------
@@ -547,8 +586,10 @@
                 // The small size of Twitch's profile pictures (the API gives the 600x600 one)
                 sourceChannels.set(room, { name: user.displayName || user.login, picture: user.logo.replace('600x600', '70x70') });
                 const selector = `.onc-source[data-room="${CSS.escape(room)}"]`;
-                box.querySelectorAll(selector).forEach(fillSource);
-                newLines.querySelectorAll(selector).forEach(fillSource);
+                [...box.querySelectorAll(selector), ...newLines.querySelectorAll(selector)].forEach(span => {
+                    fillSource(span);
+                    toOverlayAgain(span.closest('.chat_line'));
+                });
             })
             .catch(e => console.warn('[ONC] Could not load the shared chat channel ' + room, e));
     }
@@ -861,8 +902,10 @@
     }
 
     function addLine(line) {
-        newLines.appendChild(buildLine(line));
+        const div = buildLine(line);
+        newLines.appendChild(div);
         scheduleLayout();
+        toOverlay({ t: 'line', html: div.outerHTML });
     }
 
     // One chat line: time, name, ":" and the message (a /me message has no ":" and is in the user's color)
@@ -878,6 +921,9 @@
         }
         if (line.id) div.dataset.id = line.id;
         div.dataset.nick = line.login;
+        div.dataset.ov = ++overlayLines;
+        // For the overlay's "Esconder bots" (this chat's own switch already left them out when it is on)
+        if (line.bot) div.dataset.bot = '';
         div.dataset.timestamp = Date.now();
         div.style.setProperty('--user-color', line.color);
 
@@ -976,7 +1022,7 @@
                 notice.append(value);
             });
             div.classList.add('onc-notice-line', 'onc-notice-' + (line.platform || 'twitch'));
-            if (line.kind) div.classList.add('onc-' + line.platform + '-' + line.kind);
+            if (line.kind) div.classList.add('onc-' + (line.platform || 'twitch') + '-' + line.kind);
             div.append(' ', notice);
         } else if (!line.action) {
             const colon = document.createElement('span');
@@ -1133,6 +1179,7 @@
     function removeLines(selector) {
         box.querySelectorAll(selector).forEach(line => line.remove());
         newLines.querySelectorAll(selector).forEach(line => line.remove());
+        toOverlay({ t: 'remove', selector });
         refreshMarker(); // the count of a pause
         refreshReadingPill();
     }
@@ -1671,6 +1718,7 @@
             name: m.name || login,
             color: userColor(login || '?', YOUTUBE_ROLE_COLORS[m.role] || colorFromName(login)),
             action: false,
+            bot: !m.superchat && !m.notice && /bot$/.test(login),
             parts: m.parts || [],
             superchat: m.superchat || null,
             notice: m.notice || ''
@@ -1702,6 +1750,7 @@
             name: m.name || login,
             color: userColor(login || '?', colorFromName(login)),
             action: false,
+            bot: !m.kind && /bot$/.test(login),
             parts: m.parts || [],
             notice: m.notice || ''
         }, TIKTOK_ROLE_BADGES[m.role] || '', '');
@@ -1753,6 +1802,7 @@
             name: m.name || login,
             color: userColor(login, m.color),
             action: false,
+            bot: /bot$/.test(login),
             parts: m.parts || []
         }, roles.join(','), shown.join(','));
     }
@@ -1808,6 +1858,33 @@
 
         // The app's pause button and hotkey: pauses, or continues a paused chat (see "Pause"). The new state:
         // 'paused', 'reading' or 'live' (also sent to the app as onc:pause-state:...)
+        // "Mensagens de teste" (aba Overlay): lines built like the real ones (badges, an emote, a sub, a Super Chat, a
+        // TikTok gift, each platform's icon) that go only to the overlay, never to this chat. The other platforms only
+        // with the Chat Multiplataforma on. False when the overlay is off.
+        overlayTest() {
+            if (!settings.overlay) return false;
+            const kappa = { emote: { src: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0',
+                srcset: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0 2x, https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0 4x' }, name: 'Kappa' };
+            const samples = [
+                { login: 'viewer1', color: '#FF7F50', badges: 'subscriber/0', parts: ['boa noite, chat! cheguei agora'] },
+                { login: 'viewer2', color: '#1E90FF', badges: 'moderator/1,subscriber/0', parts: ['que jogada absurda ', kappa] },
+                { login: 'viewer3', color: '#9ACD32', badges: 'subscriber/0', kind: 'resub',
+                    notice: ['se inscreveu! A inscrição completou ', { value: '6' }, ' meses!'], parts: ['bora que hoje tem vitória'] }
+            ];
+            if (settings.multiplatform) {
+                samples.push(
+                    { platform: 'youtube', login: 'viewer4', color: '#2BA640', superchat: { amount: 'R$ 10,00', color: '#1DE9B6' },
+                        parts: ['salve do YouTube! a live tá com o som ótimo hoje'] },
+                    { platform: 'kick', login: 'viewer5', color: '#53FC18', badges: 'vip/1', parts: ['essa música de fundo é qual?'] },
+                    { platform: 'tiktok', kind: 'gift', login: 'viewer6', color: '#FE2C55', notice: ['enviou ', { value: 'Rosa' }], parts: [] });
+            }
+            samples.forEach((sample, i) => {
+                const line = buildLine(Object.assign({ id: 'teste-' + Date.now() + '-' + i, name: sample.login, action: false }, sample));
+                postToApp('onc:overlay:' + JSON.stringify({ t: 'test', html: line.outerHTML }));
+            });
+            return true;
+        },
+
         togglePause() {
             if (pause === 'paused') resume();
             else pauseChat();
@@ -1859,11 +1936,14 @@
             const login = name.toLowerCase();
             const reward = { by: login, text: text.trim() };
             const chatMessage = unpairedRewardLine(reward, false);
+            // The line takes the chat message's id: a moderator deleting the message deletes it too
+            const id = chatMessage && chatMessage.dataset.id || undefined;
             if (chatMessage) {
                 chatMessage.remove();
+                if (chatMessage.dataset.id) toOverlay({ t: 'remove', selector: `.chat_line[data-id="${CSS.escape(chatMessage.dataset.id)}"]` });
                 reward.paired = true;
             }
-            showLine({ login, name, color: userColor(login, color), action: true, redemption: true, reward, parts: addOtherEmotes([text]) }, '');
+            showLine({ id, login, name, color: userColor(login, color), action: true, redemption: true, reward, parts: addOtherEmotes([text]) }, '');
         },
 
         // The AutoMod queue (see "AutoMod"): { current: { id, login, name, parts, reason } or null, total, allowHotkey,

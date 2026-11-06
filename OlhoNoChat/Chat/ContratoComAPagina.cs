@@ -57,6 +57,8 @@ public static class ContratoComAPagina
             // aviso da pausa mostra
             resumeSpeed = opcoes.VelocidadeAutomaticaAoContinuar ? 0 : opcoes.LinhasPorSegundoAoContinuar,
             pauseHotkey = Atalho.Existe(opcoes.AtalhoPausar) ? opcoes.AtalhoPausar.ToString() : string.Empty,
+            // Overlay da live: cada linha mostrada (e cada uma tirada) vai também para o app (Overlay/ContratoDoOverlay.cs)
+            overlay = opcoes.OverlayLigado,
         });
     }
 
@@ -66,6 +68,12 @@ public static class ContratoComAPagina
     /// <see cref="MensagemDaPagina.ChatAoVivo"/>).
     /// </summary>
     public const string AlternarPausa = "window.oncChat && window.oncChat.togglePause && window.oncChat.togglePause();";
+
+    /// <summary>
+    /// "Mensagens de teste" da aba Overlay: a página monta linhas de exemplo como as de verdade e manda só para o overlay
+    /// (<c>onc:overlay:{"t":"test",...}</c>). Responde <c>false</c> com o overlay desligado.
+    /// </summary>
+    public const string TesteDoOverlay = "window.oncChat && window.oncChat.overlayTest && window.oncChat.overlayTest();";
 
     /// <summary>Põe o CSS no elemento do app (criado se ainda não existe).</summary>
     public static string PorOCss(string css) => $$"""

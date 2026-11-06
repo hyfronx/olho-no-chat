@@ -35,6 +35,23 @@ public sealed class Opcoes
     public const double LinhasPorSegundoMinimo = 0.5;
     public const double LinhasPorSegundoMaximo = 6;
     public const double LinhasPorSegundoPadrao = 1.5;
+    // Os limites das opções do overlay (aba Overlay)
+    public const int SegundosParaSumirNoOverlayMinimo = 5;
+    public const int SegundosParaSumirNoOverlayMaximo = 300;
+    public const int SegundosParaSumirNoOverlayPadrao = 30;
+    public const int SegundosDeAtrasoNoOverlayMaximo = 30;
+    public const int MensagensNoOverlayMinimo = 1;
+    public const int MensagensNoOverlayMaximo = 50;
+    public const int MensagensNoOverlayPadrao = 12;
+    public const int TamanhoDoTextoNoOverlayMinimo = 10;
+    public const int TamanhoDoTextoNoOverlayMaximo = 60;
+    public const int TamanhoDoTextoNoOverlayPadrao = 22;
+    public const int CaracteresNoOverlayMinimo = 20;
+    public const int CaracteresNoOverlayMaximo = 500;
+    public const int CaracteresNoOverlayPadrao = 200;
+    public const int EmotesNoOverlayMinimo = 1;
+    public const int EmotesNoOverlayMaximo = 30;
+    public const int EmotesNoOverlayPadrao = 8;
 
     public int Versao { get; set; } = VersaoAtual;
 
@@ -146,6 +163,58 @@ public sealed class Opcoes
     // captura de tela de jogo) nem F4 (soltar o Ctrl antes vira Alt + F4, que fecha o jogo); Home e End ficam juntos
     public Atalho? AtalhoAprovarAutoMod { get; set; } = new(Key.Home, ModifierKeys.Control | ModifierKeys.Alt);
     public Atalho? AtalhoRecusarAutoMod { get; set; } = new(Key.End, ModifierKeys.Control | ModifierKeys.Alt);
+    // Overlay da live: registrado só com o overlay ligado
+    public Atalho? AtalhoLimparOverlay { get; set; } = new(Key.F5, ModifierKeys.Control | ModifierKeys.Alt);
+
+    // Overlay (a página para a Fonte de navegador do OBS, ver Overlay/ServidorDoOverlay.cs)
+    public bool OverlayLigado { get; set; } = false;
+    /// <summary>A porta do endereço do overlay: fixa, muda só pelo "Encontrar outro endereço" ou à mão (aba Overlay).</summary>
+    public int PortaDoOverlay { get; set; } = Overlay.ServidorDoOverlay.PortaPadrao;
+    public bool OverlaySome { get; set; } = true;
+    public int SegundosParaSumirNoOverlay { get; set; } = SegundosParaSumirNoOverlayPadrao;
+    /// <summary>Quanto tempo a mensagem espera antes de ir ao overlay (0 = na hora): dá tempo de apagar uma ruim.</summary>
+    public int SegundosDeAtrasoNoOverlay { get; set; } = 0;
+    public int MensagensNoOverlay { get; set; } = MensagensNoOverlayPadrao;
+    /// <summary>Em pixels da Fonte de navegador.</summary>
+    public int TamanhoDoTextoNoOverlay { get; set; } = TamanhoDoTextoNoOverlayPadrao;
+    public string FonteDoOverlay { get; set; } = "Segoe UI";
+    public bool NegritoNoOverlay { get; set; } = true;
+    /// <summary>"theme" (contorno preto), "soft" (sombra suave) ou "none", como na aba Aparência.</summary>
+    public string ContornoNoOverlay { get; set; } = "theme";
+    /// <summary>"none" (sem fundo) ou "card" (cada mensagem num cartão escuro).</summary>
+    public string FundoNoOverlay { get; set; } = "none";
+    /// <summary>A opacidade do cartão, em porcentagem.</summary>
+    public int OpacidadeDoFundoNoOverlay { get; set; } = 55;
+    /// <summary>"bottom" (as novas embaixo) ou "top" (as novas em cima).</summary>
+    public string DirecaoDoOverlay { get; set; } = "bottom";
+    /// <summary>"left" ou "right".</summary>
+    public string AlinhamentoDoOverlay { get; set; } = "left";
+    /// <summary>Como as mensagens entram e saem (<see cref="Overlay.ContratoDoOverlay.Animacoes"/>; "none" = sem animação).</summary>
+    public string AnimacaoDoOverlay { get; set; } = "slide";
+    public bool SelosNoOverlay { get; set; } = true;
+    public bool HorarioNoOverlay { get; set; } = false;
+    /// <summary>O ícone da plataforma (só com o Chat Multiplataforma).</summary>
+    public bool PlataformaNoOverlay { get; set; } = true;
+    public bool EsconderComandosNoOverlay { get; set; } = true;
+    public string PrefixoDosComandosNoOverlay { get; set; } = "!";
+    public bool EsconderBotsNoOverlay { get; set; } = true;
+    /// <summary>Viram **** na live (um * no fim pega o começo da palavra).</summary>
+    public List<string> PalavrasProibidasNoOverlay { get; set; } = [];
+    /// <summary>"replace" ([link]), "show" ou "hide" (a mensagem com link não vai para a live).</summary>
+    public string LinksNoOverlay { get; set; } = "replace";
+    public bool LimitarTamanhoNoOverlay { get; set; } = false;
+    public int CaracteresNoOverlay { get; set; } = CaracteresNoOverlayPadrao;
+    public bool LimitarEmotesNoOverlay { get; set; } = false;
+    public int EmotesNoOverlay { get; set; } = EmotesNoOverlayPadrao;
+    // Os avisos que vão para a live (só os que o chat também mostra)
+    public bool InscricoesNoOverlay { get; set; } = true;
+    public bool RaidsNoOverlay { get; set; } = true;
+    public bool OutrosAvisosDaTwitchNoOverlay { get; set; } = true;
+    public bool ResgatesNoOverlay { get; set; } = true;
+    public bool SuperChatsNoOverlay { get; set; } = true;
+    public bool MembrosDoYouTubeNoOverlay { get; set; } = true;
+    public bool PresentesDoTikTokNoOverlay { get; set; } = true;
+    public bool OutrosAvisosDoTikTokNoOverlay { get; set; } = true;
 
     // Twitch
     public bool MostrarResgates { get; set; } = false;
@@ -204,9 +273,14 @@ public sealed class Opcoes
             AtalhoAprovarAutoMod = null;
         if (Atalho.Existe(AtalhoRecusarAutoMod) && anteriores.Append(AtalhoAprovarAutoMod).Contains(AtalhoRecusarAutoMod))
             AtalhoRecusarAutoMod = null;
+        // O de limpar o overlay chegou na 2.9.0 do mesmo jeito
+        if (Atalho.Existe(AtalhoLimparOverlay)
+            && anteriores.Append(AtalhoAprovarAutoMod).Append(AtalhoRecusarAutoMod).Contains(AtalhoLimparOverlay))
+            AtalhoLimparOverlay = null;
         LinhasPorSegundoAoContinuar = double.IsNaN(LinhasPorSegundoAoContinuar)
             ? LinhasPorSegundoPadrao
             : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);
+        CorrigirOverlay(padrao);
 
         if (EsconderAvisosAntigo == true)
         {
@@ -242,9 +316,41 @@ public sealed class Opcoes
         Versao = VersaoAtual;
     }
 
+    // Os números fora dos limites voltam para dentro, e um texto que o overlay não conhece volta para o padrão
+    private void CorrigirOverlay(Opcoes padrao)
+    {
+        if (!Overlay.ServidorDoOverlay.PortaValida(PortaDoOverlay))
+            PortaDoOverlay = padrao.PortaDoOverlay;
+        SegundosParaSumirNoOverlay = Math.Clamp(SegundosParaSumirNoOverlay, SegundosParaSumirNoOverlayMinimo, SegundosParaSumirNoOverlayMaximo);
+        SegundosDeAtrasoNoOverlay = Math.Clamp(SegundosDeAtrasoNoOverlay, 0, SegundosDeAtrasoNoOverlayMaximo);
+        MensagensNoOverlay = Math.Clamp(MensagensNoOverlay, MensagensNoOverlayMinimo, MensagensNoOverlayMaximo);
+        TamanhoDoTextoNoOverlay = Math.Clamp(TamanhoDoTextoNoOverlay, TamanhoDoTextoNoOverlayMinimo, TamanhoDoTextoNoOverlayMaximo);
+        OpacidadeDoFundoNoOverlay = Math.Clamp(OpacidadeDoFundoNoOverlay, 0, 100);
+        CaracteresNoOverlay = Math.Clamp(CaracteresNoOverlay, CaracteresNoOverlayMinimo, CaracteresNoOverlayMaximo);
+        EmotesNoOverlay = Math.Clamp(EmotesNoOverlay, EmotesNoOverlayMinimo, EmotesNoOverlayMaximo);
+
+        FonteDoOverlay = UmDe(FonteDoOverlay, Overlay.ContratoDoOverlay.Fontes, padrao.FonteDoOverlay);
+        ContornoNoOverlay = UmDe(ContornoNoOverlay, ["theme", "soft", "none"], padrao.ContornoNoOverlay);
+        FundoNoOverlay = UmDe(FundoNoOverlay, ["none", "card"], padrao.FundoNoOverlay);
+        DirecaoDoOverlay = UmDe(DirecaoDoOverlay, ["bottom", "top"], padrao.DirecaoDoOverlay);
+        AlinhamentoDoOverlay = UmDe(AlinhamentoDoOverlay, ["left", "right"], padrao.AlinhamentoDoOverlay);
+        AnimacaoDoOverlay = UmDe(AnimacaoDoOverlay, Overlay.ContratoDoOverlay.Animacoes, padrao.AnimacaoDoOverlay);
+        LinksNoOverlay = UmDe(LinksNoOverlay, ["replace", "show", "hide"], padrao.LinksNoOverlay);
+        // Um prefixo vazio esconderia todas as mensagens
+        PrefixoDosComandosNoOverlay = string.IsNullOrWhiteSpace(PrefixoDosComandosNoOverlay)
+            ? padrao.PrefixoDosComandosNoOverlay
+            : PrefixoDosComandosNoOverlay.Trim();
+        PalavrasProibidasNoOverlay ??= [];
+        PalavrasProibidasNoOverlay.RemoveAll(string.IsNullOrWhiteSpace);
+    }
+
+    private static string UmDe(string? valor, IEnumerable<string> conhecidos, string padrao) =>
+        valor != null && conhecidos.Contains(valor) ? valor : padrao;
+
     /// <summary>
     /// "Restaurar tudo para o padrão": as opções da primeira instalação, menos o que não é opção: os canais, a conta da
-    /// Twitch, as listas de nomes dos filtros, a posição da janela e as novidades já vistas.
+    /// Twitch, as listas de nomes dos filtros, a posição da janela, as novidades já vistas, as palavras proibidas do
+    /// overlay e a porta dele (o endereço colado no OBS não pode mudar).
     /// </summary>
     public Opcoes RestauradasParaOPadrao() => new()
     {
@@ -257,5 +363,7 @@ public sealed class Opcoes
         UsuariosBloqueados = UsuariosBloqueados,
         Janela = Janela,
         NovidadesVistas = NovidadesVistas,
+        PalavrasProibidasNoOverlay = PalavrasProibidasNoOverlay,
+        PortaDoOverlay = PortaDoOverlay,
     };
 }

@@ -8,7 +8,7 @@
                           Height="720" Width="800" MinHeight="480" MinWidth="680"
                           Topmost="True"
                           FocusManager.FocusedElement="{Binding ElementName=listaDePaginas}">
-    <!-- Configurações: seis abas; "Salvar" grava e aplica sem fechar. DataContext = LogicaConfiguracoes. -->
+    <!-- Configurações: sete abas; "Salvar" grava e aplica sem fechar. DataContext = LogicaConfiguracoes. -->
     <janelas:JanelaComMoldura.Navegacao>
         <ListBox x:Name="listaDePaginas" Style="{StaticResource ListaDeNavegacao}" ItemContainerStyle="{StaticResource ItemDaNavegacao}"
                  SelectedIndex="0" SelectionChanged="ListaDePaginas_SelectionChanged">
@@ -36,6 +36,12 @@
                     <TextBlock Text="Geral" />
                 </StackPanel>
             </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="Overlay">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE7F4;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="Overlay" />
+                </StackPanel>
+            </ListBoxItem>
             <ListBoxItem AutomationProperties.Name="Twitch">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE77B;" Style="{StaticResource IconeDaNavegacao}" />
@@ -56,6 +62,7 @@
         <local:PaginaAparencia x:Name="paginaAparencia" DataContext="{Binding Aparencia}" Visibility="Collapsed" />
         <local:PaginaSom x:Name="paginaSom" DataContext="{Binding Som}" Visibility="Collapsed" />
         <local:PaginaGeral x:Name="paginaGeral" DataContext="{Binding Geral}" Visibility="Collapsed" />
+        <local:PaginaOverlay x:Name="paginaOverlay" DataContext="{Binding Overlay}" Visibility="Collapsed" />
         <local:PaginaTwitch x:Name="paginaTwitch" DataContext="{Binding Twitch}" Visibility="Collapsed" />
         <local:PaginaSobre x:Name="paginaSobre" DataContext="{Binding Sobre}" Visibility="Collapsed" />
     </Grid>

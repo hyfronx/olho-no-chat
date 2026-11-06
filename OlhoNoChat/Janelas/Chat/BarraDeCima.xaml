@@ -169,7 +169,7 @@
         </Popup>
 
         <!-- As novidades, uma vez só cada (Novidades): um balão apontando para o botão delas, por cima do chat (a pausa no
-             botão de pausar, o AutoMod na engrenagem). Não fecha com um clique fora: só pelo "Entendi" (ou quando a janela
+             botão de pausar, o AutoMod na engrenagem). Também o aviso de que o overlay da live não abriu (na engrenagem). Não fecha com um clique fora: só pelo "Entendi" (ou quando a janela
              o esconde). O título, o texto e os atalhos vêm do código -->
         <Popup x:Name="balaoNovidade" PlacementTarget="{Binding ElementName=botaoPausar}" Placement="Bottom"
                VerticalOffset="2" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
@@ -194,6 +194,9 @@
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                             <Button x:Name="botaoEntendiNovidade" Style="{StaticResource BotaoPrincipal}" Content="Entendi" Height="30"
                                     Padding="14,0" Click="EntendiNovidade_Click" />
+                            <!-- Só nos avisos que pedem uma decisão (a porta do overlay ocupada) -->
+                            <Button x:Name="botaoAgoraNaoNovidade" Content="Agora não" Height="30" Padding="14,0" Margin="8,0,0,0"
+                                    Visibility="Collapsed" Click="AgoraNaoNovidade_Click" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
