@@ -69,3 +69,12 @@ jobs:
           $nome = if ($beta) { "Olho no Chat v$versao (beta)" } else { "Olho no Chat v$versao" }
           vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish --channel $canal $pre `
             --releaseName $nome --tag $tag
+
+      # Só ficam as 2 versões normais mais recentes e a beta mais recente (as tags ficam todas). Um problema aqui não
+      # desfaz a versão que acabou de sair: só avisa
+      - name: Apagar as Releases antigas
+        shell: pwsh
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/limpar-releases.ps1 -Repositorio '${{ github.repository }}'
