@@ -45,14 +45,17 @@ jobs:
           $repo = 'https://github.com/${{ github.repository }}'
           $beta = $versao.Contains('-')
           $canal = if ($beta) { 'beta' } else { 'win' }
-          $pre = if ($beta) { @('--pre') } else { @() }
+          # Uma lista (vazia na normal): passada assim a um programa, cada item vira um argumento. Com "@pre" ou com um
+          # "if" que devolve a lista, o PowerShell mandava "--pre" letra por letra
+          $pre = @()
+          if ($beta) { $pre += '--pre' }
 
           dotnet tool install --global vpk --version $env:VPK_VERSAO
 
           # A última versão publicada serve de base para o pacote delta (a atualização pequena)
           # (na beta, a última beta). A primeira de um canal não tem anterior: o pacote sai sem delta
           try {
-            vpk download github --repoUrl $repo --token $env:GITHUB_TOKEN --channel $canal @pre
+            vpk download github --repoUrl $repo --token $env:GITHUB_TOKEN --channel $canal $pre
           } catch {
             Write-Host "Sem versão anterior no canal ${canal}: pacote sem delta."
           }
@@ -64,5 +67,5 @@ jobs:
             --shortcuts StartMenuRoot --noPortable --channel $canal
 
           $nome = if ($beta) { "Olho no Chat v$versao (beta)" } else { "Olho no Chat v$versao" }
-          vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish --channel $canal @pre `
+          vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish --channel $canal $pre `
             --releaseName $nome --tag $tag
