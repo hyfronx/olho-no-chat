@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:onc="clr-namespace:OlhoNoChat"
         Title="Entrar no TikTok" Icon="/icons/olho_no_chat.ico"
         Width="520" Height="780" MinWidth="420" MinHeight="520" ShowInTaskbar="False" Topmost="True"
         Background="{DynamicResource FundoDaPagina}" Foreground="{DynamicResource Texto}"
@@ -18,6 +19,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
                     <TextBlock Text="&#xE77B;" Style="{DynamicResource Icone}" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center" />
                     <TextBlock Text="Entrar no TikTok" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <ContentControl Style="{DynamicResource SeloBeta}" Margin="10,0,0,0" Visibility="{x:Static onc:InfoDoApp.VisibilidadeDaBeta}" />
                 </StackPanel>
                 <Button x:Name="botaoFecharJanela" Style="{DynamicResource BotaoFecharDaBarra}" HorizontalAlignment="Right"
                         VerticalAlignment="Center" Margin="0,0,8,0" Click="BotaoFecharJanela_Click"

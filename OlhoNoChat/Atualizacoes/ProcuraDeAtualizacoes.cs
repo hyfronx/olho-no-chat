@@ -138,7 +138,9 @@ public sealed class ProcuraDeAtualizacoes
         }
 
         string atual = gerenciador.CurrentVersion?.ToString() ?? "0.0.0";
-        if (!MostrarAviso(atual, nova.TargetFullRelease.Version.ToString(), dono))
+        // Saindo da beta, a versão normal pode ser menor que a instalada: a janela diz que volta
+        bool volta = gerenciador.CurrentVersion is { } instalada && nova.TargetFullRelease.Version < instalada;
+        if (!MostrarAviso(atual, nova.TargetFullRelease.Version.ToString(), dono, volta))
             return;
 
         try
@@ -160,9 +162,9 @@ public sealed class ProcuraDeAtualizacoes
     }
 
     // true = "Atualizar agora"
-    private bool MostrarAviso(string versaoAtual, string versaoNova, Window? dono)
+    private bool MostrarAviso(string versaoAtual, string versaoNova, Window? dono, bool voltaParaANormal = false)
     {
-        var logica = new LogicaNovaVersao(versaoAtual, versaoNova);
+        var logica = new LogicaNovaVersao(versaoAtual, versaoNova, voltaParaANormal);
         var janela = new JanelaNovaVersao(logica, Application.Current?.MainWindow) { Owner = dono };
         _janelaAberta = janela;
         bool atualizar = janela.ShowDialog() == true;

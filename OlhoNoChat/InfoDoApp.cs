@@ -49,6 +49,22 @@ public static class InfoDoApp
     /// <summary>O nome da chave do cofre no chip de segurança (TPM).</summary>
     public const string ChaveDoCofre = NomeDaPastaDeDados + ".SessaoDoTikTok";
 
+    /// <summary>
+    /// Esta é uma versão beta (o número tem hífen, como 2.10.0-beta.1): as janelas ficam roxas e com o selo BETA. No app
+    /// de teste (Debug), a variável de ambiente ONC_BETA=1 mostra o visual da beta.
+    /// </summary>
+    public static bool EhBeta => _ehBeta.Value;
+
+    private static readonly Lazy<bool> _ehBeta = new(() =>
+#if DEBUG
+        Environment.GetEnvironmentVariable("ONC_BETA") == "1" ||
+#endif
+        (VelopackLocator.IsCurrentSet && VelopackLocator.Current.CurrentlyInstalledVersion?.IsPrerelease == true));
+
+    /// <summary>O selo BETA das janelas: visível só na beta.</summary>
+    public static System.Windows.Visibility VisibilidadeDaBeta =>
+        EhBeta ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+
     /// <summary>Versão instalada pelo Velopack, ou "de desenvolvimento" rodando direto da compilação.</summary>
     public static string Versao => VelopackLocator.Current?.CurrentlyInstalledVersion?.ToString() ?? "de desenvolvimento";
 

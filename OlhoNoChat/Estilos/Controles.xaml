@@ -2,7 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
                     xmlns:ctl="clr-namespace:OlhoNoChat.Controles"
-                    xmlns:janelas="clr-namespace:OlhoNoChat.Janelas">
+                    xmlns:janelas="clr-namespace:OlhoNoChat.Janelas"
+                    xmlns:onc="clr-namespace:OlhoNoChat">
 
     <!-- O visual dos controles de todas as janelas. Entra nos recursos do app (por JanelaDoChat.xaml, ver
          Inicio/Programa): os estilos sem nome valem para todos os controles daquele tipo, em qualquer janela. -->
@@ -342,6 +343,22 @@
     </Style>
 
     <!-- O "×" das janelas: vermelho (o do Windows 11) com o mouse em cima, dentro do canto arredondado -->
+    <!-- O selo "BETA" das barras de título (só na versão beta: InfoDoApp.VisibilidadeDaBeta) -->
+    <Style x:Key="SeloBeta" TargetType="ContentControl">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Border Background="#40000000" BorderBrush="#80FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,0,6,1">
+                        <TextBlock Text="BETA" FontSize="11" FontWeight="Bold" Foreground="White" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="BotaoFecharDaBarra" TargetType="Button" BasedOn="{StaticResource BotaoDaBarra}">
         <Setter Property="ToolTip" Value="Fechar (Esc)" />
         <Setter Property="AutomationProperties.Name" Value="Fechar a janela" />
@@ -1157,6 +1174,8 @@
                             <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
                                 <TextBlock Text="{TemplateBinding Icone}" Style="{StaticResource Icone}" FontSize="16" />
                                 <TextBlock Text="{TemplateBinding Title}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,1" />
+                                <ContentControl Style="{StaticResource SeloBeta}" Margin="10,0,0,0"
+                                                Visibility="{x:Static onc:InfoDoApp.VisibilidadeDaBeta}" />
                             </StackPanel>
                             <Button x:Name="botaoFecharJanela" Grid.ColumnSpan="2" Style="{StaticResource BotaoFecharDaBarra}"
                                     HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" />

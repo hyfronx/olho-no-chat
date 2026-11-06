@@ -1,19 +1,21 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:estilos="clr-namespace:OlhoNoChat.Estilos">
 
-    <!-- As cores do app: todas as janelas usam só estas. -->
+    <!-- As cores do app: todas as janelas usam só estas. As de destaque vêm de Estilos/CoresDaBeta.cs (Paleta): laranja
+         na versão normal, roxo numa versão beta. -->
 
     <!-- Laranja do app: moldura, interruptores ligados, caixa com o foco, item escolhido, botão principal -->
-    <Color x:Key="CorLaranja">#E85D30</Color>
+    <x:Static x:Key="CorLaranja" Member="estilos:Paleta.CorLaranja" />
     <!-- Laranja claro: títulos de seção, ícones dos cartões, avisos de erro, links -->
-    <Color x:Key="CorLaranjaClaro">#FF8A65</Color>
+    <x:Static x:Key="CorLaranjaClaro" Member="estilos:Paleta.CorLaranjaClaro" />
 
     <SolidColorBrush x:Key="Laranja" Color="{StaticResource CorLaranja}" />
     <SolidColorBrush x:Key="LaranjaClaro" Color="{StaticResource CorLaranjaClaro}" />
-    <SolidColorBrush x:Key="LaranjaComMouse" Color="#F06A3E" />
-    <SolidColorBrush x:Key="LaranjaApertado" Color="#D4532A" />
-    <SolidColorBrush x:Key="LaranjaTransparente" Color="#4DE85D30" />
-    <SolidColorBrush x:Key="LaranjaTransparenteComMouse" Color="#66E85D30" />
+    <SolidColorBrush x:Key="LaranjaComMouse" Color="{x:Static estilos:Paleta.CorLaranjaComMouse}" />
+    <SolidColorBrush x:Key="LaranjaApertado" Color="{x:Static estilos:Paleta.CorLaranjaApertado}" />
+    <SolidColorBrush x:Key="LaranjaTransparente" Color="{x:Static estilos:Paleta.CorLaranjaTransparente}" />
+    <SolidColorBrush x:Key="LaranjaTransparenteComMouse" Color="{x:Static estilos:Paleta.CorLaranjaTransparenteComMouse}" />
 
     <!-- Fundos -->
     <SolidColorBrush x:Key="FundoDaPagina" Color="#1C1C1C" />
@@ -25,9 +27,9 @@
     <SolidColorBrush x:Key="FundoDoCartaoApertado" Color="#242424" />
     <SolidColorBrush x:Key="BordaDoCartao" Color="#333333" />
     <SolidColorBrush x:Key="FundoDaFicha" Color="#383838" />
-    <SolidColorBrush x:Key="FundoDoCartaoDeAviso" Color="#2A211D" />
-    <SolidColorBrush x:Key="BordaDoCartaoDeAviso" Color="#4A3226" />
-    <SolidColorBrush x:Key="TextoDoCartaoDeAviso" Color="#E6D6CF" />
+    <SolidColorBrush x:Key="FundoDoCartaoDeAviso" Color="{x:Static estilos:Paleta.CorFundoDoCartaoDeAviso}" />
+    <SolidColorBrush x:Key="BordaDoCartaoDeAviso" Color="{x:Static estilos:Paleta.CorBordaDoCartaoDeAviso}" />
+    <SolidColorBrush x:Key="TextoDoCartaoDeAviso" Color="{x:Static estilos:Paleta.CorTextoDoCartaoDeAviso}" />
     <!-- Sombra por cima da janela enquanto um diálogo está aberto -->
     <SolidColorBrush x:Key="FundoAtrasDoDialogo" Color="#99000000" />
     <SolidColorBrush x:Key="FundoDoDialogo" Color="#202020" />

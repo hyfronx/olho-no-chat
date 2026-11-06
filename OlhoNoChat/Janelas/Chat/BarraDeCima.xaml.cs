@@ -25,9 +25,16 @@ public partial class BarraDeCima : UserControl
     private Popup? _painelFechado;
     private DateTime _fechouEm = DateTime.MinValue;
 
+    // Os botões vão até uns 255 px, o selo ocupa uns 45 e o "×" os últimos 40
+    private const double LarguraComSeloBeta = 345;
+
     public BarraDeCima()
     {
         InitializeComponent();
+
+        // O selo BETA fica só quando sobra espaço entre a engrenagem e o "×" (nunca por cima de um botão)
+        if (InfoDoApp.EhBeta)
+            barra.SizeChanged += (_, _) => seloBeta.Visibility = barra.ActualWidth >= LarguraComSeloBeta ? Visibility.Visible : Visibility.Collapsed;
 
         ajusteTamanhoDoTexto.ValorEscolhido += valor => TamanhoDoTextoEscolhido?.Invoke(valor);
         ajusteTamanhoDoTexto.VoltarAoPadraoPedido += () => TamanhoDoTextoEscolhido?.Invoke(Opcoes.TamanhoDoTextoPadrao);
