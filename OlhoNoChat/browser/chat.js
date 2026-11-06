@@ -24,7 +24,7 @@
 
     // From the app (PadraoChat.GetMessageSettingsJson)
     let settings = {
-        fade: 0, hideBots: true, hideGifs: false, hideOtherChannels: false, playSound: false,
+        fade: 0, hideBots: true, commandPrefixes: ['!'], hideGifs: false, firstTime: true, hideOtherChannels: false, playSound: false,
         twitchNotices: true, youTubeNotices: true, tiktokGifts: true, tiktokFollows: true, tiktokShares: false, tiktokSuperFans: true,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
         vips: [], blockList: [], multiplatform: false,
@@ -312,8 +312,6 @@
         let text = message.params[1] || '';
         const tags = message.tags;
 
-        if (settings.hideBots && (text[0] === '!' || isTwitchBot(login, tags.badges))) return;
-
         const sourceRoom = otherChannelRoom(tags);
         if (sourceRoom && settings.hideOtherChannels) return;
 
@@ -323,6 +321,9 @@
             action = true;
             text = actionMatch[1];
         }
+        // After taking the /me out: "/me !discord" is a command too
+        const command = isCommand(text);
+        if (settings.hideBots && (command || isTwitchBot(login, tags.badges))) return;
 
         // The text of a channel point redemption: once only, if the app already showed it (see "Redemptions")
         const name = tags['display-name'] || login;
@@ -351,6 +352,9 @@
             reward,
             action,
             bot: isTwitchBot(login, tags.badges) || /bot$/.test(login),
+            command,
+            // Twitch marks the first message someone ever sends in the channel ("first-msg")
+            firstMessage: tags['first-msg'] === '1',
             parts: addOtherEmotes(parts)
         }, tags.badges || '');
     }
@@ -402,7 +406,7 @@
         const notice = login && noticeText(kind, tags);
         if (!notice) return;
         // Bots make announcements too (Nightbot timers)
-        if (settings.hideBots && kind === 'announcement' && (text[0] === '!' || isTwitchBot(login, tags.badges))) return;
+        if (settings.hideBots && kind === 'announcement' && (isCommand(text) || isTwitchBot(login, tags.badges))) return;
         const sourceRoom = otherChannelRoom(tags);
         if (sourceRoom && settings.hideOtherChannels) return;
 
@@ -647,6 +651,8 @@
     // "Esconder GIFs" (Configurações > Chat): only their title, also on the lines already shown
     function showOrHideGifs() {
         document.body.classList.toggle('onc-hide-gifs', !!settings.hideGifs);
+        // "Selo de primeira vez" (Configurações > Chat): the badge is always built, the setting shows it (chat.css)
+        document.body.classList.toggle('onc-first-on', !!settings.firstTime);
     }
 
     // The message split at the places of its emotes and GIFs; the text around them stays text
@@ -796,6 +802,24 @@
         return /(?:^|,)bot-badge\//.test(badges || '') || knownBots.has(login);
     }
 
+    // A command (like !discord): the message starts with one of the "Prefixos dos comandos" of the Chat tab. Decided only
+    // here: "Esconder bots e comandos" leaves it out, and with that switch off the line goes to the overlay marked
+    // (data-command) for its "Esconder comandos", so both always agree. A message that starts with an emote is not one
+    // ("LUL !!!"): on Twitch the emote's code comes first in the text, on the other platforms see commandText.
+    function isCommand(text) {
+        const start = String(text || '').trimStart();
+        const prefixes = Array.isArray(settings.commandPrefixes) ? settings.commandPrefixes : ['!'];
+        return prefixes.some(prefix => prefix && start.startsWith(prefix));
+    }
+
+    // The text a command is looked for in, from a message in parts (YouTube, TikTok, Kick): nothing when the first part
+    // that is not blank is an emote or a picture
+    function commandText(parts) {
+        const list = parts || [];
+        const first = list.find(part => typeof part !== 'string' || part.trim());
+        return typeof first === 'string' ? list.filter(part => typeof part === 'string').join('') : '';
+    }
+
     // The chat's messages wait (up to 3 s) until the channel's emotes arrived, so the first ones get them too.
     // The channel id comes with the ROOMSTATE of the channel; its emotes are loaded once per page.
     let heldMessages = [];
@@ -922,8 +946,10 @@
         if (line.id) div.dataset.id = line.id;
         div.dataset.nick = line.login;
         div.dataset.ov = ++overlayLines;
-        // For the overlay's "Esconder bots" (this chat's own switch already left them out when it is on)
+        // For the overlay's "Esconder bots" and "Esconder comandos" (this chat's own switch already left them out when
+        // it is on)
         if (line.bot) div.dataset.bot = '';
+        if (line.command) div.dataset.command = '';
         div.dataset.timestamp = Date.now();
         div.style.setProperty('--user-color', line.color);
 
@@ -995,6 +1021,14 @@
             badges.dataset.badges = line.badges;
             fillBadges(badges);
             div.append(badges);
+        }
+        // "Primeira vez": the first message of someone in the channel (only Twitch says it), right before the name
+        if (line.firstMessage) {
+            const first = document.createElement('span');
+            first.className = 'onc-first';
+            first.textContent = 'Primeira vez';
+            div.classList.add('onc-first-message');
+            div.append(first);
         }
         div.append(nick);
         // A notice ("virou membro do canal!" on YouTube, a sub or a raid on Twitch, a gift on TikTok) in the platform's
@@ -1706,10 +1740,11 @@
 
     function onYouTubeMessage(m) {
         const login = String(m.login || m.name || '').toLowerCase();
-        const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
         if (m.notice && !settings.youTubeNotices) return;
+        // A Super Chat or a notice is never a command
+        const command = !m.superchat && !m.notice && isCommand(commandText(m.parts));
         // A bot by its name: YouTube marks no bots (see "Bots")
-        if (settings.hideBots && !m.superchat && !m.notice && (text[0] === '!' || /bot$/.test(login))) return;
+        if (settings.hideBots && (command || (!m.superchat && !m.notice && /bot$/.test(login)))) return;
 
         showLine({
             id: 'yt-' + m.id,
@@ -1719,6 +1754,7 @@
             color: userColor(login || '?', YOUTUBE_ROLE_COLORS[m.role] || colorFromName(login)),
             action: false,
             bot: !m.superchat && !m.notice && /bot$/.test(login),
+            command,
             parts: m.parts || [],
             superchat: m.superchat || null,
             notice: m.notice || ''
@@ -1736,11 +1772,11 @@
 
     function onTikTokMessage(m) {
         const login = String(m.login || m.name || '').toLowerCase();
-        const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
-        // A notice (gift, follow, share, Super Fan) has its own switch each (TIKTOK_NOTICES)
+        // A notice (gift, follow, share, Super Fan) has its own switch each (TIKTOK_NOTICES), and is never a command
         if (m.kind && !settings[TIKTOK_NOTICES[m.kind]]) return;
+        const command = !m.kind && isCommand(commandText(m.parts));
         // A bot by its name: TikTok marks no bots (see "Bots")
-        if (settings.hideBots && !m.kind && (text[0] === '!' || /bot$/.test(login))) return;
+        if (settings.hideBots && (command || (!m.kind && /bot$/.test(login)))) return;
 
         showLine({
             id: 'tt-' + m.id,
@@ -1751,6 +1787,7 @@
             color: userColor(login || '?', colorFromName(login)),
             action: false,
             bot: !m.kind && /bot$/.test(login),
+            command,
             parts: m.parts || [],
             notice: m.notice || ''
         }, TIKTOK_ROLE_BADGES[m.role] || '', '');
@@ -1788,10 +1825,10 @@
 
     function onKickMessage(m) {
         const login = String(m.login || '').toLowerCase();
-        const text = (m.parts || []).filter(part => typeof part === 'string').join('').trim();
         if (!login) return;
+        const command = isCommand(commandText(m.parts));
         // A bot by its name: Kick marks no bots (see "Bots")
-        if (settings.hideBots && (text[0] === '!' || /bot$/.test(login))) return;
+        if (settings.hideBots && (command || /bot$/.test(login))) return;
 
         const roles = (m.roles || []).map(role => KICK_ROLES[role]).filter(Boolean);
         const shown = (m.badges || []).map(b => typeof b === 'string' ? b : b && b.src ? kickImage(b.src, b.name) : '').filter(Boolean);
@@ -1803,6 +1840,7 @@
             color: userColor(login, m.color),
             action: false,
             bot: /bot$/.test(login),
+            command,
             parts: m.parts || []
         }, roles.join(','), shown.join(','));
     }
@@ -1866,7 +1904,7 @@
             const kappa = { emote: { src: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0',
                 srcset: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0 2x, https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0 4x' }, name: 'Kappa' };
             const samples = [
-                { login: 'viewer1', color: '#FF7F50', badges: 'subscriber/0', parts: ['boa noite, chat! cheguei agora'] },
+                { login: 'viewer1', color: '#FF7F50', badges: 'subscriber/0', firstMessage: true, parts: ['boa noite, chat! cheguei agora'] },
                 { login: 'viewer2', color: '#1E90FF', badges: 'moderator/1,subscriber/0', parts: ['que jogada absurda ', kappa] },
                 { login: 'viewer3', color: '#9ACD32', badges: 'subscriber/0', kind: 'resub',
                     notice: ['se inscreveu! A inscrição completou ', { value: '6' }, ' meses!'], parts: ['bora que hoje tem vitória'] }

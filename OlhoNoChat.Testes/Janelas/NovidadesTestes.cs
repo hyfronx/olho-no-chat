@@ -6,9 +6,9 @@ namespace OlhoNoChat.Testes.Janelas;
 /// <summary>Os balões das novidades: uma vez só cada, todas as que faltam em sequência, e só quando o botão delas está na tela.</summary>
 public class NovidadesTestes
 {
-    private static string? Proxima(IReadOnlyCollection<string> vistas, bool autoMod = true,
+    private static string? Proxima(IReadOnlyCollection<string> vistas, bool autoMod = true, bool overlayLigado = false,
         bool padrao = true, bool bordas = true, bool faixa = false, bool configuracoes = false) =>
-        Novidades.Proxima(vistas, autoMod, padrao, bordas, faixa, configuracoes);
+        Novidades.Proxima(vistas, autoMod, overlayLigado, padrao, bordas, faixa, configuracoes);
 
     [Fact]
     public void NenhumaVista_APausaPrimeiro()
@@ -25,16 +25,35 @@ public class NovidadesTestes
     [Fact]
     public void AutoMod_EsperaAOpcaoEAConferenciaDaConta()
     {
-        // Opção desligada, ou a conta conectada ainda sem as permissões conferidas
-        Assert.Null(Proxima([Novidades.Pausa], autoMod: false));
+        // Opção desligada, ou a conta conectada ainda sem as permissões conferidas (a do overlay vista)
+        Assert.Null(Proxima([Novidades.Pausa, Novidades.Overlay], autoMod: false));
         // A da pausa não depende disso
         Assert.Equal(Novidades.Pausa, Proxima([], autoMod: false));
     }
 
     [Fact]
+    public void AutoModVisto_DepoisOOverlay()
+    {
+        Assert.Equal(Novidades.Overlay, Proxima([Novidades.Pausa, Novidades.AutoMod]));
+    }
+
+    [Fact]
+    public void Overlay_NaoEsperaOAutoMod()
+    {
+        // Com a opção do AutoMod desligada, a do overlay vem logo depois da pausa
+        Assert.Equal(Novidades.Overlay, Proxima([Novidades.Pausa], autoMod: false));
+    }
+
+    [Fact]
+    public void Overlay_JaLigadoNaoPrecisaDoBalao()
+    {
+        Assert.Null(Proxima([Novidades.Pausa, Novidades.AutoMod], overlayLigado: true));
+    }
+
+    [Fact]
     public void TodasVistas_NuncaMais()
     {
-        Assert.Null(Proxima([Novidades.Pausa, Novidades.AutoMod]));
+        Assert.Null(Proxima([Novidades.Pausa, Novidades.AutoMod, Novidades.Overlay]));
     }
 
     [Fact]
@@ -52,6 +71,7 @@ public class NovidadesTestes
     {
         Assert.Null(Proxima([], padrao: padrao, bordas: bordas, faixa: faixa, configuracoes: configuracoes));
         Assert.Null(Proxima([Novidades.Pausa], padrao: padrao, bordas: bordas, faixa: faixa, configuracoes: configuracoes));
+        Assert.Null(Proxima([Novidades.Pausa, Novidades.AutoMod], padrao: padrao, bordas: bordas, faixa: faixa, configuracoes: configuracoes));
     }
 
     [Fact]

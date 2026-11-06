@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OlhoNoChat.Atalhos;
 using OlhoNoChat.Configuracoes;
+using OlhoNoChat.Sistema;
 using OlhoNoChat.Twitch;
 
 namespace OlhoNoChat.Janelas.Configuracoes;
@@ -14,6 +15,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 {
     public const string TituloDosErros = "Conectar com a Twitch";
     public const string TextoNaoConfirmou = "A Twitch não confirmou o acesso. Confira sua internet e tente de novo.";
+    public const string EnderecoDasConexoes = "https://www.twitch.tv/settings/connections";
 
     private readonly AutorizacaoNoNavegador _autorizacao;
     private readonly ContaDaTwitch _conta;
@@ -31,6 +33,12 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _autorizacao = autorizacao;
         _conta = conta;
         _resgates = resgates;
+        // O Chat Multiplataforma (aba Chat, ainda sem salvar) muda o que a dica da conta diz que dá para fazer
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MultiplataformaNaTela))
+                MostrarConta();
+        };
         MostrarConta();
     }
 
@@ -60,25 +68,31 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     /// <summary>Por que o AutoMod não funciona com a conta ("" = funciona, ou sem conta: a dica da conta já diz).</summary>
     public string ProblemaDoAutoMod => _conta.EstaConectada && _conta.PermissoesConferidas && !_conta.PodeModerarAutoMod
-        ? "Falta uma permissão nova: clique em \"Conectar de novo\", acima."
+        ? "Falta uma permissão: clique em \"Conectar de novo\", acima."
         : string.Empty;
 
     /// <summary>Se o AutoMod funciona no canal aberto agora ("" = não pedido: opção desligada, sem conta ou sem chat Padrão).</summary>
     public string SituacaoDoAutoMod => TextoDaSituacao(_resgates.AutoMod);
 
+    /// <summary>A situação do AutoMod é um problema: aparece em laranja ("Funcionando" fica na cor das dicas).</summary>
+    public bool AutoModComProblema => SituacaoComProblema(_resgates.AutoMod);
+
     public static string TextoDaSituacao(EventSubDaTwitch.SituacaoDoAutoMod situacao) => situacao switch
     {
-        EventSubDaTwitch.SituacaoDoAutoMod.Funcionando => "Funcionando no canal aberto agora.",
-        EventSubDaTwitch.SituacaoDoAutoMod.NaoModera => "A sua conta não é dona nem moderadora do canal aberto: nada aparece nele.",
-        EventSubDaTwitch.SituacaoDoAutoMod.Falhou => "Não deu para falar com a Twitch agora. O AutoMod volta quando o chat carregar de novo ou você clicar em Salvar.",
+        EventSubDaTwitch.SituacaoDoAutoMod.Funcionando => "Funcionando no canal aberto.",
+        EventSubDaTwitch.SituacaoDoAutoMod.NaoModera => "Não funciona no canal aberto: a sua conta não é dona nem moderadora dele.",
+        EventSubDaTwitch.SituacaoDoAutoMod.Falhou => "Não deu para falar com a Twitch. Clique em Salvar para tentar de novo.",
         _ => string.Empty,
     };
+
+    public static bool SituacaoComProblema(EventSubDaTwitch.SituacaoDoAutoMod situacao) =>
+        situacao is EventSubDaTwitch.SituacaoDoAutoMod.NaoModera or EventSubDaTwitch.SituacaoDoAutoMod.Falhou;
 
     /// <summary>A dica do AutoMod. A frase dos atalhos só cita os que existem.</summary>
     public static string TextoDaDicaDoAutoMod(Atalho? aprovar, Atalho? recusar)
     {
-        const string comum = "Quando o AutoMod segura uma mensagem num canal em que a sua conta é dona ou moderadora, ela " +
-                             "aparece embaixo do chat Padrão, uma por vez (a mais antiga primeiro). Com as bordas, use os botões";
+        const string comum = "As mensagens barradas pelo AutoMod aparecem uma por vez embaixo do chat (só no tipo Padrão), nos canais que são seus ou " +
+                             "que você modera. Com as bordas visíveis, clique em ✓ ou ✕";
         string atalhos = (Atalho.Existe(aprovar), Atalho.Existe(recusar)) switch
         {
             (true, true) => $"; no jogo, {aprovar} aprova e {recusar} recusa.",
@@ -93,6 +107,9 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     public string DicaDeFecharDepoisDeEnviar => TextoDaDicaDeFechar(_atalhoEscreverSalvo);
 
+    /// <summary>Há atalho salvo para "Escrever no chat da Twitch": sem ele, "Fechar a caixa depois de enviar" não vale.</summary>
+    public bool ComAtalhoDeEscrever => Atalho.Existe(_atalhoEscreverSalvo);
+
     /// <summary>Por que a Twitch recusou os resgates ("" = sem problema).</summary>
     public string ProblemaDosResgates => _resgates.Problema;
 
@@ -100,24 +117,24 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     public static string TextoDaDicaDaCaixa(bool caixaDaTwitch, Atalho? atalhoEscrever)
     {
         string noJogo = Atalho.Existe(atalhoEscrever)
-            ? $" No jogo, aperte {atalhoEscrever} para abrir ou fechar a caixa por cima do jogo."
+            ? $" No jogo, {atalhoEscrever} abre e fecha a caixa."
             : string.Empty;
         return caixaDaTwitch
-            ? "A caixa da Twitch, com a lista de emotes, respostas e comandos (só no Chat oficial da Twitch; no Padrão fica a do " +
-              "Olho no Chat). Abra com o balão de conversa, na barra laranja. Para enviar, entre na sua conta da Twitch dentro da " +
-              "janela do chat (uma vez): abra a caixa, clique em \"Chat\", embaixo, e depois em \"Faça login\"." + noJogo
-            : "A caixa \"Escrever no chat…\" embaixo do chat: abra com o balão de conversa, na barra laranja. Envia com a conta " +
-              "conectada acima." + noJogo;
+            ? "A caixa da Twitch tem emotes, respostas e comandos, mas só existe no Chat oficial da Twitch (no Padrão fica a do " +
+              "Olho no Chat). Para abrir, clique no balão de conversa, na barra laranja. Na primeira vez, entre na sua conta da " +
+              "Twitch dentro do chat: abra a caixa, clique em \"Chat\", embaixo, e depois em \"Faça login\"." + noJogo
+            : "A caixa \"Escrever no chat…\" aparece embaixo do chat e envia pela conta conectada acima. Para abrir, clique no " +
+              "balão de conversa, na barra laranja." + noJogo;
     }
 
     /// <summary>A dica de "Fechar a caixa depois de enviar".</summary>
     public static string TextoDaDicaDeFechar(Atalho? atalhoEscrever)
     {
-        const string comum = "Com a caixa aberta pelo atalho no jogo: ligado, ela fecha ao enviar e o jogo volta para a frente. " +
-                             "Desligado, ela continua aberta para a próxima mensagem";
+        const string comum = "Vale para a caixa aberta pelo atalho no jogo. Ligado, ela fecha ao enviar e o jogo volta para a frente. " +
+                             "Desligado, fica aberta para a próxima mensagem";
         return Atalho.Existe(atalhoEscrever)
-            ? $"{comum}; feche com {atalhoEscrever} de novo, Esc ou o × da caixa."
-            : comum + ".";
+            ? $"{comum}; feche com {atalhoEscrever} de novo, Esc ou o ×."
+            : comum + ". Para usar, escolha um atalho para \"Escrever no chat da Twitch\" na aba Geral.";
     }
 
     public override void Carregar(Opcoes opcoes)
@@ -132,6 +149,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         OnPropertyChanged(nameof(DicaDoAutoMod));
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
+        OnPropertyChanged(nameof(ComAtalhoDeEscrever));
 
         MostrarConta();
         // A foto e uma conferência nova do acesso
@@ -155,6 +173,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
+        OnPropertyChanged(nameof(ComAtalhoDeEscrever));
         OnPropertyChanged(nameof(DicaDoAutoMod));
     }
 
@@ -191,6 +210,10 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     [ObservableProperty]
     private bool _mostrarDesconectar;
 
+    /// <summary>O aviso "A sua senha fica só com a Twitch": só sem conta ou quando falta conectar de novo.</summary>
+    [ObservableProperty]
+    private bool _mostrarAvisoDeConectar;
+
     /// <summary>A página está na tela: acompanha a conta e os resgates.</summary>
     public void Ligar()
     {
@@ -202,6 +225,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         MostrarConta();
         OnPropertyChanged(nameof(ProblemaDosResgates));
         OnPropertyChanged(nameof(SituacaoDoAutoMod));
+        OnPropertyChanged(nameof(AutoModComProblema));
     }
 
     public void Desligar()
@@ -219,6 +243,7 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     {
         OnPropertyChanged(nameof(ProblemaDosResgates));
         OnPropertyChanged(nameof(SituacaoDoAutoMod));
+        OnPropertyChanged(nameof(AutoModComProblema));
     });
 
     private void NaTela(Action acao)
@@ -237,29 +262,38 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         bool semPermissaoDeEmotes = conectada && _conta.PermissoesConferidas && !_conta.PodeLerEmotes;
         bool semPermissaoDoAutoMod = conectada && _conta.PermissoesConferidas && !_conta.PodeModerarAutoMod;
 
-        MostrarConectar = (!conectada || semPermissaoDeEmotes || semPermissaoDoAutoMod) && !esperando;
+        bool precisaConectar = !conectada || semPermissaoDeEmotes || semPermissaoDoAutoMod;
+
+        MostrarConectar = precisaConectar && !esperando;
         TextoConectar = conectada ? "Conectar de novo" : "Conectar";
         MostrarCancelar = esperando;
         MostrarDesconectar = conectada && !esperando;
+        // Continua na tela enquanto espera a autorização (não pula); some quando a conta fica pronta
+        MostrarAvisoDeConectar = precisaConectar;
 
+        // No Chat Multiplataforma, escrever no chat e os resgates ficam desligados: a conta serve só para o AutoMod
         if (esperando)
         {
             TituloDaConta = _conferindo ? "Conectando…" : "Esperando você autorizar…";
-            DicaDaConta = "Termine no navegador que abriu: clique em \"Autorizar\" na página da Twitch.";
+            DicaDaConta = "No navegador que abriu, clique em \"Autorizar\" na página da Twitch.";
         }
         else if (conectada)
         {
             TituloDaConta = "Conectado como " + _conta.NomeMostrado;
             DicaDaConta = semPermissaoDeEmotes
-                ? "Para ver os seus emotes na caixa de escrever, clique em \"Conectar de novo\" (a Twitch pede uma permissão nova)."
+                ? "Falta uma permissão para usar os seus emotes na caixa de digitar: clique em \"Conectar de novo\"."
                 : semPermissaoDoAutoMod
-                    ? "Para aprovar as mensagens barradas pelo AutoMod, clique em \"Conectar de novo\" (a Twitch pede uma permissão nova)."
-                    : "Você pode escrever no chat, usar os seus emotes, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
+                    ? "Falta uma permissão para aprovar as mensagens barradas pelo AutoMod: clique em \"Conectar de novo\"."
+                    : MultiplataformaNaTela
+                        ? "Você pode aprovar as mensagens barradas pelo AutoMod."
+                        : "Você pode escrever no chat, usar os seus emotes, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
         }
         else
         {
             TituloDaConta = "Não conectado";
-            DicaDaConta = "Para só ler o chat, não precisa conectar. Conecte para escrever no chat e mostrar os resgates de pontos.";
+            DicaDaConta = MultiplataformaNaTela
+                ? "Para só ler o chat, não precisa conectar. Conecte para aprovar as mensagens barradas pelo AutoMod."
+                : "Para só ler o chat, não precisa conectar. Conecte para escrever no chat, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
         }
 
         Foto = conectada && _conta.Foto.Length > 0 ? _conta.Foto : null;
@@ -310,4 +344,8 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _conta.Desconectar();
         MostrarConta();
     }
+
+    /// <summary>"Abrir as Conexões da Twitch": lá também dá para tirar o acesso do app (procurando "Olho no Chat").</summary>
+    [RelayCommand]
+    private static void AbrirConexoes() => AbrirNoWindows.Site(EnderecoDasConexoes);
 }

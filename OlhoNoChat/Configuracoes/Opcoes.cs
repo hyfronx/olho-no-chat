@@ -52,6 +52,9 @@ public sealed class Opcoes
     public const int EmotesNoOverlayMinimo = 1;
     public const int EmotesNoOverlayMaximo = 30;
     public const int EmotesNoOverlayPadrao = 8;
+    public const int VelocidadeDaFaixaMinima = 30;
+    public const int VelocidadeDaFaixaMaxima = 400;
+    public const int VelocidadeDaFaixaPadrao = 120;
 
     public int Versao { get; set; } = VersaoAtual;
 
@@ -74,7 +77,7 @@ public sealed class Opcoes
     public string CanalDoTikTok { get; set; } = string.Empty;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
-    /// <summary>Do jeito que foi digitado na aba Chat.</summary>
+    /// <summary>Os segundos em texto: a aba Chat grava um número inteiro (deslizante de 10 s a 10 min) e mostra o padrão quando o texto salvo não vale.</summary>
     public string SegundosParaApagar { get; set; } = "120";
     /// <summary>
     /// Pausar o chat (só no Padrão): ao continuar, ele rola sozinho até a última mensagem no ritmo de leitura, pela
@@ -83,7 +86,14 @@ public sealed class Opcoes
     public bool VelocidadeAutomaticaAoContinuar { get; set; } = true;
     public double LinhasPorSegundoAoContinuar { get; set; } = LinhasPorSegundoPadrao;
     public bool EsconderBots { get; set; } = true;
+    /// <summary>
+    /// "Prefixos dos comandos": a mensagem que começa com um deles é um comando. Valem para o "Esconder bots e comandos"
+    /// do chat e para o "Esconder comandos" do overlay (uma lista para os dois, escolha do usuário em 2026-11-06).
+    /// </summary>
+    public List<string> PrefixosDosComandos { get; set; } = ["!"];
     public bool EsconderGifs { get; set; } = false;
+    /// <summary>O selo "Primeira vez" na primeira mensagem de alguém no canal (a Twitch avisa; só no Padrão).</summary>
+    public bool MostrarPrimeiraVez { get; set; } = true;
     public bool EsconderOutrosCanais { get; set; } = false;
     // Os avisos no chat Padrão, cada plataforma e cada tipo com o seu interruptor (pedido do usuário em 2026-10-23)
     /// <summary>Inscrições, presentes, raids, comunicados, sequências de visualizações... da Twitch.</summary>
@@ -174,6 +184,11 @@ public sealed class Opcoes
     public int SegundosParaSumirNoOverlay { get; set; } = SegundosParaSumirNoOverlayPadrao;
     /// <summary>Quanto tempo a mensagem espera antes de ir ao overlay (0 = na hora): dá tempo de apagar uma ruim.</summary>
     public int SegundosDeAtrasoNoOverlay { get; set; } = 0;
+    /// <summary>
+    /// "Quantas mensagens: As que couberem" (aba Overlay > Mensagens; ligado por padrão, pedido do usuário em 2026-11-06): ficam quantas mensagens couberem na
+    /// fonte do OBS, e a mais antiga sai por cima; o <see cref="MensagensNoOverlay"/> só vale com ele desligado.
+    /// </summary>
+    public bool PreencherAreaNoOverlay { get; set; } = true;
     public int MensagensNoOverlay { get; set; } = MensagensNoOverlayPadrao;
     /// <summary>Em pixels da Fonte de navegador.</summary>
     public int TamanhoDoTextoNoOverlay { get; set; } = TamanhoDoTextoNoOverlayPadrao;
@@ -181,7 +196,7 @@ public sealed class Opcoes
     public bool NegritoNoOverlay { get; set; } = true;
     /// <summary>"theme" (contorno preto), "soft" (sombra suave) ou "none", como na aba Aparência.</summary>
     public string ContornoNoOverlay { get; set; } = "theme";
-    /// <summary>"none" (sem fundo) ou "card" (cada mensagem num cartão escuro).</summary>
+    /// <summary>"none" (sem fundo), "card" (cada mensagem num cartão escuro) ou "bubble" (balão, o nome em cima).</summary>
     public string FundoNoOverlay { get; set; } = "none";
     /// <summary>A opacidade do cartão, em porcentagem.</summary>
     public int OpacidadeDoFundoNoOverlay { get; set; } = 55;
@@ -190,13 +205,19 @@ public sealed class Opcoes
     /// <summary>"left" ou "right".</summary>
     public string AlinhamentoDoOverlay { get; set; } = "left";
     /// <summary>Como as mensagens entram e saem (<see cref="Overlay.ContratoDoOverlay.Animacoes"/>; "none" = sem animação).</summary>
-    public string AnimacaoDoOverlay { get; set; } = "slide";
+    public string AnimacaoDoOverlay { get; set; } = "pop"; // "Pular", escolha do usuário (2026-11-06)
     public bool SelosNoOverlay { get; set; } = true;
     public bool HorarioNoOverlay { get; set; } = false;
     /// <summary>O ícone da plataforma (só com o Chat Multiplataforma).</summary>
     public bool PlataformaNoOverlay { get; set; } = true;
+    /// <summary>O selo "Primeira vez" também na live.</summary>
+    public bool PrimeiraVezNoOverlay { get; set; } = true;
+    /// <summary>"list" (uma embaixo da outra) ou "ticker" (uma faixa horizontal, passando da direita para a esquerda).</summary>
+    public string DisposicaoDoOverlay { get; set; } = "list";
+    /// <summary>A velocidade da faixa horizontal, em pixels por segundo.</summary>
+    public int VelocidadeDaFaixaNoOverlay { get; set; } = VelocidadeDaFaixaPadrao;
+    /// <summary>Os prefixos são os do chat (<see cref="PrefixosDosComandos"/>).</summary>
     public bool EsconderComandosNoOverlay { get; set; } = true;
-    public string PrefixoDosComandosNoOverlay { get; set; } = "!";
     public bool EsconderBotsNoOverlay { get; set; } = true;
     /// <summary>Viram **** na live (um * no fim pega o começo da palavra).</summary>
     public List<string> PalavrasProibidasNoOverlay { get; set; } = [];
@@ -281,6 +302,10 @@ public sealed class Opcoes
             ? LinhasPorSegundoPadrao
             : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);
         CorrigirOverlay(padrao);
+        // Uma lista vazia não esconderia comando nenhum, e a caixa da aba Chat nunca grava uma vazia
+        PrefixosDosComandos = LerPrefixos(string.Join(' ', PrefixosDosComandos?.Where(p => p != null) ?? []));
+        if (PrefixosDosComandos.Count == 0)
+            PrefixosDosComandos = padrao.PrefixosDosComandos;
 
         if (EsconderAvisosAntigo == true)
         {
@@ -331,18 +356,27 @@ public sealed class Opcoes
 
         FonteDoOverlay = UmDe(FonteDoOverlay, Overlay.ContratoDoOverlay.Fontes, padrao.FonteDoOverlay);
         ContornoNoOverlay = UmDe(ContornoNoOverlay, ["theme", "soft", "none"], padrao.ContornoNoOverlay);
-        FundoNoOverlay = UmDe(FundoNoOverlay, ["none", "card"], padrao.FundoNoOverlay);
+        FundoNoOverlay = UmDe(FundoNoOverlay, ["none", "card", "bubble"], padrao.FundoNoOverlay);
+        DisposicaoDoOverlay = UmDe(DisposicaoDoOverlay, ["list", "ticker"], padrao.DisposicaoDoOverlay);
+        VelocidadeDaFaixaNoOverlay = Math.Clamp(VelocidadeDaFaixaNoOverlay, VelocidadeDaFaixaMinima, VelocidadeDaFaixaMaxima);
         DirecaoDoOverlay = UmDe(DirecaoDoOverlay, ["bottom", "top"], padrao.DirecaoDoOverlay);
         AlinhamentoDoOverlay = UmDe(AlinhamentoDoOverlay, ["left", "right"], padrao.AlinhamentoDoOverlay);
         AnimacaoDoOverlay = UmDe(AnimacaoDoOverlay, Overlay.ContratoDoOverlay.Animacoes, padrao.AnimacaoDoOverlay);
         LinksNoOverlay = UmDe(LinksNoOverlay, ["replace", "show", "hide"], padrao.LinksNoOverlay);
-        // Um prefixo vazio esconderia todas as mensagens
-        PrefixoDosComandosNoOverlay = string.IsNullOrWhiteSpace(PrefixoDosComandosNoOverlay)
-            ? padrao.PrefixoDosComandosNoOverlay
-            : PrefixoDosComandosNoOverlay.Trim();
         PalavrasProibidasNoOverlay ??= [];
         PalavrasProibidasNoOverlay.RemoveAll(string.IsNullOrWhiteSpace);
     }
+
+    /// <summary>
+    /// Os prefixos de um texto, como "! $" ou "!, $": separados por espaço, vírgula ou ponto e vírgula, sem repetir.
+    /// </summary>
+    public static List<string> LerPrefixos(string? texto) =>
+        (texto ?? string.Empty).Split([' ', '\t', '\r', '\n', ',', ';'],StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>Os prefixos como a caixa da aba Chat mostra: "! $".</summary>
+    public static string TextoDosPrefixos(IEnumerable<string> prefixos) => string.Join(' ', prefixos);
 
     private static string UmDe(string? valor, IEnumerable<string> conhecidos, string padrao) =>
         valor != null && conhecidos.Contains(valor) ? valor : padrao;

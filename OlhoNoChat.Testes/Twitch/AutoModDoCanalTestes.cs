@@ -243,10 +243,10 @@ public class AutoModDoCanalTestes
     public void AbaTwitch_DicaCitaOsAtalhosQueExistem()
     {
         var o = new Opcoes();
-        Assert.EndsWith("Com as bordas, use os botões; no jogo, Ctrl + Alt + Home aprova e Ctrl + Alt + End recusa.",
+        Assert.EndsWith("Com as bordas visíveis, clique em ✓ ou ✕; no jogo, Ctrl + Alt + Home aprova e Ctrl + Alt + End recusa.",
             OlhoNoChat.Janelas.Configuracoes.LogicaTwitch.TextoDaDicaDoAutoMod(o.AtalhoAprovarAutoMod, o.AtalhoRecusarAutoMod));
-        Assert.EndsWith("use os botões; no jogo, Ctrl + Alt + End recusa.",
+        Assert.EndsWith("clique em ✓ ou ✕; no jogo, Ctrl + Alt + End recusa.",
             OlhoNoChat.Janelas.Configuracoes.LogicaTwitch.TextoDaDicaDoAutoMod(null, o.AtalhoRecusarAutoMod));
-        Assert.EndsWith("use os botões.", OlhoNoChat.Janelas.Configuracoes.LogicaTwitch.TextoDaDicaDoAutoMod(null, null));
+        Assert.EndsWith("clique em ✓ ou ✕.", OlhoNoChat.Janelas.Configuracoes.LogicaTwitch.TextoDaDicaDoAutoMod(null, null));
     }
 }

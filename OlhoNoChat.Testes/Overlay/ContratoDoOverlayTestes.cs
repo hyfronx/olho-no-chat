@@ -69,7 +69,7 @@ public sealed class ContratoDoOverlayTestes
     public void JsonDasOpcoes_PadraoDaPrimeiraInstalacao_Exato()
     {
         Assert.Equal(
-            """{"fadeSeconds":30,"delaySeconds":0,"maxLines":12,"fontSize":22,"font":"Segoe UI","bold":true,"outline":"theme","background":"none","backgroundOpacity":0.55,"direction":"bottom","align":"left","animation":"slide","hideGifs":false,"badges":true,"time":false,"platform":false,"hideCommands":true,"commandPrefix":"!","hideBots":true,"bannedWords":[],"links":"replace","maxChars":0,"maxEmotes":0,"notices":{"subs":true,"raids":true,"twitchOther":true,"redemptions":true,"superchats":true,"youtubeMembers":true,"tiktokGifts":true,"tiktokOther":true}}""",
+            """{"fadeSeconds":30,"delaySeconds":0,"maxLines":12,"fill":true,"fontSize":22,"font":"Segoe UI","bold":true,"outline":"theme","background":"none","backgroundOpacity":0.55,"direction":"bottom","align":"left","animation":"pop","hideGifs":false,"badges":true,"time":false,"platform":false,"firstTime":true,"layout":"list","tickerSpeed":120,"hideCommands":true,"hideBots":true,"bannedWords":[],"links":"replace","maxChars":0,"maxEmotes":0,"notices":{"subs":true,"raids":true,"twitchOther":true,"redemptions":true,"superchats":true,"youtubeMembers":true,"tiktokGifts":true,"tiktokOther":true}}""",
             ContratoDoOverlay.JsonDasOpcoes(new Opcoes()));
     }
 
@@ -81,11 +81,15 @@ public sealed class ContratoDoOverlayTestes
             OverlaySome = false,
             SegundosDeAtrasoNoOverlay = 5,
             MensagensNoOverlay = 3,
+            PreencherAreaNoOverlay = false,
             TamanhoDoTextoNoOverlay = 30,
             FonteDoOverlay = "Verdana",
             NegritoNoOverlay = false,
             ContornoNoOverlay = "soft",
-            FundoNoOverlay = "card",
+            FundoNoOverlay = "bubble",
+            PrimeiraVezNoOverlay = false,
+            DisposicaoDoOverlay = "ticker",
+            VelocidadeDaFaixaNoOverlay = 200,
             OpacidadeDoFundoNoOverlay = 80,
             DirecaoDoOverlay = "top",
             AlinhamentoDoOverlay = "right",
@@ -96,7 +100,6 @@ public sealed class ContratoDoOverlayTestes
             PlataformaNoOverlay = true,
             ChatMultiplataforma = true,
             EsconderComandosNoOverlay = false,
-            PrefixoDosComandosNoOverlay = "?",
             EsconderBotsNoOverlay = false,
             PalavrasProibidasNoOverlay = [" feio ", "", "chato*"],
             LinksNoOverlay = "hide",
@@ -115,7 +118,7 @@ public sealed class ContratoDoOverlayTestes
         };
 
         Assert.Equal(
-            """{"fadeSeconds":0,"delaySeconds":5,"maxLines":3,"fontSize":30,"font":"Verdana","bold":false,"outline":"soft","background":"card","backgroundOpacity":0.8,"direction":"top","align":"right","animation":"none","hideGifs":true,"badges":false,"time":true,"platform":true,"hideCommands":false,"commandPrefix":"?","hideBots":false,"bannedWords":["feio","chato*"],"links":"hide","maxChars":100,"maxEmotes":4,"notices":{"subs":false,"raids":false,"twitchOther":false,"redemptions":false,"superchats":false,"youtubeMembers":false,"tiktokGifts":false,"tiktokOther":false}}""",
+            """{"fadeSeconds":0,"delaySeconds":5,"maxLines":3,"fill":false,"fontSize":30,"font":"Verdana","bold":false,"outline":"soft","background":"bubble","backgroundOpacity":0.8,"direction":"top","align":"right","animation":"none","hideGifs":true,"badges":false,"time":true,"platform":true,"firstTime":false,"layout":"ticker","tickerSpeed":200,"hideCommands":false,"hideBots":false,"bannedWords":["feio","chato*"],"links":"hide","maxChars":100,"maxEmotes":4,"notices":{"subs":false,"raids":false,"twitchOther":false,"redemptions":false,"superchats":false,"youtubeMembers":false,"tiktokGifts":false,"tiktokOther":false}}""",
             ContratoDoOverlay.JsonDasOpcoes(opcoes));
     }
 

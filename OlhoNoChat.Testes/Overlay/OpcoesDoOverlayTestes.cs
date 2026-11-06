@@ -34,6 +34,30 @@ public sealed class OpcoesDoOverlayTestes
         Assert.Equal("replace", opcoes.LinksNoOverlay);
         Assert.Empty(opcoes.PalavrasProibidasNoOverlay);
         Assert.Equal(new Atalho(Key.F5, ModifierKeys.Control | ModifierKeys.Alt), opcoes.AtalhoLimparOverlay);
+        Assert.True(opcoes.PreencherAreaNoOverlay); // ligado por padrão (pedido do usuário, 2026-11-06)
+        Assert.Equal("pop", opcoes.AnimacaoDoOverlay); // "Pular", escolha do usuário (2026-11-06)
+    }
+
+    // Quem já tinha o app não tem a chave no arquivo: fica com o padrão, ligado
+    [Fact]
+    public void PreencherArea_ArquivoSemAChaveFicaLigado()
+    {
+        Assert.True(Corrigidas("""{"MensagensNoOverlay":12}""").PreencherAreaNoOverlay);
+        Assert.False(Corrigidas("""{"PreencherAreaNoOverlay":false}""").PreencherAreaNoOverlay);
+    }
+
+    [Fact]
+    public void Aba_MensagensNaTelaSoValeSemPreencherENaLista()
+    {
+        var aba = new LogicaOverlay();
+        aba.Carregar(new Opcoes());
+
+        Assert.True(aba.PreencherArea);
+        Assert.False(aba.ComLimiteDeMensagens);
+        aba.PreencherArea = false;
+        Assert.True(aba.ComLimiteDeMensagens);
+        aba.Disposicao = "ticker";
+        Assert.False(aba.ComLimiteDeMensagens);
     }
 
     [Fact]
@@ -58,7 +82,7 @@ public sealed class OpcoesDoOverlayTestes
     {
         Opcoes o = Corrigidas("""
             {"FonteDoOverlay":"Comic Sans MS","ContornoNoOverlay":"neon","FundoNoOverlay":null,"DirecaoDoOverlay":"left",
-             "AlinhamentoDoOverlay":"center","AnimacaoDoOverlay":"spin","LinksNoOverlay":"","PrefixoDosComandosNoOverlay":"  ",
+             "AlinhamentoDoOverlay":"center","AnimacaoDoOverlay":"spin","LinksNoOverlay":"",
              "PalavrasProibidasNoOverlay":["feio",null,"  "]}
             """);
         var padrao = new Opcoes();
@@ -70,8 +94,34 @@ public sealed class OpcoesDoOverlayTestes
         Assert.Equal(padrao.AlinhamentoDoOverlay, o.AlinhamentoDoOverlay);
         Assert.Equal(padrao.AnimacaoDoOverlay, o.AnimacaoDoOverlay);
         Assert.Equal(padrao.LinksNoOverlay, o.LinksNoOverlay);
-        Assert.Equal("!", o.PrefixoDosComandosNoOverlay);
         Assert.Equal(["feio"], o.PalavrasProibidasNoOverlay);
+    }
+
+    [Fact]
+    public void Corrigir_DisposicaoEVelocidadeDaFaixa()
+    {
+        Opcoes o = Corrigidas("""{"DisposicaoDoOverlay":"diagonal","VelocidadeDaFaixaNoOverlay":5,"FundoNoOverlay":"bubble"}""");
+
+        Assert.Equal("list", o.DisposicaoDoOverlay);
+        Assert.Equal(Opcoes.VelocidadeDaFaixaMinima, o.VelocidadeDaFaixaNoOverlay);
+        Assert.Equal("bubble", o.FundoNoOverlay);
+        Assert.Equal("ticker", Corrigidas("""{"DisposicaoDoOverlay":"ticker","VelocidadeDaFaixaNoOverlay":9999}""").DisposicaoDoOverlay);
+        Assert.Equal(Opcoes.VelocidadeDaFaixaMaxima, Corrigidas("""{"VelocidadeDaFaixaNoOverlay":9999}""").VelocidadeDaFaixaNoOverlay);
+    }
+
+    [Fact]
+    public void Aba_EscuroValeParaCartaoEBalao_EFaixaEscondeAsOpcoesDaLista()
+    {
+        var aba = new LogicaOverlay();
+        aba.Carregar(new Opcoes());
+
+        Assert.False(aba.ComCartao);
+        aba.Fundo = "bubble";
+        Assert.True(aba.ComCartao);
+        Assert.True(aba.EmLista);
+        aba.Disposicao = "ticker";
+        Assert.False(aba.EmLista);
+        Assert.True(aba.EmFaixa);
     }
 
     [Theory]
@@ -160,7 +210,11 @@ public sealed class OpcoesDoOverlayTestes
             SegundosParaSumirNoOverlay = 45,
             SegundosDeAtrasoNoOverlay = 4,
             FonteDoOverlay = "Arial",
-            FundoNoOverlay = "card",
+            FundoNoOverlay = "bubble",
+            DisposicaoDoOverlay = "ticker",
+            VelocidadeDaFaixaNoOverlay = 250,
+            PreencherAreaNoOverlay = false,
+            PrimeiraVezNoOverlay = false,
             PalavrasProibidasNoOverlay = ["feio", "chato*"],
             LinksNoOverlay = "show",
             OutrosAvisosDoTikTokNoOverlay = false,
@@ -235,20 +289,6 @@ public sealed class OpcoesDoOverlayTestes
         aba.Gravar(opcoes);
 
         Assert.Equal(18987, opcoes.PortaDoOverlay);
-    }
-
-    [Fact]
-    public void Aba_PrefixoVazioFicaOAnterior()
-    {
-        var aba = new LogicaOverlay();
-        aba.Carregar(new Opcoes { PrefixoDosComandosNoOverlay = "?" });
-        aba.PrefixoDosComandos = " ";
-        var opcoes = new Opcoes { PrefixoDosComandosNoOverlay = "?" };
-
-        aba.Gravar(opcoes);
-
-        Assert.Equal("?", opcoes.PrefixoDosComandosNoOverlay);
-        Assert.Equal("?", aba.PrefixoDosComandos); // a tela mostra o que ficou valendo
     }
 
     private static (LogicaOverlay Aba, Func<EstadoDoOverlay, EstadoDoOverlay> Mudar) AbaCom(int? portaNova = null, int conectados = 0)

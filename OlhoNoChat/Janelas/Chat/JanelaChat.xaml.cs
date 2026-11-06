@@ -616,6 +616,8 @@ public partial class JanelaChat : Window
                 barraDeCima.MostrarNovidadeDoAutoMod(!_conta.EstaConectada ? BarraDeCima.FaltaParaOAutoMod.Conectar
                     : !_conta.PodeModerarAutoMod ? BarraDeCima.FaltaParaOAutoMod.ConectarDeNovo
                     : BarraDeCima.FaltaParaOAutoMod.Nada);
+            else if (_novidadeNaTela == Novidades.Overlay)
+                barraDeCima.MostrarNovidadeDoOverlay();
         };
         _esperaDaNovidade.Start();
     }
@@ -633,6 +635,7 @@ public partial class JanelaChat : Window
             : Novidades.Proxima(Opcoes.NovidadesVistas,
                 // Conectada, espera a conferência das permissões (o balão diz se falta conectar de novo)
                 autoModPronto: Opcoes.AprovarAutoMod && (!_conta.EstaConectada || _conta.PermissoesConferidas),
+                overlayLigado: Opcoes.OverlayLigado,
                 _navegador.Pagina is ChatPadrao && _navegador.PaginaPronta, _logica.BordasVisiveis, _faixa.EditorAberto,
                 _janelaDeConfiguracoes != null);
 

@@ -15,7 +15,7 @@ public sealed class ContratoComAPaginaTestes
     public void JsonDeConfiguracoes_PadraoDaPrimeiraInstalacao_Exato()
     {
         Assert.Equal(
-            """{"fade":0,"hideBots":true,"hideGifs":false,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"resumeSpeed":0,"pauseHotkey":"Ctrl \u002B Alt \u002B F6","overlay":false}""",
+            """{"fade":0,"hideBots":true,"commandPrefixes":["!"],"hideGifs":false,"firstTime":true,"hideOtherChannels":false,"twitchNotices":true,"youTubeNotices":true,"tiktokGifts":true,"tiktokFollows":true,"tiktokShares":false,"tiktokSuperFans":true,"highlightUsers":false,"allowedUsersOnly":false,"playSound":true,"filterAllowAllVIPs":false,"filterAllowAllMods":false,"vips":[],"blockList":[],"multiplatform":false,"resumeSpeed":0,"pauseHotkey":"Ctrl \u002B Alt \u002B F6","overlay":false}""",
             ContratoComAPagina.JsonDeConfiguracoes(new Opcoes()));
     }
 
@@ -27,7 +27,9 @@ public sealed class ContratoComAPaginaTestes
             ApagarMensagensAntigas = true,
             SegundosParaApagar = "45",
             EsconderBots = false,
+            PrefixosDosComandos = ["!", "$"],
             EsconderGifs = true,
+            MostrarPrimeiraVez = false,
             EsconderOutrosCanais = true,
             MostrarAvisosDaTwitch = false,
             MostrarAvisosDoYouTube = false,
@@ -49,7 +51,7 @@ public sealed class ContratoComAPaginaTestes
         };
 
         Assert.Equal(
-            """{"fade":45,"hideBots":false,"hideGifs":true,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"resumeSpeed":2.5,"pauseHotkey":"","overlay":true}""",
+            """{"fade":45,"hideBots":false,"commandPrefixes":["!","$"],"hideGifs":true,"firstTime":false,"hideOtherChannels":true,"twitchNotices":false,"youTubeNotices":false,"tiktokGifts":false,"tiktokFollows":false,"tiktokShares":true,"tiktokSuperFans":false,"highlightUsers":true,"allowedUsersOnly":true,"playSound":false,"filterAllowAllVIPs":true,"filterAllowAllMods":true,"vips":["fulano","beltrano"],"blockList":["nightbot"],"multiplatform":false,"resumeSpeed":2.5,"pauseHotkey":"","overlay":true}""",
             ContratoComAPagina.JsonDeConfiguracoes(opcoes));
     }
 

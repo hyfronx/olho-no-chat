@@ -34,7 +34,11 @@ public static class ContratoComAPagina
         {
             fade,
             hideBots = opcoes.EsconderBots,
+            // "Prefixos dos comandos": a mensagem que começa com um deles é um comando
+            commandPrefixes = opcoes.PrefixosDosComandos,
             hideGifs = opcoes.EsconderGifs,
+            // O selo "Primeira vez" na primeira mensagem de alguém no canal
+            firstTime = opcoes.MostrarPrimeiraVez,
             hideOtherChannels = opcoes.EsconderOutrosCanais,
             // Os avisos de cada plataforma, cada um com o seu interruptor
             twitchNotices = opcoes.MostrarAvisosDaTwitch,

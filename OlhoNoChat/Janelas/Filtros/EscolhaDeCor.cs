@@ -46,7 +46,7 @@ public sealed partial class EscolhaDeCor : ObservableObject
     /// <summary>A caixa só aparece com "Personalizada…" escolhida e a lista na tela.</summary>
     public bool MostrarCaixa => Visivel && Escolhida.EhPersonalizada;
 
-    /// <summary>"Use o formato #RRGGBB." embaixo da caixa.</summary>
+    /// <summary>O erro <see cref="CoresDeDestaque.ErroDaPersonalizada"/> embaixo da caixa.</summary>
     public bool MostrarErro => _erro && MostrarCaixa;
 
     public Color? CorPersonalizada => CoresDeDestaque.Ler(TextoPersonalizado, _salva);

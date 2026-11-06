@@ -57,8 +57,8 @@ public partial class JanelaConfiguracoes : JanelaComMoldura
     private async void RestaurarTudo()
     {
         RespostaDoDialogo resposta = await PerguntarAsync("Restaurar tudo para o padrão?",
-            "Todas as opções voltam como na primeira instalação (também o que você mudou e ainda não salvou). " +
-            "O canal, a conta da Twitch, as listas de nomes dos filtros, as palavras proibidas e o endereço do overlay continuam.",
+            "Todas as opções voltam como na primeira instalação, inclusive o que você mudou e ainda não salvou. " +
+            "Ficam como estão: os canais, a conta da Twitch, a lista de usuários e as pessoas bloqueadas dos filtros, as palavras proibidas e o endereço do overlay.",
             "Restaurar", null, "Cancelar", RespostaDoDialogo.Fechar);
         if (resposta != RespostaDoDialogo.Principal)
             return;

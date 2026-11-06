@@ -269,6 +269,20 @@
         </Setter>
     </Style>
 
+    <!-- O botão ao lado de uma caixa de atalho (abas Geral e Overlay): "Mudar atalho", e "Confirmar" enquanto a caixa
+         (no Tag) grava; volta sozinho quando a caixa para (Esc cancela) -->
+    <Style x:Key="BotaoMudarAtalho" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Margin" Value="8,0,0,0" />
+        <Setter Property="MinWidth" Value="110" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Content" Value="Mudar atalho" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag.Gravando, RelativeSource={RelativeSource Self}}" Value="True">
+                <Setter Property="Content" Value="Confirmar" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- A ação principal (Salvar, Atualizar agora): laranja -->
     <Style x:Key="BotaoPrincipal" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="Background" Value="{StaticResource Laranja}" />
@@ -1012,6 +1026,63 @@
         </Setter>
     </Style>
 
+    <!-- ===== Abas no topo de uma página (aba Overlay das Configurações) ===== -->
+
+    <!-- Uma linha fina embaixo de todas; as abas quebram para a linha de baixo se a janela ficar estreita -->
+    <Style x:Key="AbasDoTopo" TargetType="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="Margin" Value="0,14,0,4" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBox">
+                    <Grid>
+                        <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource BordaDoCartao}" />
+                        <ItemsPresenter />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Cada aba: texto cinza; com o mouse, branco; a escolhida em branco semibold com a linha laranja embaixo -->
+    <Style x:Key="AbaDoTopo" TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="14,8,14,9" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocoDoTeclado}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid Background="Transparent">
+                        <ContentPresenter Margin="{TemplateBinding Padding}" />
+                        <Border x:Name="Linha" Height="2" CornerRadius="1" VerticalAlignment="Bottom" Background="{StaticResource Laranja}"
+                                Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Texto}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Texto}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter TargetName="Linha" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== Diálogo dentro da janela ===== -->
 
     <Style TargetType="ctl:DialogoNaJanela">
@@ -1108,7 +1179,7 @@
                                             BorderThickness="0,1,0,0" Padding="20,12">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                             <Button x:Name="botaoSalvar" Content="Salvar" Style="{StaticResource BotaoPrincipal}" MinWidth="104" Height="34"
-                                                    Margin="0,0,8,0" IsDefault="True" ToolTip="Salva e aplica no chat na hora"
+                                                    Margin="0,0,8,0" IsDefault="True" ToolTip="Salva e aplica na hora, sem fechar a janela"
                                                     AutomationProperties.Name="Salvar" />
                                             <Button x:Name="botaoFechar" Content="Fechar" MinWidth="104" Height="34" />
                                         </StackPanel>

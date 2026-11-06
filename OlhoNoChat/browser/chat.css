@@ -95,6 +95,27 @@ body {
     margin: 0 5px 2px 1px;
 }
 
+/* "Primeira vez": a small purple pill (Twitch's color) before the name on the first message of someone in the channel;
+   shown with "Selo de primeira vez" on (body.onc-first-on, chat.js showOrHideGifs) */
+.onc-first {
+    display: none;
+}
+
+body.onc-first-on .onc-first {
+    display: inline-block;
+    margin: 0 .35em 0 0;
+    padding: .05em .45em .1em;
+    border-radius: .55em;
+    background: #9146FF;
+    color: #fff;
+    font-size: .72em;
+    font-weight: bold;
+    letter-spacing: 0;
+    line-height: 1.3;
+    text-shadow: none;
+    vertical-align: .12em;
+}
+
 /* Chat Multiplataforma: the icon of the platform at the start of each line (body.onc-multi, chat.js showPlatforms) */
 .onc-platform {
     display: none;

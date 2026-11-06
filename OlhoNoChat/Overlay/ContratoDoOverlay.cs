@@ -43,6 +43,8 @@ public static class ContratoDoOverlay
         fadeSeconds = opcoes.OverlaySome ? opcoes.SegundosParaSumirNoOverlay : 0,
         delaySeconds = opcoes.SegundosDeAtrasoNoOverlay,
         maxLines = opcoes.MensagensNoOverlay,
+        // Quantas couberem na fonte (o maxLines não vale)
+        fill = opcoes.PreencherAreaNoOverlay,
         fontSize = opcoes.TamanhoDoTextoNoOverlay,
         font = opcoes.FonteDoOverlay,
         bold = opcoes.NegritoNoOverlay,
@@ -58,8 +60,11 @@ public static class ContratoDoOverlay
         time = opcoes.HorarioNoOverlay,
         // O ícone só faz sentido com mais de uma plataforma
         platform = opcoes.PlataformaNoOverlay && opcoes.ChatMultiplataforma,
+        firstTime = opcoes.PrimeiraVezNoOverlay,
+        layout = opcoes.DisposicaoDoOverlay,
+        tickerSpeed = opcoes.VelocidadeDaFaixaNoOverlay,
+        // O chat marca as linhas de comando (data-command) pelos "Prefixos dos comandos" da aba Chat
         hideCommands = opcoes.EsconderComandosNoOverlay,
-        commandPrefix = opcoes.PrefixoDosComandosNoOverlay,
         hideBots = opcoes.EsconderBotsNoOverlay,
         bannedWords = opcoes.PalavrasProibidasNoOverlay.Select(p => p.Trim()).Where(p => p.Length > 0),
         links = opcoes.LinksNoOverlay,

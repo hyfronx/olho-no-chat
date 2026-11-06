@@ -19,8 +19,25 @@ public partial class PaginaOverlay : UserControl
 
     private LogicaOverlay? Logica => DataContext as LogicaOverlay;
 
-    /// <summary>Mostra o cartão do endereço (o balão "Resolver" da porta ocupada abre a aba aqui).</summary>
-    public void MostrarEndereco() => caixaEndereco.BringIntoView();
+    /// <summary>
+    /// Mostra o estado, com o "Encontrar outro endereço", e o endereço logo abaixo (o balão "Resolver" da porta ocupada
+    /// abre a aba aqui), na parte Geral.
+    /// </summary>
+    public void MostrarEndereco()
+    {
+        listaDeAbas.SelectedIndex = 0;
+        textoEstado.BringIntoView();
+    }
+
+    // As abas do topo: só o painel da escolhida aparece (a ordem dos painéis é a das abas)
+    private void ListaDeAbas_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Chamado também enquanto a página é montada, antes dos painéis existirem
+        if (paineisDasAbas == null)
+            return;
+        for (int i = 0; i < paineisDasAbas.Children.Count; i++)
+            paineisDasAbas.Children[i].Visibility = i == listaDeAbas.SelectedIndex ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     private void Copiar_Click(object sender, RoutedEventArgs e)
     {
@@ -46,23 +63,8 @@ public partial class PaginaOverlay : UserControl
         _voltarOCopiar.Start();
     }
 
-    // "Mudar atalho" começa a gravar na caixa; "Confirmar" para (igual à aba Geral). Vale depois de "Salvar".
-    private void MudarAtalho_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: EditorDeAtalho editor } botao)
-            return;
-
-        if (editor.Gravando)
-        {
-            editor.PararDeGravar();
-            botao.Content = "Mudar atalho";
-        }
-        else
-        {
-            editor.ComecarAGravar();
-            botao.Content = "Confirmar";
-        }
-    }
+    // "Mudar atalho"/"Confirmar": ver EditorDeAtalho.AlternarPeloBotao
+    private void MudarAtalho_Click(object sender, RoutedEventArgs e) => EditorDeAtalho.AlternarPeloBotao(sender);
 
     private void Abrir_Click(object sender, RoutedEventArgs e)
     {

@@ -1,7 +1,6 @@
 using System.Windows.Media;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.Filtros;
-using OlhoNoChat.Twitch;
 
 namespace OlhoNoChat.Testes.Janelas;
 
@@ -73,7 +72,7 @@ public class LogicaFiltrosTestes
         logica.AdicionarUsuarioCommand.Execute(null);
 
         Assert.Empty(logica.ListaDeUsuarios);
-        Assert.Equal(NomesDaTwitch.DicaNomeInvalido, logica.ErroNovoUsuario);
+        Assert.Equal(LogicaFiltros.DicaNomeInvalido, logica.ErroNovoUsuario);
     }
 
     [Theory]
@@ -414,7 +413,7 @@ public class LogicaFiltrosTestes
 
         logica.Salvar();
 
-        Assert.Equal(NomesDaTwitch.DicaNomeInvalido, logica.ErroNovoUsuario);
+        Assert.Equal(LogicaFiltros.DicaNomeInvalido, logica.ErroNovoUsuario);
         Assert.Empty(opcoes.ListaDeUsuarios);
         Assert.True(opcoes.DestacarVips);
         Assert.Equal(1, _gravacoes);

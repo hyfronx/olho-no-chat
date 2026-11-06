@@ -11,7 +11,7 @@
     <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
         <StackPanel Style="{DynamicResource PainelDaPagina}">
             <TextBlock Text="Twitch" Style="{DynamicResource TituloDaPagina}" />
-            <TextBlock Text="Sua conta da Twitch no Olho no Chat." Style="{DynamicResource SubtituloDaPagina}" />
+            <TextBlock Text="Sua conta da Twitch, escrever no chat, resgates de pontos e AutoMod." Style="{DynamicResource SubtituloDaPagina}" />
 
             <!-- Conta: conectar e desconectar acontecem na hora -->
             <TextBlock Text="Conta" Style="{DynamicResource TituloDaSecao}" />
@@ -52,15 +52,23 @@
                 </Grid>
             </Border>
 
-            <Border Style="{DynamicResource CartaoDeAviso}" Margin="0,10,0,0">
+            <!-- Só sem conta ou quando falta conectar de novo: como conectar e a segurança da senha -->
+            <Border x:Name="avisoDeConectar" Style="{DynamicResource CartaoDeAviso}" Margin="0,10,0,0"
+                    Visibility="{Binding MostrarAvisoDeConectar, Converter={StaticResource VisivelSe}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
-                    <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="Conectar abre a Twitch no seu navegador. Se você já estiver logado nele, é só clicar em &quot;Autorizar&quot;. O Olho no Chat nunca vê a sua senha e você pode tirar o acesso quando quiser, aqui ou nas configurações da sua conta da Twitch (Conexões)." />
+                    <TextBlock Text="&#xEA18;" Style="{DynamicResource IconeDoCartao}" VerticalAlignment="Top" Margin="2,2,16,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="A sua senha fica só com a Twitch" Style="{DynamicResource Rotulo}" FontWeight="SemiBold" />
+                        <TextBlock Style="{DynamicResource TextoDoAviso}" Margin="0,4,0,0">
+                            <Run Text="Conectar abre a Twitch no seu navegador: entre na sua conta, se precisar, e clique em &quot;Autorizar&quot;. Para tirar o acesso depois, clique em Desconectar ou procure &quot;Olho no Chat&quot; nas Conexões da Twitch." />
+                            <LineBreak />
+                            <Hyperlink Command="{Binding AbrirConexoesCommand}"><Run Text="Abrir as Conexões da Twitch" /></Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -74,14 +82,15 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
                     <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="O Chat Multiplataforma está ligado (Configurações > Chat): escrever no chat e os resgates ficam desligados para não misturar as plataformas. A sua conta continua conectada." />
+                               Text="Escrever no chat e mostrar os resgates de pontos ficam desligados enquanto o Chat Multiplataforma estiver ligado (aba Chat). A conta continua conectada e o AutoMod continua funcionando." />
                 </Grid>
             </Border>
 
             <StackPanel x:Name="recursosDaTwitch" IsEnabled="{Binding SemMultiplataforma}">
                 <TextBlock Text="Escrever no chat" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
-                    <Grid>
+                    <!-- Desbotada fora do Chat oficial da Twitch: só nele dá para usar a caixa da Twitch -->
+                    <Grid x:Name="linhaCaixaDeDigitar" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComChatOficial}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -91,16 +100,20 @@
                         <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
                             <TextBlock Text="Caixa de digitar" Style="{DynamicResource Rotulo}" />
                             <TextBlock x:Name="dicaCaixaDeDigitar" Text="{Binding DicaDaCaixa}" Style="{DynamicResource Dica}" />
+                            <TextBlock x:Name="avisoCaixaSoNoChatOficial" Style="{DynamicResource Dica}" Margin="0,6,0,0"
+                                       Text="Só dá para escolher com o tipo de chat &quot;Chat oficial da Twitch&quot; (aba Chat)."
+                                       Visibility="{Binding ComChatOficial, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
                         </StackPanel>
                         <ComboBox x:Name="listaCaixaDeDigitar" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
                                   AutomationProperties.Name="Caixa de digitar" SelectedIndex="{Binding CaixaDeDigitar}">
                             <ComboBoxItem Content="Do Olho no Chat" />
-                            <ComboBoxItem Content="Da própria Twitch" />
+                            <ComboBoxItem Content="Da Twitch (Chat oficial)" />
                         </ComboBox>
                     </Grid>
                 </Border>
                 <Border Style="{DynamicResource Cartao}">
-                    <Grid>
+                    <!-- Desbotada sem atalho salvo para "Escrever no chat da Twitch" (a dica diz onde escolher um) -->
+                    <Grid x:Name="linhaFecharDepoisDeEnviar" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComAtalhoDeEscrever}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -128,7 +141,7 @@
                         <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
                             <TextBlock Text="Mostrar os resgates no chat" Style="{DynamicResource Rotulo}" />
                             <TextBlock Style="{DynamicResource Dica}"
-                                       Text="Só os resgates do canal da conta conectada, quando o chat aberto é o desse canal. Aparecem apenas no chat Padrão." />
+                                       Text="Só os do seu canal (o da conta conectada), com ele aberto no tipo de chat Padrão. Pontos do canal só existem em canais de afiliados e parceiros." />
                             <!-- Quando a Twitch recusa (por exemplo, canal sem pontos de canal) -->
                             <TextBlock x:Name="problemaDosResgates" Text="{Binding ProblemaDosResgates}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
                                        Visibility="{Binding ProblemaDosResgates, Converter={StaticResource VisivelSe}}" />
@@ -154,10 +167,19 @@
                         <TextBlock x:Name="dicaAutoMod" Text="{Binding DicaDoAutoMod}" Style="{DynamicResource Dica}" />
                         <TextBlock x:Name="problemaDoAutoMod" Text="{Binding ProblemaDoAutoMod}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
                                    Visibility="{Binding ProblemaDoAutoMod, Converter={StaticResource VisivelSe}}" />
-                        <!-- Se a Twitch aceitou no canal aberto agora (ou por que não) -->
-                        <TextBlock x:Name="situacaoDoAutoMod" Text="{Binding SituacaoDoAutoMod}" Style="{DynamicResource Dica}" Margin="0,6,0,0"
-                                   Foreground="{DynamicResource LaranjaClaro}"
-                                   Visibility="{Binding SituacaoDoAutoMod, Converter={StaticResource VisivelSe}}" />
+                        <!-- Se a Twitch aceitou no canal aberto agora (ou por que não): laranja só quando é um problema -->
+                        <TextBlock x:Name="situacaoDoAutoMod" Text="{Binding SituacaoDoAutoMod}" Margin="0,6,0,0"
+                                   Visibility="{Binding SituacaoDoAutoMod, Converter={StaticResource VisivelSe}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Dica}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoModComProblema}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource LaranjaClaro}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                     <ctl:Interruptor x:Name="interruptorAutoMod" Grid.Column="2" IsChecked="{Binding AprovarAutoMod}"
                                      AutomationProperties.Name="Aprovar ou recusar no chat" />

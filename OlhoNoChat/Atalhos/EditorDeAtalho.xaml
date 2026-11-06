@@ -1,8 +1,15 @@
 <UserControl x:Class="OlhoNoChat.Atalhos.EditorDeAtalho"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Só mostra o atalho: não recebe foco nem aceita digitação enquanto não está gravando (ver o .cs), e não
-         tem menu do botão direito (colar, recortar etc. não fazem sentido aqui) -->
-    <TextBox x:Name="caixa" Focusable="False" IsReadOnly="True" IsReadOnlyCaretVisible="False" ContextMenuService.IsEnabled="False"
-             HorizontalContentAlignment="Center" VerticalContentAlignment="Center" PreviewKeyDown="Caixa_PreviewKeyDown" />
+    <Grid>
+        <!-- Só mostra o atalho: não recebe foco nem aceita digitação enquanto não está gravando (ver o .cs), e não
+             tem menu do botão direito (colar, recortar etc. não fazem sentido aqui). O espaço à direita é o do "×",
+             reservado sempre, para o texto ficar no mesmo lugar com e sem ele. -->
+        <TextBox x:Name="caixa" Focusable="False" IsReadOnly="True" IsReadOnlyCaretVisible="False" ContextMenuService.IsEnabled="False"
+                 Padding="8,5,32,6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" PreviewKeyDown="Caixa_PreviewKeyDown" />
+        <!-- O "×" que tira o atalho, dentro da caixa, só quando há atalho. Igual ao "×" das outras caixas: fora do Tab,
+             porque pelo teclado o Delete tira o atalho enquanto a caixa grava. -->
+        <Button x:Name="botaoTirar" Style="{DynamicResource BotaoDeApagarDaCaixa}" HorizontalAlignment="Right" Margin="0,0,5,0"
+                ToolTip="Tirar o atalho" AutomationProperties.Name="Tirar o atalho" Visibility="Collapsed" Click="Tirar_Click" />
+    </Grid>
 </UserControl>

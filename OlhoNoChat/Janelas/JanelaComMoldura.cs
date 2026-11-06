@@ -58,7 +58,7 @@ public abstract class JanelaComMoldura : Window
     protected abstract void Salvar();
 
     /// <summary>O texto do "Salvar as alterações?".</summary>
-    protected virtual string TextoDaPerguntaAoFechar => "Você mudou algumas opções e ainda não salvou.";
+    protected virtual string TextoDaPerguntaAoFechar => "Se fechar sem salvar, as opções que você mudou voltam como estavam.";
 
     public override void OnApplyTemplate()
     {
@@ -130,7 +130,7 @@ public abstract class JanelaComMoldura : Window
         }
     }
 
-    /// <summary>O Esc fecha uma lista aberta ou apaga uma caixa de atalho que está gravando.</summary>
+    /// <summary>O Esc fecha uma lista aberta ou cancela a troca numa caixa de atalho que está gravando.</summary>
     public static bool EscPertenceAoControleComFoco()
     {
         var elemento = Keyboard.FocusedElement as DependencyObject;
@@ -195,12 +195,12 @@ public abstract class JanelaComMoldura : Window
     private async void PerguntarAntesDeFechar()
     {
         RespostaDoDialogo resposta = await PerguntarAsync("Salvar as alterações?", TextoDaPerguntaAoFechar,
-            "Salvar", "Não salvar", "Voltar", RespostaDoDialogo.Principal);
+            "Salvar", "Não salvar", "Cancelar", RespostaDoDialogo.Principal);
 
         if (resposta == RespostaDoDialogo.Principal)
             SalvarEMostrar();
         else if (resposta != RespostaDoDialogo.Secundaria)
-            return; // "Voltar": continua editando
+            return; // "Cancelar": continua editando
 
         _fecharSemPerguntar = true;
         Close();

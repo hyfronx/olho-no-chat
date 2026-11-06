@@ -23,7 +23,7 @@
     <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
         <StackPanel Style="{DynamicResource PainelDaPagina}">
             <TextBlock Text="Bloqueios" Style="{DynamicResource TituloDaPagina}" />
-            <TextBlock Text="As mensagens destas pessoas nunca aparecem no chat." Style="{DynamicResource SubtituloDaPagina}" />
+            <TextBlock Text="As mensagens destas pessoas não aparecem no chat nem no overlay." Style="{DynamicResource SubtituloDaPagina}" />
 
             <TextBlock Text="Pessoas bloqueadas" Style="{DynamicResource TituloDaSecao}" />
             <Border Style="{DynamicResource Cartao}">
@@ -34,7 +34,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <!-- Enter bloqueia (em vez de salvar a janela) -->
-                        <TextBox x:Name="caixaNovoBloqueado" ctl:CaixaDeTexto.TextoDeExemplo="Nome do usuário na Twitch"
+                        <TextBox x:Name="caixaNovoBloqueado" ctl:CaixaDeTexto.TextoDeExemplo="Nome ou @ do usuário"
                                  AutomationProperties.Name="Nome do usuário para bloquear"
                                  Text="{Binding NovoBloqueado, UpdateSourceTrigger=PropertyChanged}">
                             <TextBox.InputBindings>
@@ -72,7 +72,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
                     <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="Para esconder todos os bots e comandos de uma vez, use &quot;Esconder bots e comandos&quot; na aba Chat das configurações." />
+                               Text="Para esconder todos os bots e comandos, ligue &quot;Esconder bots e comandos&quot; na aba Chat." />
                 </Grid>
             </Border>
         </StackPanel>

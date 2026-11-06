@@ -4,9 +4,9 @@ using OlhoNoChat.Configuracoes;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A janela Configurações sem a tela: as sete abas, o tipo de chat escolhido (que as abas Chat, Aparência e Som seguem
-/// antes de salvar), "Salvar" (grava sem fechar), "Restaurar tudo para o padrão" e a conferência de mudanças. Nada vai
-/// para as opções antes de <see cref="Salvar"/>; conectar e desconectar a conta são na hora (aba Twitch).
+/// A janela Configurações sem a tela: as sete abas, o tipo de chat escolhido (que as outras abas seguem antes de
+/// salvar), "Salvar" (grava sem fechar), "Restaurar tudo para o padrão" e a conferência de mudanças. Nada vai para as
+/// opções antes de <see cref="Salvar"/>; conectar e desconectar a conta são na hora (aba Twitch).
 /// </summary>
 public sealed class LogicaConfiguracoes
 {
@@ -51,11 +51,13 @@ public sealed class LogicaConfiguracoes
 
     private IEnumerable<LogicaDaPagina> Paginas => [Chat, Aparencia, Som, Geral, Overlay, Twitch];
 
-    // Trocar o tipo na lista muda na hora o que as abas mostram
+    // Trocar o tipo na lista muda na hora o que as abas mostram; os prefixos dos comandos aparecem na dica do overlay
     private void ChatMudou(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(LogicaChat.TipoDeChat) or nameof(LogicaChat.ChatMultiplataforma))
             MostrarTipo();
+        else if (e.PropertyName == nameof(LogicaChat.PrefixosQueValem))
+            Overlay.PrefixosDoChat = Chat.PrefixosQueValem;
     }
 
     private void MostrarTipo()
@@ -73,6 +75,7 @@ public sealed class LogicaConfiguracoes
         Opcoes opcoes = _arquivo.Opcoes;
         Chat.Carregar(opcoes);
         MostrarTipo();
+        Overlay.PrefixosDoChat = Chat.PrefixosQueValem;
         foreach (LogicaDaPagina pagina in Paginas.Skip(1))
             pagina.Carregar(opcoes);
     }

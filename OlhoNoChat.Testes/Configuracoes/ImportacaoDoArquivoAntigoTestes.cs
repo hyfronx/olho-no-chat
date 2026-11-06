@@ -103,7 +103,8 @@ public sealed class ImportacaoDoArquivoAntigoTestes
                 or nameof(Opcoes.MostrarSuperfasDoTikTok) or nameof(Opcoes.EsconderAvisosAntigo)
                 or nameof(Opcoes.VelocidadeAutomaticaAoContinuar) or nameof(Opcoes.LinhasPorSegundoAoContinuar)
                 or nameof(Opcoes.AtalhoPausar) or nameof(Opcoes.NovidadesVistas)
-                or nameof(Opcoes.AprovarAutoMod) or nameof(Opcoes.AtalhoAprovarAutoMod) or nameof(Opcoes.AtalhoRecusarAutoMod)))
+                or nameof(Opcoes.AprovarAutoMod) or nameof(Opcoes.AtalhoAprovarAutoMod) or nameof(Opcoes.AtalhoRecusarAutoMod)
+                or nameof(Opcoes.MostrarPrimeiraVez) or nameof(Opcoes.PrefixosDosComandos)))
             // O overlay da live (2.9.0) e todas as opções dele
             .Where(p => !p.Name.Contains("Overlay", StringComparison.Ordinal))
             .Where(p => JsonSerializer.Serialize(p.GetValue(convertidas), ArquivoDeConfiguracoes.Formato)

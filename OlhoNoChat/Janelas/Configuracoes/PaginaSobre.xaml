@@ -74,26 +74,7 @@
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="Feito para a Twitch" Style="{DynamicResource Rotulo}" FontWeight="SemiBold" />
                         <TextBlock Style="{DynamicResource Dica}" Margin="0,4,0,0"
-                                   Text="O Olho no Chat é focado na Twitch, por isso ela tem mais destaque e todos os recursos: escrever no chat, emotes da sua conta e resgates de pontos. O Chat Multiplataforma, que junta o chat do YouTube, o da Kick e o do TikTok, está em Beta: é só para ler e ainda está em testes, então pode ter falhas e mudar." />
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <TextBlock Text="Segurança da sua conta" Style="{DynamicResource TituloDaSecao}" />
-            <Border Style="{DynamicResource CartaoDeAviso}" Margin="0,0,0,4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="&#xEA18;" Style="{DynamicResource IconeDoCartao}" VerticalAlignment="Top" Margin="2,2,16,0" />
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Text="A conexão com a Twitch é feita no seu navegador" Style="{DynamicResource Rotulo}" FontWeight="SemiBold" />
-                        <TextBlock Style="{DynamicResource TextoDoAviso}" Margin="0,4,0,0">
-                            <Run Text="O Olho no Chat nunca vê a sua senha. Na sua conta da Twitch, ele aparece como &quot;Olho no Chat&quot; em Configurações &gt; Conexões, e você pode desconectar a qualquer momento: lá ou aqui, na aba Twitch." />
-                            <LineBreak />
-                            <Hyperlink Command="{Binding AbrirConexoesCommand}"><Run Text="Abrir as conexões da sua conta da Twitch" /></Hyperlink>
-                        </TextBlock>
+                                   Text="Escrever no chat, usar os seus emotes, ver os resgates de pontos e aprovar mensagens do AutoMod só funcionam com a Twitch. O Chat Multiplataforma (YouTube, Kick e TikTok) está em testes (Beta): é só para ler e pode ter falhas e mudar." />
                     </StackPanel>
                 </Grid>
             </Border>

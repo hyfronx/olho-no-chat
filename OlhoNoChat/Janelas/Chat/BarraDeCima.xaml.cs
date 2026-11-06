@@ -192,6 +192,13 @@ public partial class BarraDeCima : UserControl
             },
             []);
 
+    /// <summary>O balão da novidade do overlay da live, apontando para a engrenagem (ele é ligado na aba Overlay).</summary>
+    public void MostrarNovidadeDoOverlay() =>
+        MostrarNovidade(botaoConfiguracoes, "Novo: o chat na sua live",
+            "Agora dá para colocar o Olho no Chat como overlay no OBS, com opções próprias para ele ficar do melhor jeito " +
+            "na tela da live. Para ligar, vá em Configurações > Overlay.",
+            []);
+
     /// <summary>
     /// O overlay da live não abriu (o endereço dele está ocupado): o balão na engrenagem, com "Resolver" (abre a aba
     /// Overlay) e "Agora não". Outro Olho no Chat na porta: o texto diz para fechar o outro.

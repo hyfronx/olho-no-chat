@@ -456,8 +456,8 @@ public class EventSubDaTwitchTestes
     }
 
     [Theory]
-    [InlineData(EventSubDaTwitch.SituacaoDoAutoMod.Funcionando, "Funcionando no canal aberto agora.")]
-    [InlineData(EventSubDaTwitch.SituacaoDoAutoMod.NaoModera, "A sua conta não é dona nem moderadora do canal aberto: nada aparece nele.")]
+    [InlineData(EventSubDaTwitch.SituacaoDoAutoMod.Funcionando, "Funcionando no canal aberto.")]
+    [InlineData(EventSubDaTwitch.SituacaoDoAutoMod.NaoModera, "Não funciona no canal aberto: a sua conta não é dona nem moderadora dele.")]
     [InlineData(EventSubDaTwitch.SituacaoDoAutoMod.Desligado, "")]
     public void AbaTwitch_SituacaoDoAutoMod(EventSubDaTwitch.SituacaoDoAutoMod situacao, string texto)
     {

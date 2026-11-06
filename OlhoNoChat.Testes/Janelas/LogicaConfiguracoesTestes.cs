@@ -56,11 +56,13 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     private void MudarTudoNaTela(LogicaConfiguracoes c)
     {
         c.Chat.ApagarMensagensAntigas = true;
-        c.Chat.SegundosParaApagar = "45";
+        c.Chat.SegundosParaApagar = 45;
         c.Chat.VelocidadeAutomaticaAoContinuar = false;
         c.Chat.LinhasPorSegundoAoContinuar = 3.5;
         c.Chat.EsconderBots = false;
+        c.Chat.PrefixosDosComandos = "?, $";
         c.Chat.EsconderGifs = true;
+        c.Chat.MostrarPrimeiraVez = false;
         c.Chat.EsconderOutrosCanais = true;
         c.Chat.MostrarAvisosDaTwitch = false;
         c.Chat.MostrarAvisosDoYouTube = false;
@@ -108,7 +110,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
 
         c.Chat.TipoDeChat = 2;
         c.Chat.EsconderBots = false;
-        c.Chat.SegundosParaApagar = "99";
+        c.Chat.SegundosParaApagar = 99;
         c.Aparencia.Fonte = "Verdana";
         c.Som.Volume = 55;
         c.Geral.AtalhoBordas = null;
@@ -117,11 +119,52 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
 
         c.Chat.TipoDeChat = 0;
         c.Chat.EsconderBots = true;
-        c.Chat.SegundosParaApagar = "120";
+        c.Chat.SegundosParaApagar = 120;
         c.Aparencia.Fonte = "theme";
         c.Som.Volume = 100.3; // o volume conta arredondado
         c.Geral.AtalhoBordas = new Atalho(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);
         c.Twitch.CaixaDeDigitar = 0;
+        Assert.False(c.TemMudancas);
+    }
+
+    [Fact]
+    public void PrefixosDosComandos_VirgulaOuEspacoEhAMesmaCoisaEVazioNaoConta()
+    {
+        var c = Abrir(o => o.PrefixosDosComandos = ["!", "$"]);
+        Assert.Equal("! $", c.Chat.PrefixosDosComandos);
+
+        c.Chat.PrefixosDosComandos = "!, $";
+        Assert.False(c.TemMudancas);
+        c.Chat.PrefixosDosComandos = "";
+        Assert.False(c.TemMudancas); // a caixa vazia não grava nada
+        c.Chat.PrefixosDosComandos = "! $ ?";
+        Assert.True(c.TemMudancas);
+    }
+
+    [Fact]
+    public void PrefixosDosComandos_ADicaDoOverlayMostraOsDaAbaChatAntesDeSalvar()
+    {
+        var c = Abrir(o => o.PrefixosDosComandos = ["$"]);
+        Assert.Equal("Esconde as mensagens que começam com $, como $discord. Os prefixos ficam na aba Chat.", c.Overlay.DicaDosComandos);
+
+        c.Chat.PrefixosDosComandos = "! ?";
+        Assert.Equal("Esconde as mensagens que começam com ! ou ?, como !discord. Os prefixos ficam na aba Chat.", c.Overlay.DicaDosComandos);
+
+        // A caixa vazia fica com os salvos
+        c.Chat.PrefixosDosComandos = " ";
+        Assert.Contains("começam com $,", c.Overlay.DicaDosComandos);
+    }
+
+    [Fact]
+    public void PrefixosDosComandos_CaixaVaziaFicaComOsSalvos()
+    {
+        var c = Abrir(o => o.PrefixosDosComandos = ["$", "?"]);
+        c.Chat.PrefixosDosComandos = " , ";
+
+        c.Salvar();
+
+        Assert.Equal(["$", "?"], Gravadas().PrefixosDosComandos);
+        Assert.Equal("$ ?", c.Chat.PrefixosDosComandos); // a tela mostra o que ficou valendo
         Assert.False(c.TemMudancas);
     }
 
@@ -183,6 +226,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.False(o.VelocidadeAutomaticaAoContinuar);
         Assert.Equal(3.5, o.LinhasPorSegundoAoContinuar);
         Assert.False(o.EsconderBots);
+        Assert.Equal(["?", "$"], o.PrefixosDosComandos);
         Assert.True(o.EsconderGifs);
         Assert.True(o.EsconderOutrosCanais);
         Assert.False(o.MostrarAvisosDaTwitch);
@@ -248,6 +292,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         // Os do Padrão e do endereço ficam como estavam (o som de mensagem também)
         Assert.False(o.ApagarMensagensAntigas);
         Assert.True(o.EsconderBots);
+        Assert.Equal(["!"], o.PrefixosDosComandos);
         Assert.Equal(Opcoes.TemaPadrao, o.Tema);
         Assert.Equal("", o.CssDoTemaNenhum);
         Assert.Equal("", o.EnderecoPersonalizado);
@@ -393,6 +438,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
             o.Janela = new PosicaoDaJanela(10, 20, 300, 400, System.Windows.WindowState.Normal);
             o.TipoDeChat = 1;
             o.EsconderBots = false;
+            o.PrefixosDosComandos = ["$"];
             o.Volume = 0.2f;
             o.TamanhoDoTexto = 1.5;
             o.Fundo = 40;
@@ -415,6 +461,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         var padrao = new Opcoes();
         Assert.Equal(padrao.TipoDeChat, o.TipoDeChat);
         Assert.True(o.EsconderBots);
+        Assert.Equal(["!"], o.PrefixosDosComandos);
         Assert.Equal(1f, o.Volume);
         Assert.Equal(Opcoes.TamanhoDoTextoPadrao, o.TamanhoDoTexto);
         Assert.Equal(Opcoes.FundoPadrao, o.Fundo);
@@ -428,6 +475,8 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.True(c.Som.ComPadrao);
         Assert.False(c.Chat.EsconderGifs);
         Assert.True(c.Chat.EsconderBots);
+        Assert.Equal("!", c.Chat.PrefixosDosComandos);
+        Assert.Contains("começam com !,", c.Overlay.DicaDosComandos);
         Assert.Equal(100, c.Som.Volume);
         Assert.False(c.TemMudancas);
         Assert.Equal(1, avisos);
@@ -466,27 +515,28 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     {
         var atalho = new Atalho(Key.F11, ModifierKeys.Control | ModifierKeys.Alt);
 
-        Assert.Equal("A caixa \"Escrever no chat…\" embaixo do chat: abra com o balão de conversa, na barra laranja. Envia com a " +
-                     "conta conectada acima. No jogo, aperte Ctrl + Alt + F11 para abrir ou fechar a caixa por cima do jogo.",
+        Assert.Equal("A caixa \"Escrever no chat…\" aparece embaixo do chat e envia pela conta conectada acima. Para abrir, clique no " +
+                     "balão de conversa, na barra laranja. No jogo, Ctrl + Alt + F11 abre e fecha a caixa.",
             LogicaTwitch.TextoDaDicaDaCaixa(false, atalho));
-        Assert.EndsWith("\"Faça login\". No jogo, aperte Ctrl + Alt + F11 para abrir ou fechar a caixa por cima do jogo.",
+        Assert.EndsWith("\"Faça login\". No jogo, Ctrl + Alt + F11 abre e fecha a caixa.",
             LogicaTwitch.TextoDaDicaDaCaixa(true, atalho));
-        Assert.StartsWith("A caixa da Twitch, com a lista de emotes, respostas e comandos (só no Chat oficial da Twitch;",
+        Assert.StartsWith("A caixa da Twitch tem emotes, respostas e comandos, mas só existe no Chat oficial da Twitch",
             LogicaTwitch.TextoDaDicaDaCaixa(true, atalho));
-        Assert.Equal("Com a caixa aberta pelo atalho no jogo: ligado, ela fecha ao enviar e o jogo volta para a frente. Desligado, " +
-                     "ela continua aberta para a próxima mensagem; feche com Ctrl + Alt + F11 de novo, Esc ou o × da caixa.",
+        Assert.Equal("Vale para a caixa aberta pelo atalho no jogo. Ligado, ela fecha ao enviar e o jogo volta para a frente. " +
+                     "Desligado, fica aberta para a próxima mensagem; feche com Ctrl + Alt + F11 de novo, Esc ou o ×.",
             LogicaTwitch.TextoDaDicaDeFechar(atalho));
     }
 
     [Fact]
     public void Dicas_SemAtalhoNaoFalamDoAtalho()
     {
-        Assert.Equal("A caixa \"Escrever no chat…\" embaixo do chat: abra com o balão de conversa, na barra laranja. Envia com a " +
-                     "conta conectada acima.", LogicaTwitch.TextoDaDicaDaCaixa(false, null));
+        Assert.Equal("A caixa \"Escrever no chat…\" aparece embaixo do chat e envia pela conta conectada acima. Para abrir, clique no " +
+                     "balão de conversa, na barra laranja.", LogicaTwitch.TextoDaDicaDaCaixa(false, null));
         Assert.EndsWith("depois em \"Faça login\".", LogicaTwitch.TextoDaDicaDaCaixa(true, null));
-        Assert.Equal("Com a caixa aberta pelo atalho no jogo: ligado, ela fecha ao enviar e o jogo volta para a frente. Desligado, " +
-                     "ela continua aberta para a próxima mensagem.", LogicaTwitch.TextoDaDicaDeFechar(null));
-        Assert.DoesNotContain("aperte", LogicaTwitch.TextoDaDicaDaCaixa(false, new Atalho(Key.None, ModifierKeys.None)));
+        Assert.Equal("Vale para a caixa aberta pelo atalho no jogo. Ligado, ela fecha ao enviar e o jogo volta para a frente. " +
+                     "Desligado, fica aberta para a próxima mensagem. Para usar, escolha um atalho para \"Escrever no chat da Twitch\" na aba Geral.",
+            LogicaTwitch.TextoDaDicaDeFechar(null));
+        Assert.DoesNotContain("No jogo", LogicaTwitch.TextoDaDicaDaCaixa(false, new Atalho(Key.None, ModifierKeys.None)));
     }
 
     [Fact]
@@ -503,7 +553,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
 
         c.Geral.AtalhoEscrever = null;
         c.Salvar();
-        Assert.DoesNotContain("aperte", c.Twitch.DicaDaCaixa);
+        Assert.DoesNotContain("No jogo", c.Twitch.DicaDaCaixa);
     }
 
     [Fact]

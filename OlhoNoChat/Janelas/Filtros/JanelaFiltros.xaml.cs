@@ -21,7 +21,7 @@ public partial class JanelaFiltros : JanelaComMoldura
 
     protected override void Salvar() => Logica.Salvar();
 
-    protected override string TextoDaPerguntaAoFechar => "Você mudou os filtros e ainda não salvou.";
+    protected override string TextoDaPerguntaAoFechar => "Se fechar sem salvar, os filtros que você mudou voltam como estavam.";
 
     private void ListaDePaginas_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

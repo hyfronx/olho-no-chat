@@ -108,6 +108,68 @@ body.ov-card .ov-line .onc-superchat {
     background: none;
 }
 
+/* "Balão": each message in a rounded bubble, the name (with its badges) on top and the message under it; the corner
+   on the side of the chat is less round, like a speech bubble */
+body.ov-bubble .ov-line {
+    margin: .25em 0;
+    padding: .35em .75em .45em;
+    border-radius: 1em 1em 1em .3em;
+    background: rgb(0 0 0 / var(--ov-card-opacity, .55));
+    max-width: 88%;
+}
+
+body.ov-bubble.ov-right .ov-line {
+    border-radius: 1em 1em .3em 1em;
+}
+
+body.ov-bubble .ov-line .nick {
+    display: inline-block;
+    margin-bottom: .1em;
+    font-size: .82em;
+}
+
+body.ov-bubble .ov-line .colon {
+    display: none;
+}
+
+/* The message on its own line, under the name */
+body.ov-bubble .ov-line .message {
+    display: block;
+}
+
+body.ov-bubble .ov-line .onc-notice-line,
+body.ov-bubble .ov-line .onc-superchat {
+    margin: 0;
+    background: none;
+}
+
+/* "Faixa horizontal": one row, the lines move from right to left (overlay.js moves them) */
+body.ov-ticker #ov-lines {
+    display: block;
+}
+
+body.ov-ticker .ov-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    max-width: none;
+    margin: 0;
+    white-space: nowrap;
+    will-change: transform;
+}
+
+body.ov-ticker .ov-line .message,
+body.ov-ticker .ov-line .onc-notice-line .message {
+    display: inline !important;
+}
+
+body.ov-ticker:not(.onc-hide-gifs) .ov-line .onc-gif {
+    display: inline;
+    max-height: 1.6em;
+    margin: 0;
+    vertical-align: middle;
+}
+
 /* Coming in and going away: each "Animação" has its way in (ov-enter-<name>) and a way out that matches it
    (ov-leave-<name>, .45 s, overlay.js LEAVE_MS). On the right side the sideways ones go the other way. */
 .ov-line {

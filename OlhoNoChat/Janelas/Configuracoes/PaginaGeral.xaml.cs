@@ -12,21 +12,6 @@ public partial class PaginaGeral : UserControl
         InitializeComponent();
     }
 
-    // "Mudar atalho" começa a gravar na caixa da mesma linha; "Confirmar" para. O atalho só vale depois de "Salvar".
-    private void MudarAtalho_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: EditorDeAtalho editor } botao)
-            return;
-
-        if (editor.Gravando)
-        {
-            editor.PararDeGravar();
-            botao.Content = "Mudar atalho";
-        }
-        else
-        {
-            editor.ComecarAGravar();
-            botao.Content = "Confirmar";
-        }
-    }
+    // "Mudar atalho"/"Confirmar": ver EditorDeAtalho.AlternarPeloBotao
+    private void MudarAtalho_Click(object sender, RoutedEventArgs e) => EditorDeAtalho.AlternarPeloBotao(sender);
 }

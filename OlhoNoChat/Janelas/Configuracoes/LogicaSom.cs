@@ -8,12 +8,12 @@ using OlhoNoChat.Som;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A aba Som: o som de mensagem nova e "Quando tocar" (só no chat Padrão), a saída de som, o volume e a pasta dos sons.
-/// "Ouvir" toca o som com a saída e o volume da tela, sem salvar.
+/// A aba Som (só no chat Padrão; nos outros tipos ela mostra só um aviso): o som de mensagem nova, o volume, a pasta dos
+/// sons, "Quando tocar" e a saída de som. "Ouvir" toca o som com a saída e o volume da tela, sem salvar.
 /// </summary>
 public sealed partial class LogicaSom : LogicaDaPagina
 {
-    public const string TextoDaPastaPadrao = "Padrão (sons que vêm com o app)";
+    public const string TextoDaPastaPadrao = "Sons do app";
 
     private static readonly OpcaoDaLista[] QuandoTocarDaLista =
     [
@@ -59,7 +59,12 @@ public sealed partial class LogicaSom : LogicaDaPagina
     /// <summary>A pasta como fica gravada: <see cref="SonsDisponiveis.PastaPadrao"/> ou o caminho.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDaPasta))]
+    [NotifyCanExecuteChangedFor(nameof(UsarPastaPadraoCommand))]
     private string _pastaDosSons = SonsDisponiveis.PastaPadrao;
+
+    /// <summary>A pasta não tem nenhum .wav nem .mp3: a lista "Som" fica só com "Nenhum" e a aba avisa.</summary>
+    [ObservableProperty]
+    private bool _pastaSemSons;
 
     public string TextoDoVolume => $"{Math.Round(Volume):0}%";
 
@@ -98,6 +103,7 @@ public sealed partial class LogicaSom : LogicaDaPagina
         Sons.Clear();
         Sons.Add(new OpcaoDaLista("Nenhum", SonsDisponiveis.Nenhum));
         IReadOnlyList<SonsDisponiveis.Som> daPasta = SonsDisponiveis.Listar(SonsDisponiveis.ResolverPasta(PastaDosSons));
+        PastaSemSons = daPasta.Count == 0;
 
         bool existe = escolhido.Equals(SonsDisponiveis.Nenhum, StringComparison.OrdinalIgnoreCase)
                       || daPasta.Any(s => s.Arquivo == escolhido);
@@ -110,15 +116,18 @@ public sealed partial class LogicaSom : LogicaDaPagina
         SomEscolhido = Sons.FirstOrDefault(s => s.Valor == escolhido)?.Valor ?? SonsDisponiveis.Nenhum;
     }
 
-    /// <summary>"Escolher pasta..." e "Usar a pasta padrão": a lista de sons muda na hora.</summary>
+    /// <summary>"Escolher pasta…" e "Usar os sons do app": a lista de sons muda na hora.</summary>
     public void MudarPasta(string pasta)
     {
         PastaDosSons = string.IsNullOrEmpty(pasta) ? SonsDisponiveis.PastaPadrao : pasta;
         ListarSons(SomEscolhido, manterQueSumiu: false);
     }
 
-    [RelayCommand]
+    /// <summary>"Usar os sons do app": desligado quando a pasta já é a do app.</summary>
+    [RelayCommand(CanExecute = nameof(ComPastaEscolhida))]
     private void UsarPastaPadrao() => MudarPasta(SonsDisponiveis.PastaPadrao);
+
+    private bool ComPastaEscolhida() => PastaDosSons != SonsDisponiveis.PastaPadrao;
 
     /// <summary>Toca o som escolhido com a saída e o volume da tela ("Nenhum" ou arquivo que não existe: nada).</summary>
     [RelayCommand]

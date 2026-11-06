@@ -11,7 +11,8 @@ public static class CoresDeDestaque
 {
     public const byte Transparencia = 150;
     public const string NomeDaPersonalizada = "Personalizada…";
-    public const string ErroDaPersonalizada = "Use o formato #RRGGBB.";
+    /// <summary>O erro embaixo da caixa da "Personalizada…" (a página lê daqui).</summary>
+    public const string ErroDaPersonalizada = "Use um código como #FF8A00.";
 
     public static IReadOnlyList<(string Nome, Color Cor)> Prontas { get; } =
     [

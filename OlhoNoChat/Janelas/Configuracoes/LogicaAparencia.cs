@@ -37,7 +37,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     [
         new("Contorno preto", "theme"),
         new("Sombra suave", "soft"),
-        new("Nenhum", "none"),
+        new("Sem contorno", "none"),
     ];
 
     public static IReadOnlyList<OpcaoDaLista> Fontes { get; } =
@@ -51,7 +51,11 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     // Tema (Padrão)
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MostrarCssDoTemaNenhum))]
+    [NotifyPropertyChangedFor(nameof(TemaRecarregaOChat))]
     private string _tema = Opcoes.TemaPadrao.ToString();
+
+    // O tema salvo, que é o da página do chat aberta
+    private string _temaSalvo = Opcoes.TemaPadrao.ToString();
 
     [ObservableProperty]
     private string _cssDoTemaNenhum = string.Empty;
@@ -72,6 +76,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     // Aparência (CSS) do chat oficial: com a aparência padrão, o editor mostra o CSS do app só para ler
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDoEditorDoChatOficial))]
+    [NotifyPropertyChangedFor(nameof(CorContornoEFonteValem))]
     private bool _aparenciaPadraoNoChatOficial;
 
     /// <summary>O CSS próprio do chat oficial (o que é gravado com a aparência padrão desligada).</summary>
@@ -85,6 +90,20 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
 
     /// <summary>A caixa do CSS aparece só com o tema "Nenhum".</summary>
     public bool MostrarCssDoTemaNenhum => Tema == Opcoes.TemaNenhum.ToString();
+
+    /// <summary>
+    /// O tema da tela não é o salvo: o tema faz parte da página do chat Padrão (a chave de recarga dela), então ao salvar
+    /// o chat recarrega e as mensagens da tela somem.
+    /// </summary>
+    public bool TemaRecarregaOChat => Tema != _temaSalvo;
+
+    /// <summary>
+    /// "Cor do texto", "Contorno das letras" e "Fonte" valem no Padrão (também por cima do CSS do tema "Nenhum") e, no
+    /// chat oficial, só com a aparência padrão: com o CSS próprio ficam desbotadas. O horário vale sempre.
+    /// </summary>
+    public bool CorContornoEFonteValem => !ComChatOficial || AparenciaPadraoNoChatOficial;
+
+    protected override void TipoMudou() => OnPropertyChanged(nameof(CorContornoEFonteValem));
 
     /// <summary>
     /// O editor do chat oficial: o CSS padrão do app (somente leitura) ou o CSS próprio. Desligar e ligar de novo a
@@ -103,6 +122,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     public override void Carregar(Opcoes opcoes)
     {
         Tema = (opcoes.Tema == Opcoes.TemaNenhum ? Opcoes.TemaNenhum : Opcoes.TemaPadrao).ToString();
+        GuardarTemaSalvo();
         CssDoTemaNenhum = opcoes.CssDoTemaNenhum.Length > 0 ? opcoes.CssDoTemaNenhum : CssDoChat.ExemploDoTemaNenhum;
 
         // Um valor que não está na lista aparece como o primeiro item ("Padrão do tema", "Contorno preto")
@@ -133,6 +153,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
                 opcoes.Tema = int.Parse(Tema);
                 if (opcoes.Tema == Opcoes.TemaNenhum)
                     opcoes.CssDoTemaNenhum = CssDoTemaNenhum;
+                GuardarTemaSalvo();
                 break;
             case TipoDeChat.ChatOficial:
                 GravarTextoDasMensagens(opcoes);
@@ -147,6 +168,13 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
                     : CssDoEnderecoPersonalizado;
                 break;
         }
+    }
+
+    // O tema da tela passa a ser o da página do chat (ao abrir e ao salvar): o aviso de recarregar some
+    private void GuardarTemaSalvo()
+    {
+        _temaSalvo = Tema;
+        OnPropertyChanged(nameof(TemaRecarregaOChat));
     }
 
     private void GravarTextoDasMensagens(Opcoes opcoes)

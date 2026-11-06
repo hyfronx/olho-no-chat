@@ -42,62 +42,9 @@
     <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
         <StackPanel Style="{DynamicResource PainelDaPagina}">
             <TextBlock Text="Usuários" Style="{DynamicResource TituloDaPagina}" />
-            <TextBlock Text="Destaque as mensagens de algumas pessoas, ou veja só as mensagens delas." Style="{DynamicResource SubtituloDaPagina}" />
+            <TextBlock Text="Destaque algumas pessoas no chat ou mostre só as mensagens delas." Style="{DynamicResource SubtituloDaPagina}" />
 
-            <!-- O que fazer com a lista -->
-            <TextBlock Text="O que fazer com a lista" Style="{DynamicResource TituloDaSecao}" />
-            <Border Style="{DynamicResource Cartao}">
-                <StackPanel>
-                    <RadioButton x:Name="opcaoNada" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoNada}"
-                                 AutomationProperties.Name="Nada">
-                        <StackPanel>
-                            <TextBlock Text="Nada" Style="{DynamicResource Rotulo}" />
-                            <TextBlock Text="A lista fica guardada, mas o chat mostra todo mundo do mesmo jeito." Style="{DynamicResource Dica}" />
-                        </StackPanel>
-                    </RadioButton>
-                    <RadioButton x:Name="opcaoDestacar" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoDestacar}"
-                                 AutomationProperties.Name="Destacar as mensagens dessas pessoas">
-                        <StackPanel>
-                            <TextBlock Text="Destacar as mensagens dessas pessoas" Style="{DynamicResource Rotulo}" />
-                            <TextBlock Text="Todo mundo aparece, e essas pessoas ficam com um fundo colorido." Style="{DynamicResource Dica}" />
-                        </StackPanel>
-                    </RadioButton>
-                    <RadioButton x:Name="opcaoSoALista" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoSoALista}"
-                                 AutomationProperties.Name="Mostrar só as mensagens dessas pessoas">
-                        <StackPanel>
-                            <TextBlock Text="Mostrar só as mensagens dessas pessoas" Style="{DynamicResource Rotulo}" />
-                            <TextBlock Text="As mensagens de quem não está na lista não aparecem." Style="{DynamicResource Dica}" />
-                        </StackPanel>
-                    </RadioButton>
-
-                    <!-- Só no "Destacar" -->
-                    <StackPanel x:Name="linhaCorDoDestaque" Visibility="{Binding CorDoDestaque.Visivel, Converter={StaticResource VisivelSe}}">
-                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Style="{DynamicResource TextoDaLinha}">
-                                <TextBlock Text="Cor do destaque" Style="{DynamicResource Rotulo}" />
-                                <TextBlock Text="O fundo das mensagens das pessoas da lista." Style="{DynamicResource Dica}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" DataContext="{Binding CorDoDestaque}">
-                                <ComboBox x:Name="listaCorDoDestaque" Width="170" HorizontalAlignment="Right" AutomationProperties.Name="Cor do destaque"
-                                          ItemsSource="{Binding Itens}" SelectedItem="{Binding Escolhida}" ItemTemplate="{StaticResource ModeloDoItemDeCor}" />
-                                <TextBox x:Name="caixaCorDoDestaque" Width="90" Margin="0,6,0,0" HorizontalAlignment="Right"
-                                         ctl:CaixaDeTexto.TextoDeExemplo="#RRGGBB" AutomationProperties.Name="Cor personalizada"
-                                         Text="{Binding TextoPersonalizado, UpdateSourceTrigger=PropertyChanged}"
-                                         Visibility="{Binding MostrarCaixa, Converter={StaticResource VisivelSe}}" LostFocus="CaixaDeCor_LostFocus" />
-                                <TextBlock x:Name="erroCorDoDestaque" Text="Use o formato #RRGGBB." Style="{DynamicResource Erro}" HorizontalAlignment="Right"
-                                           Margin="0,4,0,0" Visibility="{Binding MostrarErro, Converter={StaticResource VisivelSe}}" />
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Lista de usuários -->
+            <!-- Lista de usuários (primeiro a lista, depois o que fazer com ela) -->
             <TextBlock Text="Lista de usuários" Style="{DynamicResource TituloDaSecao}" />
             <Border Style="{DynamicResource Cartao}">
                 <StackPanel>
@@ -107,7 +54,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <!-- Enter adiciona o nome (em vez de salvar a janela) -->
-                        <TextBox x:Name="caixaNovoUsuario" ctl:CaixaDeTexto.TextoDeExemplo="Nome do usuário na Twitch"
+                        <TextBox x:Name="caixaNovoUsuario" ctl:CaixaDeTexto.TextoDeExemplo="Nome ou @ do usuário"
                                  AutomationProperties.Name="Nome do usuário para adicionar à lista"
                                  Text="{Binding NovoUsuario, UpdateSourceTrigger=PropertyChanged}">
                             <TextBox.InputBindings>
@@ -137,6 +84,59 @@
                 </StackPanel>
             </Border>
 
+            <!-- O que fazer com a lista -->
+            <TextBlock Text="O que fazer com a lista" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <StackPanel>
+                    <RadioButton x:Name="opcaoNada" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoNada}"
+                                 AutomationProperties.Name="Não usar a lista">
+                        <StackPanel>
+                            <TextBlock Text="Não usar a lista" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="O chat mostra todo mundo igual. A lista fica guardada." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="opcaoDestacar" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoDestacar}"
+                                 AutomationProperties.Name="Destacar quem está na lista">
+                        <StackPanel>
+                            <TextBlock Text="Destacar quem está na lista" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Todo mundo aparece, e quem está na lista ganha um fundo colorido." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="opcaoSoALista" GroupName="modoDaLista" Margin="0,2" IsChecked="{Binding ModoSoALista}"
+                                 AutomationProperties.Name="Mostrar só quem está na lista">
+                        <StackPanel>
+                            <TextBlock Text="Mostrar só quem está na lista" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Quem não está na lista não aparece no chat nem no overlay." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <!-- Só no "Destacar" -->
+                    <StackPanel x:Name="linhaCorDoDestaque" Visibility="{Binding CorDoDestaque.Visivel, Converter={StaticResource VisivelSe}}">
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Cor do destaque" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="O fundo das mensagens de quem está na lista." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" DataContext="{Binding CorDoDestaque}">
+                                <ComboBox x:Name="listaCorDoDestaque" Width="170" HorizontalAlignment="Right" AutomationProperties.Name="Cor do destaque"
+                                          ItemsSource="{Binding Itens}" SelectedItem="{Binding Escolhida}" ItemTemplate="{StaticResource ModeloDoItemDeCor}" />
+                                <TextBox x:Name="caixaCorDoDestaque" Width="90" Margin="0,6,0,0" HorizontalAlignment="Right"
+                                         ctl:CaixaDeTexto.TextoDeExemplo="#FF8A00" AutomationProperties.Name="Cor personalizada"
+                                         Text="{Binding TextoPersonalizado, UpdateSourceTrigger=PropertyChanged}"
+                                         Visibility="{Binding MostrarCaixa, Converter={StaticResource VisivelSe}}" LostFocus="CaixaDeCor_LostFocus" />
+                                <TextBlock x:Name="erroCorDoDestaque" Text="{x:Static local:CoresDeDestaque.ErroDaPersonalizada}" Style="{DynamicResource Erro}" HorizontalAlignment="Right"
+                                           Margin="0,4,0,0" Visibility="{Binding MostrarErro, Converter={StaticResource VisivelSe}}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Moderadores e VIPs: desbotados no "Nada"; as cores somem no "Mostrar só" -->
             <TextBlock Text="Moderadores e VIPs" Style="{DynamicResource TituloDaSecao}" />
             <Border x:Name="cartaoModeradoresEVips" Style="{DynamicResource Cartao}">
@@ -156,10 +156,10 @@
                             <ComboBox x:Name="listaCorDosModeradores" Width="170" HorizontalAlignment="Right" AutomationProperties.Name="Cor dos moderadores"
                                       ItemsSource="{Binding Itens}" SelectedItem="{Binding Escolhida}" ItemTemplate="{StaticResource ModeloDoItemDeCor}" />
                             <TextBox x:Name="caixaCorDosModeradores" Width="90" Margin="0,6,0,0" HorizontalAlignment="Right"
-                                     ctl:CaixaDeTexto.TextoDeExemplo="#RRGGBB" AutomationProperties.Name="Cor personalizada"
+                                     ctl:CaixaDeTexto.TextoDeExemplo="#FF8A00" AutomationProperties.Name="Cor personalizada"
                                      Text="{Binding TextoPersonalizado, UpdateSourceTrigger=PropertyChanged}"
                                      Visibility="{Binding MostrarCaixa, Converter={StaticResource VisivelSe}}" LostFocus="CaixaDeCor_LostFocus" />
-                            <TextBlock x:Name="erroCorDosModeradores" Text="Use o formato #RRGGBB." Style="{DynamicResource Erro}" HorizontalAlignment="Right"
+                            <TextBlock x:Name="erroCorDosModeradores" Text="{x:Static local:CoresDeDestaque.ErroDaPersonalizada}" Style="{DynamicResource Erro}" HorizontalAlignment="Right"
                                        Margin="0,4,0,0" Visibility="{Binding MostrarErro, Converter={StaticResource VisivelSe}}" />
                         </StackPanel>
                         <ctl:Interruptor x:Name="interruptorModeradores" Grid.Column="3" IsChecked="{Binding DestacarModeradores}"
@@ -181,17 +181,20 @@
                             <ComboBox x:Name="listaCorDosVips" Width="170" HorizontalAlignment="Right" AutomationProperties.Name="Cor dos VIPs"
                                       ItemsSource="{Binding Itens}" SelectedItem="{Binding Escolhida}" ItemTemplate="{StaticResource ModeloDoItemDeCor}" />
                             <TextBox x:Name="caixaCorDosVips" Width="90" Margin="0,6,0,0" HorizontalAlignment="Right"
-                                     ctl:CaixaDeTexto.TextoDeExemplo="#RRGGBB" AutomationProperties.Name="Cor personalizada"
+                                     ctl:CaixaDeTexto.TextoDeExemplo="#FF8A00" AutomationProperties.Name="Cor personalizada"
                                      Text="{Binding TextoPersonalizado, UpdateSourceTrigger=PropertyChanged}"
                                      Visibility="{Binding MostrarCaixa, Converter={StaticResource VisivelSe}}" LostFocus="CaixaDeCor_LostFocus" />
-                            <TextBlock x:Name="erroCorDosVips" Text="Use o formato #RRGGBB." Style="{DynamicResource Erro}" HorizontalAlignment="Right"
+                            <TextBlock x:Name="erroCorDosVips" Text="{x:Static local:CoresDeDestaque.ErroDaPersonalizada}" Style="{DynamicResource Erro}" HorizontalAlignment="Right"
                                        Margin="0,4,0,0" Visibility="{Binding MostrarErro, Converter={StaticResource VisivelSe}}" />
                         </StackPanel>
                         <ctl:Interruptor x:Name="interruptorVips" Grid.Column="3" IsChecked="{Binding DestacarVips}"
                                          AutomationProperties.Name="Todos os VIPs" />
                     </Grid>
-                    <TextBlock x:Name="dicaModeradoresEVips" Text="Escolha &quot;Destacar&quot; ou &quot;Mostrar só&quot; acima para usar estas opções."
-                               Style="{DynamicResource Dica}" Margin="36,10,0,0"
+                    <!-- O YouTube e o TikTok não têm VIP (browser\chat.js: só dono e moderador) -->
+                    <TextBlock x:Name="dicaPlataformas" Text="Moderadores contam em todas as plataformas. VIP só existe na Twitch e na Kick."
+                               Style="{DynamicResource Dica}" Margin="36,10,0,0" />
+                    <TextBlock x:Name="dicaModeradoresEVips" Text="Para usar, escolha &quot;Destacar&quot; ou &quot;Mostrar só&quot; acima."
+                               Style="{DynamicResource Dica}" Margin="36,3,0,0"
                                Visibility="{Binding ModeradoresEVipsAtivos, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
                 </StackPanel>
             </Border>
@@ -204,7 +207,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
                     <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="Com a lista em uso, o som de nova mensagem só toca para as mensagens destacadas (ou para as que aparecem, no &quot;Mostrar só&quot;)." />
+                               Text="Com &quot;Destacar&quot; ou &quot;Mostrar só&quot;, o som de nova mensagem (aba Som) só toca para as pessoas escolhidas aqui." />
                 </Grid>
             </Border>
         </StackPanel>

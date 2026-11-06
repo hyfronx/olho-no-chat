@@ -52,9 +52,68 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private bool _apagarMensagensAntigas;
 
-    /// <summary>Aceita qualquer texto; só um número inteiro maior que 0 apaga as mensagens.</summary>
+    /// <summary>Os tempos do deslizante "Apagar depois de", em segundos: de 10 s a 10 min.</summary>
+    public static IReadOnlyList<int> TemposParaApagar { get; } = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600];
+
+    // O padrão das opções: um texto salvo que não é um número inteiro maior que 0 aparece como ele
+    private static readonly int SegundosParaApagarPadrao = int.Parse(new Opcoes().SegundosParaApagar, CultureInfo.InvariantCulture);
+
+    // Os tempos do deslizante: os da lista e o salvo, quando é outro (como em "Quando tocar", da aba Som)
+    private readonly List<int> _temposNoDeslizante = [.. TemposParaApagar];
+
+    /// <summary>
+    /// "Apagar depois de", em segundos (gravado como texto em <see cref="Opcoes.SegundosParaApagar"/>). O deslizante só
+    /// dá os <see cref="TemposParaApagar"/> e o salvo.
+    /// </summary>
     [ObservableProperty]
-    private string _segundosParaApagar = string.Empty;
+    [NotifyPropertyChangedFor(nameof(PosicaoParaApagar))]
+    [NotifyPropertyChangedFor(nameof(TextoParaApagar))]
+    private int _segundosParaApagar = SegundosParaApagarPadrao;
+
+    /// <summary>A posição do deslizante "Apagar depois de" (de 0 a <see cref="UltimaPosicaoParaApagar"/>).</summary>
+    public int PosicaoParaApagar
+    {
+        get => _temposNoDeslizante.IndexOf(SegundosParaApagar);
+        set => SegundosParaApagar = _temposNoDeslizante[Math.Clamp(value, 0, UltimaPosicaoParaApagar)];
+    }
+
+    public int UltimaPosicaoParaApagar => _temposNoDeslizante.Count - 1;
+
+    /// <summary>"45 segundos", "2 minutos".</summary>
+    public string TextoParaApagar => TextoDoTempo(SegundosParaApagar);
+
+    /// <summary>"1 segundo", "45 segundos", "1 minuto", "2 minutos", "1 min 30 s".</summary>
+    public static string TextoDoTempo(int segundos)
+    {
+        if (segundos < 60)
+            return segundos == 1 ? "1 segundo" : $"{segundos} segundos";
+        int minutos = segundos / 60, resto = segundos % 60;
+        return resto == 0 ? (minutos == 1 ? "1 minuto" : $"{minutos} minutos") : $"{minutos} min {resto} s";
+    }
+
+    // Um tempo que não está no deslizante entra nele, no lugar certo (o deslizante fica sabendo antes da posição nova)
+    partial void OnSegundosParaApagarChanged(int value)
+    {
+        if (_temposNoDeslizante.Contains(value))
+            return;
+        _temposNoDeslizante.Add(value);
+        _temposNoDeslizante.Sort();
+        OnPropertyChanged(nameof(UltimaPosicaoParaApagar));
+    }
+
+    // A caixa mostra os prefixos salvos, separados por espaço
+    private void MostrarPrefixosSalvos(Opcoes opcoes)
+    {
+        _prefixosSalvos = [.. opcoes.PrefixosDosComandos];
+        PrefixosDosComandos = Opcoes.TextoDosPrefixos(_prefixosSalvos);
+        OnPropertyChanged(nameof(PrefixosQueValem));
+    }
+
+    // Os segundos salvos; um texto que não é um número inteiro maior que 0 (que nunca apagaria) dá o padrão
+    private static int LerSegundosParaApagar(string? texto) =>
+        int.TryParse(texto, NumberStyles.Integer, CultureInfo.InvariantCulture, out int segundos) && segundos > 0
+            ? segundos
+            : SegundosParaApagarPadrao;
 
     /// <summary>Continuar a pausa no ritmo de leitura (pela quantidade de texto); desligado, na velocidade fixa.</summary>
     [ObservableProperty]
@@ -82,8 +141,26 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private bool _esconderBots;
 
+    /// <summary>
+    /// "Prefixos dos comandos", como a pessoa escreve ("! $" ou "!, $"); gravados como lista em
+    /// <see cref="Opcoes.PrefixosDosComandos"/>. Valem também para o "Esconder comandos" do overlay.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PrefixosQueValem))]
+    private string _prefixosDosComandos = "!";
+
+    // Os salvos, para a caixa vazia (que não grava nada)
+    private List<string> _prefixosSalvos = ["!"];
+
+    /// <summary>Os prefixos da caixa; com ela vazia, os salvos (é o que fica valendo ao salvar).</summary>
+    public IReadOnlyList<string> PrefixosQueValem =>
+        Opcoes.LerPrefixos(PrefixosDosComandos) is { Count: > 0 } prefixos ? prefixos : _prefixosSalvos;
+
     [ObservableProperty]
     private bool _esconderGifs;
+
+    [ObservableProperty]
+    private bool _mostrarPrimeiraVez;
 
     [ObservableProperty]
     private bool _esconderOutrosCanais;
@@ -141,11 +218,19 @@ public sealed partial class LogicaChat : LogicaDaPagina
         ChatMultiplataforma = opcoes.ChatMultiplataforma;
         MostrarHistoricoDoYouTube = opcoes.MostrarHistoricoDoYouTube;
         ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
-        SegundosParaApagar = opcoes.SegundosParaApagar;
+        // O deslizante volta aos tempos da lista, mais o salvo quando é outro; o máximo muda antes da posição
+        int segundos = LerSegundosParaApagar(opcoes.SegundosParaApagar);
+        _temposNoDeslizante.Clear();
+        _temposNoDeslizante.AddRange(TemposParaApagar.Append(segundos).Distinct().Order());
+        OnPropertyChanged(nameof(UltimaPosicaoParaApagar));
+        SegundosParaApagar = segundos;
+        OnPropertyChanged(nameof(PosicaoParaApagar));
         VelocidadeAutomaticaAoContinuar = opcoes.VelocidadeAutomaticaAoContinuar;
         LinhasPorSegundoAoContinuar = opcoes.LinhasPorSegundoAoContinuar;
         EsconderBots = opcoes.EsconderBots;
+        MostrarPrefixosSalvos(opcoes);
         EsconderGifs = opcoes.EsconderGifs;
+        MostrarPrimeiraVez = opcoes.MostrarPrimeiraVez;
         EsconderOutrosCanais = opcoes.EsconderOutrosCanais;
         MostrarAvisosDaTwitch = opcoes.MostrarAvisosDaTwitch;
         MostrarAvisosDoYouTube = opcoes.MostrarAvisosDoYouTube;
@@ -173,12 +258,16 @@ public sealed partial class LogicaChat : LogicaDaPagina
             case Tipos.Padrao:
                 opcoes.EnderecoPersonalizado = string.Empty;
                 opcoes.ApagarMensagensAntigas = ApagarMensagensAntigas;
-                opcoes.SegundosParaApagar = SegundosParaApagar;
+                opcoes.SegundosParaApagar = SegundosParaApagar.ToString(CultureInfo.InvariantCulture);
                 opcoes.VelocidadeAutomaticaAoContinuar = VelocidadeAutomaticaAoContinuar;
                 opcoes.LinhasPorSegundoAoContinuar = Math.Clamp(Math.Round(LinhasPorSegundoAoContinuar * 2) / 2,
                     Opcoes.LinhasPorSegundoMinimo, Opcoes.LinhasPorSegundoMaximo);
                 opcoes.EsconderBots = EsconderBots;
+                // A caixa vazia não grava (não sobraria prefixo nenhum): volta a mostrar os salvos
+                opcoes.PrefixosDosComandos = [.. PrefixosQueValem];
+                MostrarPrefixosSalvos(opcoes);
                 opcoes.EsconderGifs = EsconderGifs;
+                opcoes.MostrarPrimeiraVez = MostrarPrimeiraVez;
                 opcoes.EsconderOutrosCanais = EsconderOutrosCanais;
                 opcoes.MostrarAvisosDaTwitch = MostrarAvisosDaTwitch;
                 opcoes.MostrarAvisosDoYouTube = MostrarAvisosDoYouTube;
@@ -208,11 +297,14 @@ public sealed partial class LogicaChat : LogicaDaPagina
         estado["Chat.ChatMultiplataforma"] = ChatMultiplataforma.ToString();
         estado["Chat.MostrarHistoricoDoYouTube"] = MostrarHistoricoDoYouTube.ToString();
         estado["Chat.ApagarMensagensAntigas"] = ApagarMensagensAntigas.ToString();
-        estado["Chat.SegundosParaApagar"] = SegundosParaApagar;
+        estado["Chat.SegundosParaApagar"] = SegundosParaApagar.ToString(CultureInfo.InvariantCulture);
         estado["Chat.VelocidadeAutomaticaAoContinuar"] = VelocidadeAutomaticaAoContinuar.ToString();
         estado["Chat.LinhasPorSegundoAoContinuar"] = TextoDaVelocidade;
         estado["Chat.EsconderBots"] = EsconderBots.ToString();
+        // "!, $" e "! $" são a mesma coisa
+        estado["Chat.PrefixosDosComandos"] = Opcoes.TextoDosPrefixos(PrefixosQueValem);
         estado["Chat.EsconderGifs"] = EsconderGifs.ToString();
+        estado["Chat.MostrarPrimeiraVez"] = MostrarPrimeiraVez.ToString();
         estado["Chat.EsconderOutrosCanais"] = EsconderOutrosCanais.ToString();
         estado["Chat.MostrarAvisosDaTwitch"] = MostrarAvisosDaTwitch.ToString();
         estado["Chat.MostrarAvisosDoYouTube"] = MostrarAvisosDoYouTube.ToString();

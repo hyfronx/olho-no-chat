@@ -14,6 +14,13 @@ namespace OlhoNoChat.Janelas.Filtros;
 /// </summary>
 public sealed partial class LogicaFiltros : ObservableObject
 {
+    /// <summary>
+    /// Nome que não vale nas duas listas. Os filtros valem em todas as plataformas: o nome da Twitch e da Kick (só letras,
+    /// números e _) ou o @ do YouTube e do TikTok (que pode ter também ponto e traço).
+    /// </summary>
+    public const string DicaNomeInvalido =
+        "Use o nome do endereço do canal (twitch.tv/nome) ou o @ da pessoa no YouTube, no TikTok ou na Kick: só letras, números, _, ponto e traço.";
+
     private readonly Opcoes _opcoes;
     private readonly Func<bool> _gravar;
     private string _estadoSalvo;
@@ -133,8 +140,8 @@ public sealed partial class LogicaFiltros : ObservableObject
     private void Desbloquear(string nome) => UsuariosBloqueados.Remove(nome);
 
     // Aceita "nome", "@nome", "twitch.tv/nome" ou o link do canal. O nome entra com as maiúsculas digitadas. No Chat
-    // Multiplataforma os filtros valem também para o YouTube e o TikTok: um @ com . ou - (que a Twitch não tem) ou o link
-    // youtube.com/@nome ou tiktok.com/@nome também vale.
+    // Multiplataforma os filtros valem também para o YouTube, o TikTok e a Kick: um @ com . ou - (que a Twitch não tem) ou o
+    // link youtube.com/@nome ou tiktok.com/@nome também vale; o nome da Kick segue a regra da Twitch.
     private static bool Adicionar(string digitado, ObservableCollection<string> lista, out string? erro)
     {
         string nome = NomesDaTwitch.Extrair(digitado);
@@ -154,7 +161,7 @@ public sealed partial class LogicaFiltros : ObservableObject
         if (nome.Length == 0)
             erro = "Digite o nome do usuário.";
         else if (!deOutraPlataforma && !NomesDaTwitch.EhValido(nome))
-            erro = NomesDaTwitch.DicaNomeInvalido;
+            erro = DicaNomeInvalido;
         else if (lista.Any(u => string.Equals(u, nome, StringComparison.OrdinalIgnoreCase)))
             erro = nome + " já está na lista.";
         else

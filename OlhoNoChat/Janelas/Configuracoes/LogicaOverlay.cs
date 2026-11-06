@@ -21,7 +21,8 @@ public sealed record AcoesDoOverlay(Func<EstadoDoOverlay> Estado, Func<int> Cone
 
 /// <summary>
 /// A aba Overlay: o overlay da live (uma Fonte de navegador do OBS com só as mensagens do chat) e como ele mostra as
-/// mensagens. Desligado no começo. O endereço é fixo; muda só com "Encontrar outro endereço" ou à mão, no Avançado.
+/// mensagens. Desligado no começo. O endereço é fixo; muda só com "Encontrar outro endereço" ou à mão, em "Porta do
+/// endereço".
 /// </summary>
 public sealed partial class LogicaOverlay : LogicaDaPagina
 {
@@ -46,12 +47,29 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [
         new("Sem fundo", "none"),
         new("Cartão escuro", "card"),
+        new("Balão", "bubble"),
+    ];
+
+    public static IReadOnlyList<OpcaoDaLista> Disposicoes { get; } =
+    [
+        new("Uma embaixo da outra", "list"),
+        new("Faixa horizontal", "ticker"),
+    ];
+
+    private const string QuantasCouberem = "couberem";
+    private const string AteUmNumero = "numero";
+
+    /// <summary>A lista "Quantas mensagens" (só da tela: o que fica gravado é o <see cref="PreencherArea"/>).</summary>
+    public static IReadOnlyList<OpcaoDaLista> Quantidades { get; } =
+    [
+        new("As que couberem", QuantasCouberem),
+        new("Até um número", AteUmNumero),
     ];
 
     public static IReadOnlyList<OpcaoDaLista> Direcoes { get; } =
     [
-        new("As novas embaixo", "bottom"),
-        new("As novas em cima", "top"),
+        new("Embaixo", "bottom"),
+        new("Em cima", "top"),
     ];
 
     public static IReadOnlyList<OpcaoDaLista> Alinhamentos { get; } =
@@ -82,10 +100,10 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     // --- O overlay ---------------------------------------------------------------------------------------------
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TextoDoEstado), nameof(TemProblema), nameof(Funcionando))]
+    [NotifyPropertyChangedFor(nameof(TextoDoEstado), nameof(TemProblema), nameof(Funcionando), nameof(FaltaParaUsar))]
     private bool _overlayLigado;
 
-    /// <summary>Do jeito que foi digitada (Avançado); só um número de 1024 a 65535 vale.</summary>
+    /// <summary>Do jeito que foi digitada ("Porta do endereço"); só um número de 1024 a 65535 vale.</summary>
     [ObservableProperty]
     private string _porta = string.Empty;
 
@@ -105,6 +123,24 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
 
     public bool TemProblema => _ligadoSalvo && OverlayLigado && EstadoAgora is EstadoDoOverlay.PortaOcupada or EstadoDoOverlay.OutroOlhoNoChat;
 
+    /// <summary>
+    /// A dica de "Mensagens de teste", "Limpar" e do abrir no navegador enquanto estão desligados: o que falta para
+    /// usar. Null quando o overlay está funcionando.
+    /// </summary>
+    public string? FaltaParaUsar
+    {
+        get
+        {
+            if (Funcionando)
+                return null;
+            if (!OverlayLigado)
+                return _ligadoSalvo ? "Ligue o overlay de novo." : "Ligue o overlay e clique em Salvar.";
+            if (!_ligadoSalvo)
+                return "Clique em Salvar para ligar o overlay.";
+            return TemProblema ? "O endereço está ocupado. Veja como resolver acima." : "O overlay está abrindo. Espere um pouco.";
+        }
+    }
+
     public string TextoDoEstado
     {
         get
@@ -118,16 +154,16 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
             {
                 EstadoDoOverlay.Funcionando => conectados switch
                 {
-                    0 => "Funcionando. Ainda nenhum OBS conectado: cole o endereço numa Fonte de navegador.",
+                    0 => "Funcionando, mas nenhum OBS está conectado. Cole o endereço numa Fonte de navegador do OBS.",
                     1 => "Funcionando. O OBS está conectado.",
                     _ => $"Funcionando. {conectados} Fontes de navegador conectadas.",
                 },
                 EstadoDoOverlay.OutroOlhoNoChat =>
-                    "Outro Olho no Chat aberto já está usando este endereço. Feche o outro (perto do relógio, clique com o " +
-                    "botão direito no ícone do olho e em Sair) e o overlay volta sozinho, ou use outro endereço.",
+                    "Outro Olho no Chat aberto está usando este endereço. Feche o outro (clique com o botão direito no ícone do olho, " +
+                    "perto do relógio, e em Sair) e o overlay volta sozinho. Ou clique em \"Encontrar outro endereço\".",
                 EstadoDoOverlay.PortaOcupada =>
-                    "Outro programa está usando o endereço do overlay. O app tenta de novo sozinho de tempos em tempos, " +
-                    "ou você pode usar outro endereço.",
+                    "Outro programa está usando o endereço do overlay. O app tenta de novo sozinho de tempos em tempos; " +
+                    "para resolver agora, clique em \"Encontrar outro endereço\".",
                 _ => "Abrindo…",
             };
         }
@@ -139,6 +175,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         OnPropertyChanged(nameof(TextoDoEstado));
         OnPropertyChanged(nameof(TemProblema));
         OnPropertyChanged(nameof(Funcionando));
+        OnPropertyChanged(nameof(FaltaParaUsar));
     }
 
     [RelayCommand]
@@ -152,7 +189,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         }
         _portaSalva = nova.Value;
         Porta = nova.Value.ToString(CultureInfo.InvariantCulture);
-        ResultadoDaProcura = "Pronto: o overlay está no endereço novo. Agora troque no OBS:";
+        ResultadoDaProcura = "Pronto, o overlay mudou de endereço. Agora troque no OBS:";
         MostrarPassosDoObs = true;
         OnPropertyChanged(nameof(Endereco));
         AtualizarEstado();
@@ -172,7 +209,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     // --- Como as mensagens aparecem ---------------------------------------------------------------------------
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SomemNaLista))]
     private bool _overlaySome;
+
+    /// <summary>O tempo de sumir só vale com "As mensagens somem" e uma embaixo da outra (a faixa tira sozinha).</summary>
+    public bool SomemNaLista => OverlaySome && EmLista;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDoSumir))]
@@ -184,13 +225,33 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [NotifyPropertyChangedFor(nameof(TextoDoAtraso))]
     private double _segundosDeAtraso;
 
-    public string TextoDoAtraso => SegundosDeAtraso < 0.5 ? "Na hora" : Segundos(SegundosDeAtraso);
+    public string TextoDoAtraso => SegundosDeAtraso < 0.5 ? "Sem atraso" : Segundos(SegundosDeAtraso);
+
+    /// <summary>Verdadeiro: as que couberem na fonte do OBS; falso: no máximo <see cref="Mensagens"/>. É o que fica gravado.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ComLimiteDeMensagens), nameof(Quantidade))]
+    private bool _preencherArea;
+
+    /// <summary>"Quantas mensagens" na tela: "As que couberem" ou "Até um número" (o <see cref="PreencherArea"/>).</summary>
+    public string Quantidade
+    {
+        get => PreencherArea ? QuantasCouberem : AteUmNumero;
+        set
+        {
+            // Só um dos dois da lista muda alguma coisa
+            if (value is QuantasCouberem or AteUmNumero)
+                PreencherArea = value == QuantasCouberem;
+        }
+    }
+
+    /// <summary>O número de mensagens só vale uma embaixo da outra e com "Até um número".</summary>
+    public bool ComLimiteDeMensagens => EmLista && !PreencherArea;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDasMensagens))]
     private double _mensagens = Opcoes.MensagensNoOverlayPadrao;
 
-    public string TextoDasMensagens => Math.Round(Mensagens).ToString(CultureInfo.InvariantCulture);
+    public string TextoDasMensagens => Math.Round(Mensagens) == 1 ? "1 mensagem" : $"{Math.Round(Mensagens):0} mensagens";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDoTamanho))]
@@ -211,7 +272,33 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [NotifyPropertyChangedFor(nameof(ComCartao))]
     private string _fundo = "none";
 
-    public bool ComCartao => Fundo == "card";
+    /// <summary>O escuro vale para o cartão e para o balão.</summary>
+    public bool ComCartao => Fundo is "card" or "bubble";
+
+    /// <summary>"Uma embaixo da outra" ou "Faixa horizontal" (passando da direita para a esquerda).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EmLista), nameof(EmFaixa), nameof(SomemNaLista), nameof(ComLimiteDeMensagens))]
+    private string _disposicao = "list";
+
+    /// <summary>Quantas, somem, onde entram, alinhamento e animação só valem (e só aparecem) uma embaixo da outra.</summary>
+    public bool EmLista => Disposicao != "ticker";
+
+    public bool EmFaixa => Disposicao == "ticker";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaVelocidadeDaFaixa))]
+    private double _velocidadeDaFaixa = Opcoes.VelocidadeDaFaixaPadrao;
+
+    public string TextoDaVelocidadeDaFaixa => Math.Round(VelocidadeDaFaixa) switch
+    {
+        < 80 => "Devagar",
+        < 180 => "Normal",
+        < 280 => "Rápida",
+        _ => "Muito rápida",
+    } + $" ({Math.Round(VelocidadeDaFaixa):0})";
+
+    [ObservableProperty]
+    private bool _primeiraVez;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDaOpacidade))]
@@ -226,7 +313,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     private string _alinhamento = "left";
 
     [ObservableProperty]
-    private string _animacao = "slide";
+    private string _animacao = "pop";
 
     [ObservableProperty]
     private bool _selos;
@@ -242,8 +329,23 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [ObservableProperty]
     private bool _esconderComandos;
 
+    /// <summary>
+    /// Os prefixos dos comandos da aba Chat (os da caixa de lá, mesmo antes de salvar), que o "Esconder comandos" usa.
+    /// </summary>
     [ObservableProperty]
-    private string _prefixoDosComandos = "!";
+    [NotifyPropertyChangedFor(nameof(DicaDosComandos))]
+    private IReadOnlyList<string> _prefixosDoChat = ["!"];
+
+    /// <summary>"Esconde as mensagens que começam com ! ou $, como !discord. Os prefixos ficam na aba Chat."</summary>
+    public string DicaDosComandos
+    {
+        get
+        {
+            IReadOnlyList<string> p = PrefixosDoChat.Count > 0 ? PrefixosDoChat : ["!"];
+            string lista = p.Count == 1 ? p[0] : string.Join(", ", p.Take(p.Count - 1)) + " ou " + p[^1];
+            return $"Esconde as mensagens que começam com {lista}, como {p[0]}discord. Os prefixos ficam na aba Chat.";
+        }
+    }
 
     [ObservableProperty]
     private bool _esconderBots;
@@ -298,14 +400,8 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [ObservableProperty]
     private bool _outrosAvisosDoTikTok;
 
-    private static string Segundos(double valor)
-    {
-        int segundos = (int)Math.Round(valor);
-        if (segundos < 60)
-            return segundos == 1 ? "1 segundo" : $"{segundos} segundos";
-        int minutos = segundos / 60, resto = segundos % 60;
-        return resto == 0 ? (minutos == 1 ? "1 minuto" : $"{minutos} minutos") : $"{minutos} min {resto} s";
-    }
+    // O mesmo texto de tempo da aba Chat ("45 segundos", "1 min 30 s")
+    private static string Segundos(double valor) => LogicaChat.TextoDoTempo((int)Math.Round(valor));
 
     /// <summary>As palavras da caixa: uma por linha ou separadas por vírgula, sem repetir (maiúsculas não contam).</summary>
     public static List<string> LerPalavras(string texto) =>
@@ -325,12 +421,16 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         OverlaySome = opcoes.OverlaySome;
         SegundosParaSumir = opcoes.SegundosParaSumirNoOverlay;
         SegundosDeAtraso = opcoes.SegundosDeAtrasoNoOverlay;
+        PreencherArea = opcoes.PreencherAreaNoOverlay;
         Mensagens = opcoes.MensagensNoOverlay;
         TamanhoDoTexto = opcoes.TamanhoDoTextoNoOverlay;
         Fonte = opcoes.FonteDoOverlay;
         Negrito = opcoes.NegritoNoOverlay;
         Contorno = opcoes.ContornoNoOverlay;
         Fundo = opcoes.FundoNoOverlay;
+        Disposicao = opcoes.DisposicaoDoOverlay;
+        VelocidadeDaFaixa = opcoes.VelocidadeDaFaixaNoOverlay;
+        PrimeiraVez = opcoes.PrimeiraVezNoOverlay;
         OpacidadeDoFundo = opcoes.OpacidadeDoFundoNoOverlay;
         Direcao = opcoes.DirecaoDoOverlay;
         Alinhamento = opcoes.AlinhamentoDoOverlay;
@@ -339,7 +439,6 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         Horario = opcoes.HorarioNoOverlay;
         Plataforma = opcoes.PlataformaNoOverlay;
         EsconderComandos = opcoes.EsconderComandosNoOverlay;
-        PrefixoDosComandos = opcoes.PrefixoDosComandosNoOverlay;
         EsconderBots = opcoes.EsconderBotsNoOverlay;
         PalavrasProibidas = string.Join(Environment.NewLine, opcoes.PalavrasProibidasNoOverlay);
         Links = opcoes.LinksNoOverlay;
@@ -368,12 +467,16 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         opcoes.OverlaySome = OverlaySome;
         opcoes.SegundosParaSumirNoOverlay = Inteiro(SegundosParaSumir, Opcoes.SegundosParaSumirNoOverlayMinimo, Opcoes.SegundosParaSumirNoOverlayMaximo);
         opcoes.SegundosDeAtrasoNoOverlay = Inteiro(SegundosDeAtraso, 0, Opcoes.SegundosDeAtrasoNoOverlayMaximo);
+        opcoes.PreencherAreaNoOverlay = PreencherArea;
         opcoes.MensagensNoOverlay = Inteiro(Mensagens, Opcoes.MensagensNoOverlayMinimo, Opcoes.MensagensNoOverlayMaximo);
         opcoes.TamanhoDoTextoNoOverlay = Inteiro(TamanhoDoTexto, Opcoes.TamanhoDoTextoNoOverlayMinimo, Opcoes.TamanhoDoTextoNoOverlayMaximo);
         opcoes.FonteDoOverlay = Fonte;
         opcoes.NegritoNoOverlay = Negrito;
         opcoes.ContornoNoOverlay = Contorno;
         opcoes.FundoNoOverlay = Fundo;
+        opcoes.DisposicaoDoOverlay = Disposicao;
+        opcoes.VelocidadeDaFaixaNoOverlay = Inteiro(VelocidadeDaFaixa, Opcoes.VelocidadeDaFaixaMinima, Opcoes.VelocidadeDaFaixaMaxima);
+        opcoes.PrimeiraVezNoOverlay = PrimeiraVez;
         opcoes.OpacidadeDoFundoNoOverlay = Inteiro(OpacidadeDoFundo, 0, 100);
         opcoes.DirecaoDoOverlay = Direcao;
         opcoes.AlinhamentoDoOverlay = Alinhamento;
@@ -382,9 +485,6 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         opcoes.HorarioNoOverlay = Horario;
         opcoes.PlataformaNoOverlay = Plataforma;
         opcoes.EsconderComandosNoOverlay = EsconderComandos;
-        // Um prefixo vazio esconderia todas as mensagens: fica o de antes
-        if (!string.IsNullOrWhiteSpace(PrefixoDosComandos))
-            opcoes.PrefixoDosComandosNoOverlay = PrefixoDosComandos.Trim();
         opcoes.EsconderBotsNoOverlay = EsconderBots;
         opcoes.PalavrasProibidasNoOverlay = LerPalavras(PalavrasProibidas);
         opcoes.LinksNoOverlay = Links;
@@ -403,9 +503,8 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
 
         _ligadoSalvo = opcoes.OverlayLigado;
         _portaSalva = opcoes.PortaDoOverlay;
-        // O que não valeu (uma porta inválida, o prefixo vazio) volta na tela para o que ficou gravado
+        // Uma porta que não valeu volta na tela para a que ficou gravada
         Porta = _portaSalva.ToString(CultureInfo.InvariantCulture);
-        PrefixoDosComandos = opcoes.PrefixoDosComandosNoOverlay;
         OnPropertyChanged(nameof(Endereco));
         AtualizarEstado();
     }
@@ -424,12 +523,16 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         estado["Overlay.Some"] = OverlaySome.ToString();
         estado["Overlay.SegundosParaSumir"] = TextoDoSumir;
         estado["Overlay.SegundosDeAtraso"] = TextoDoAtraso;
+        estado["Overlay.PreencherArea"] = PreencherArea.ToString();
         estado["Overlay.Mensagens"] = TextoDasMensagens;
         estado["Overlay.TamanhoDoTexto"] = TextoDoTamanho;
         estado["Overlay.Fonte"] = Fonte;
         estado["Overlay.Negrito"] = Negrito.ToString();
         estado["Overlay.Contorno"] = Contorno;
         estado["Overlay.Fundo"] = Fundo;
+        estado["Overlay.Disposicao"] = Disposicao;
+        estado["Overlay.VelocidadeDaFaixa"] = TextoDaVelocidadeDaFaixa;
+        estado["Overlay.PrimeiraVez"] = PrimeiraVez.ToString();
         estado["Overlay.OpacidadeDoFundo"] = TextoDaOpacidade;
         estado["Overlay.Direcao"] = Direcao;
         estado["Overlay.Alinhamento"] = Alinhamento;
@@ -438,7 +541,6 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         estado["Overlay.Horario"] = Horario.ToString();
         estado["Overlay.Plataforma"] = Plataforma.ToString();
         estado["Overlay.EsconderComandos"] = EsconderComandos.ToString();
-        estado["Overlay.PrefixoDosComandos"] = PrefixoDosComandos.Trim();
         estado["Overlay.EsconderBots"] = EsconderBots.ToString();
         estado["Overlay.PalavrasProibidas"] = string.Join("\n", LerPalavras(PalavrasProibidas));
         estado["Overlay.Links"] = Links;

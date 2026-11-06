@@ -33,45 +33,49 @@
     <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
         <StackPanel Style="{DynamicResource PainelDaPagina}">
             <TextBlock Text="Aparência" Style="{DynamicResource TituloDaPagina}" />
-            <TextBlock Text="Como as mensagens aparecem por cima do jogo." Style="{DynamicResource SubtituloDaPagina}" />
+            <TextBlock Text="Como as mensagens aparecem na janela do chat. O visual do overlay fica na aba Overlay." Style="{DynamicResource SubtituloDaPagina}" />
 
-            <!-- Padrão: tema e o CSS do tema "Nenhum" -->
-            <StackPanel x:Name="painelTema" Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">
-                <TextBlock Text="Tema" Style="{DynamicResource TituloDaSecao}" />
-                <Border Style="{DynamicResource Cartao}">
-                    <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="&#xE790;" Style="{DynamicResource IconeDoCartao}" />
-                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                                <TextBlock Text="Tema do chat" Style="{DynamicResource Rotulo}" />
-                                <TextBlock Text="Cores e estilo das mensagens." Style="{DynamicResource Dica}" />
-                            </StackPanel>
-                            <ComboBox x:Name="listaTema" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" AutomationProperties.Name="Tema do chat"
-                                      ItemsSource="{x:Static local:LogicaAparencia.Temas}" DisplayMemberPath="Nome"
-                                      SelectedValuePath="Valor" SelectedValue="{Binding Tema}" />
-                        </Grid>
-                        <StackPanel x:Name="painelCssDoTemaNenhum" Visibility="{Binding MostrarCssDoTemaNenhum, Converter={StaticResource VisivelSe}}">
-                            <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                            <TextBlock Text="CSS personalizado" Style="{DynamicResource Rotulo}" />
-                            <TextBox x:Name="caixaCssDoTemaNenhum" Style="{DynamicResource CaixaDeVariasLinhas}" Height="110" Margin="0,8,0,0"
-                                     AutomationProperties.Name="CSS personalizado"
-                                     Text="{Binding CssDoTemaNenhum, UpdateSourceTrigger=PropertyChanged}" />
+            <!-- Padrão: tema e o CSS do tema "Nenhum" (uma linha só: sem título de seção, como o tipo de chat na aba Chat) -->
+            <Border x:Name="painelTema" Style="{DynamicResource Cartao}" Margin="0,14,0,4"
+                    Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE790;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Tema do chat" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Padrão: letras brancas em negrito. Nenhum: você escreve o visual em CSS." Style="{DynamicResource Dica}" />
+                            <!-- Só com um tema diferente do salvo: o tema faz parte da página do chat, que recarrega ao salvar -->
+                            <TextBlock x:Name="avisoTemaRecarrega" Text="Ao salvar, o chat recarrega e as mensagens da tela somem." Style="{DynamicResource Erro}"
+                                       Margin="0,6,0,0" Visibility="{Binding TemaRecarregaOChat, Converter={StaticResource VisivelSe}}" />
                         </StackPanel>
+                        <ComboBox x:Name="listaTema" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" AutomationProperties.Name="Tema do chat"
+                                  ItemsSource="{x:Static local:LogicaAparencia.Temas}" DisplayMemberPath="Nome"
+                                  SelectedValuePath="Valor" SelectedValue="{Binding Tema}" />
+                    </Grid>
+                    <StackPanel x:Name="painelCssDoTemaNenhum" Visibility="{Binding MostrarCssDoTemaNenhum, Converter={StaticResource VisivelSe}}">
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <TextBlock Text="CSS personalizado" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Fica no lugar do visual do app, sem as cores de destaque dos Filtros do chat; o Texto das mensagens, abaixo, continua valendo."
+                                   Style="{DynamicResource Dica}" />
+                        <TextBox x:Name="caixaCssDoTemaNenhum" Style="{DynamicResource CaixaDeVariasLinhas}" Height="110" Margin="0,8,0,0"
+                                 AutomationProperties.Name="CSS personalizado"
+                                 Text="{Binding CssDoTemaNenhum, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
-                </Border>
-            </StackPanel>
+                </StackPanel>
+            </Border>
 
-            <!-- Padrão e Chat oficial da Twitch (que imita o Padrão) -->
+            <!-- Padrão e Chat oficial da Twitch (que imita o Padrão). Cor, contorno e fonte ficam desbotados no chat oficial
+                 com o CSS próprio (não valem); o horário vale sempre -->
             <StackPanel x:Name="painelTextoDasMensagens" Visibility="{Binding ComTextoDasMensagens, Converter={StaticResource VisivelSe}}">
                 <TextBlock Text="Texto das mensagens" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
                     <StackPanel>
-                        <Grid>
+                        <Grid x:Name="linhaCorDoTexto" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -79,15 +83,15 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE8D3;" Style="{DynamicResource IconeDoCartao}" />
                             <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                                <TextBlock Text="Cor" Style="{DynamicResource Rotulo}" />
-                                <TextBlock Text="Muda só o texto. A cor dos nomes continua a da Twitch." Style="{DynamicResource Dica}" />
+                                <TextBlock Text="Cor do texto" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Os nomes continuam na cor de cada pessoa." Style="{DynamicResource Dica}" />
                             </StackPanel>
                             <ComboBox x:Name="listaCorDoTexto" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" AutomationProperties.Name="Cor do texto"
                                       ItemsSource="{x:Static local:LogicaAparencia.Cores}" ItemTemplate="{StaticResource ModeloDaCor}"
                                       SelectedValuePath="Valor" SelectedValue="{Binding CorDoTexto}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid>
+                        <Grid x:Name="linhaContorno" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -103,7 +107,7 @@
                                       SelectedValuePath="Valor" SelectedValue="{Binding ContornoDasLetras}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid>
+                        <Grid x:Name="linhaFonte" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -127,11 +131,11 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE823;" Style="{DynamicResource IconeDoCartao}" />
                             <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
-                                <TextBlock Text="Mostrar o horário das mensagens" Style="{DynamicResource Rotulo}" />
-                                <TextBlock Text="A hora em que cada mensagem chegou, antes do nome." Style="{DynamicResource Dica}" />
+                                <TextBlock Text="Horário das mensagens" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="A hora em que cada mensagem chegou, como 21:05, antes do nome." Style="{DynamicResource Dica}" />
                             </StackPanel>
                             <ctl:Interruptor x:Name="interruptorHorario" Grid.Column="2" IsChecked="{Binding MostrarHorario}"
-                                             AutomationProperties.Name="Mostrar o horário das mensagens" />
+                                             AutomationProperties.Name="Horário das mensagens" />
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -144,14 +148,14 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="&#xE946;" Style="{DynamicResource IconeDoCartao}" />
                         <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                                   Text="As mudanças aparecem no chat quando você clicar em Salvar. O tamanho do texto e o fundo do chat ficam na barra laranja em cima do chat (com as bordas visíveis)." />
+                                   Text="O tamanho do texto e o fundo do chat ficam na barra laranja, em cima do chat (com as bordas visíveis), e mudam na hora." />
                     </Grid>
                 </Border>
             </StackPanel>
 
             <!-- Chat oficial da Twitch -->
             <StackPanel x:Name="painelCssDoChatOficial" Visibility="{Binding ComChatOficial, Converter={StaticResource VisivelSe}}">
-                <TextBlock Text="Aparência (CSS)" Style="{DynamicResource TituloDaSecao}" />
+                <TextBlock Text="CSS do chat oficial" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -162,19 +166,22 @@
                         <TextBlock Text="&#xE790;" Style="{DynamicResource IconeDoCartao}" />
                         <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
                             <TextBlock Text="Usar a aparência padrão" Style="{DynamicResource Rotulo}" />
-                            <TextBlock Text="Desligue para editar o CSS abaixo." Style="{DynamicResource Dica}" />
+                            <TextBlock Text="Desligue para editar o CSS abaixo. Com o seu CSS, a cor do texto, o contorno e a fonte de cima deixam de valer." Style="{DynamicResource Dica}" />
                         </StackPanel>
                         <ctl:Interruptor x:Name="interruptorAparenciaPadrao" Grid.Column="2" IsChecked="{Binding AparenciaPadraoNoChatOficial}"
                                          AutomationProperties.Name="Usar a aparência padrão" />
                     </Grid>
                 </Border>
+                <TextBlock Text="O visual da página do chat da Twitch; o horário e as partes da página escondidas na aba Chat valem com qualquer CSS."
+                           Style="{DynamicResource Dica}" Margin="2,6,0,8" />
                 <ctl:EditorDeCss x:Name="editorCssDoChatOficial" AutomationProperties.Name="CSS do chat oficial"
                                  Texto="{Binding TextoDoEditorDoChatOficial}" IsReadOnly="{Binding AparenciaPadraoNoChatOficial}" />
             </StackPanel>
 
             <!-- Endereço personalizado -->
             <StackPanel x:Name="painelCssDoEndereco" Visibility="{Binding ComEndereco, Converter={StaticResource VisivelSe}}">
-                <TextBlock Text="Aparência (CSS personalizado)" Style="{DynamicResource TituloDaSecao}" />
+                <TextBlock Text="CSS da página" Style="{DynamicResource TituloDaSecao}" />
+                <TextBlock Text="É o único visual que o app põe na página do endereço escolhido na aba Chat." Style="{DynamicResource Dica}" Margin="2,0,0,8" />
                 <ctl:EditorDeCss x:Name="editorCssDoEndereco" AutomationProperties.Name="CSS da página"
                                  Texto="{Binding CssDoEnderecoPersonalizado}" />
             </StackPanel>

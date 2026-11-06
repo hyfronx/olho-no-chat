@@ -142,6 +142,7 @@ public sealed class PaginaDoChatTestes
         Assert.False(Recarrega(padrao, o =>
         {
             o.EsconderBots = false;
+            o.PrefixosDosComandos = ["$"];
             o.EsconderGifs = true;
             o.EsconderOutrosCanais = true;
             o.MostrarAvisosDaTwitch = false;
