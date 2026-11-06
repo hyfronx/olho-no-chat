@@ -1,5 +1,7 @@
 # Publica uma versão nova do Olho no Chat quando uma tag "vX.Y.Z" chega ao GitHub.
 # Enviar só commits para a main não publica nada. O número da versão vem da tag (v2.0.0 -> 2.0.0).
+# Uma tag com "-" (v2.10.0-beta.1) é uma versão BETA: sai como pré-lançamento no canal "beta" do Velopack, e só quem
+# está na beta (o instalador dela, ou "Receber versões beta" na aba Geral) recebe. O link "latest" continua na normal.
 name: Publicar versão
 
 on:
@@ -41,17 +43,26 @@ jobs:
           $tag = '${{ github.ref_name }}'
           $versao = $tag.TrimStart('v')
           $repo = 'https://github.com/${{ github.repository }}'
+          $beta = $versao.Contains('-')
+          $canal = if ($beta) { 'beta' } else { 'win' }
+          $pre = if ($beta) { @('--pre') } else { @() }
 
           dotnet tool install --global vpk --version $env:VPK_VERSAO
 
           # A última versão publicada serve de base para o pacote delta (a atualização pequena)
-          vpk download github --repoUrl $repo --token $env:GITHUB_TOKEN
+          # (na beta, a última beta). A primeira de um canal não tem anterior: o pacote sai sem delta
+          try {
+            vpk download github --repoUrl $repo --token $env:GITHUB_TOKEN --channel $canal @pre
+          } catch {
+            Write-Host "Sem versão anterior no canal ${canal}: pacote sem delta."
+          }
 
           # Atalho só no menu Iniciar (sem área de trabalho) e sem o zip portátil: as configurações
           # ficam sempre em %AppData%\OlhoNoChat
           vpk pack --packId OlhoNoChat --packVersion $versao --packTitle 'Olho no Chat' --packAuthors 'Hyfronx' `
             --packDir publish --mainExe OlhoNoChat.exe --icon OlhoNoChat/olho_no_chat.ico `
-            --shortcuts StartMenuRoot --noPortable
+            --shortcuts StartMenuRoot --noPortable --channel $canal
 
-          vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish `
-            --releaseName "Olho no Chat v$versao" --tag $tag
+          $nome = if ($beta) { "Olho no Chat v$versao (beta)" } else { "Olho no Chat v$versao" }
+          vpk upload github --repoUrl $repo --token $env:GITHUB_TOKEN --publish --channel $canal @pre `
+            --releaseName $nome --tag $tag

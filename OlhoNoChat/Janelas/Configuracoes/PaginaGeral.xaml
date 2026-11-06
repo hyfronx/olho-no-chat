@@ -209,6 +209,22 @@
                                          AutomationProperties.Name="Procurar atualizações ao abrir o app" />
                     </Grid>
                     <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xF196;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Receber versões beta" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Style="{DynamicResource Dica}"
+                                       Text="Versões de teste, com as novidades antes, mas que podem ter problemas. Desligado, o app volta para a última versão normal na próxima atualização (as configurações continuam)." />
+                        </StackPanel>
+                        <ctl:Interruptor x:Name="interruptorVersoesBeta" Grid.Column="2" IsChecked="{Binding VersoesBeta}"
+                                         AutomationProperties.Name="Receber versões beta" />
+                    </Grid>
+                    <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
                     <Grid Margin="36,0,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

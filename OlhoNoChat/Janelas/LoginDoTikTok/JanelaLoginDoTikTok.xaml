@@ -1,0 +1,57 @@
+<Window x:Class="OlhoNoChat.Janelas.LoginDoTikTok.JanelaLoginDoTikTok"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Entrar no TikTok" Icon="/icons/olho_no_chat.ico"
+        Width="520" Height="780" MinWidth="420" MinHeight="520" ShowInTaskbar="False" Topmost="True"
+        Background="{DynamicResource FundoDaPagina}" Foreground="{DynamicResource Texto}"
+        FontFamily="Segoe UI" FontSize="14" UseLayoutRounding="True">
+    <!-- Sem a barra do Windows: a barra laranja é a do app (arrasta pela barra, "×" do app) -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Laranja}" Height="44">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                    <TextBlock Text="&#xE77B;" Style="{DynamicResource Icone}" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Entrar no TikTok" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button x:Name="botaoFecharJanela" Style="{DynamicResource BotaoFecharDaBarra}" HorizontalAlignment="Right"
+                        VerticalAlignment="Center" Margin="0,0,8,0" Click="BotaoFecharJanela_Click"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+            </Grid>
+        </Border>
+
+        <!-- O endereço da página, sempre à vista -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource FundoDoCartao}" Padding="12,8"
+                BorderBrush="{DynamicResource BordaDoCartao}" BorderThickness="0,0,0,1">
+            <DockPanel>
+                <TextBlock x:Name="iconeDoEndereco" Style="{DynamicResource Icone}" Text="&#xE72E;" FontSize="13"
+                           Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock x:Name="textoDoEndereco" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                           Text="Abrindo…" />
+            </DockPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource FundoDoCartao}" Padding="12,8"
+                BorderBrush="{DynamicResource BordaDoCartao}" BorderThickness="0,1,0,0">
+            <StackPanel>
+                <TextBlock x:Name="textoDoAviso" Foreground="{DynamicResource LaranjaClaro}" TextWrapping="Wrap" Visibility="Collapsed"
+                           Margin="0,0,0,4" />
+                <TextBlock Style="{DynamicResource Rotulo}" TextWrapping="Wrap" Margin="0,0,0,4"
+                           Text="Se o login com Google, Facebook ou Apple não funcionar, use &quot;Usar código QR&quot; e leia o código com o app do TikTok no celular." />
+                <TextBlock Style="{DynamicResource Dica}" TextWrapping="Wrap"
+                           Text="A senha não é guardada: o Olho no Chat guarda só a sessão, protegida neste computador. Esta janela só abre o TikTok." />
+            </StackPanel>
+        </Border>
+
+        <Grid>
+            <wv2:WebView2 x:Name="navegador" />
+            <TextBlock x:Name="textoCarregando" Text="Abrindo o TikTok…" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Style="{DynamicResource Dica}" />
+        </Grid>
+    </DockPanel>
+</Window>

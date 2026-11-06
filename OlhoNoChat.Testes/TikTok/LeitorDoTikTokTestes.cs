@@ -289,6 +289,89 @@ public class LeitorDoTikTokTestes
         Assert.Equal(new PresenteDoTikTok("Hand Heart", ImagemDaRosa, 2, 200), _avisos.Single(a => a.Presente != null).Presente);
     }
 
+    [Fact]
+    public async Task ComConta_ConectaComASessao()
+    {
+        _tikTok.Sessao = "sessao1";
+        _tikTok.Sala(Sala(aoVivo: true));
+        _tikTok.Socket();
+        using var leitor = Novo();
+        bool recusada = false;
+        leitor.SessaoRecusada += () => recusada = true;
+        leitor.Ligar("fulano");
+
+        await Esperar(() => leitor.Estado == EstadoDoTikTok.Conectado);
+        Assert.Equal(["sessao1"], _tikTok.SessoesAbertas);
+        Assert.False(recusada);
+    }
+
+    [Fact]
+    public async Task SessaoRecusada_Avisa_EConectaSemEla()
+    {
+        _tikTok.Sessao = "vencida";
+        _tikTok.Situacao = SituacaoDaSessao.Recusada;
+        _tikTok.Sala(Sala(aoVivo: true));
+        _tikTok.Socket();
+        using var leitor = Novo();
+        // Quem usa (a conta) esquece a sessão ao ouvir o aviso
+        int avisos = 0;
+        leitor.SessaoRecusada += () =>
+        {
+            avisos++;
+            _tikTok.Sessao = null;
+        };
+        leitor.Ligar("fulano");
+
+        await Esperar(() => leitor.Estado == EstadoDoTikTok.Conectado);
+        Assert.Equal(1, avisos);
+        Assert.Equal([null], _tikTok.SessoesAbertas);
+    }
+
+    [Fact]
+    public async Task SemResposta_DaConferencia_ContinuaComASessao()
+    {
+        _tikTok.Sessao = "sessao1";
+        _tikTok.Situacao = SituacaoDaSessao.SemResposta;
+        _tikTok.Sala(Sala(aoVivo: true));
+        _tikTok.Socket();
+        using var leitor = Novo();
+        bool recusada = false;
+        leitor.SessaoRecusada += () => recusada = true;
+        leitor.Ligar("fulano");
+
+        await Esperar(() => leitor.Estado == EstadoDoTikTok.Conectado);
+        Assert.False(recusada);
+        Assert.Equal(["sessao1"], _tikTok.SessoesAbertas);
+    }
+
+    [Fact]
+    public async Task Recomecar_ConectaDeNovoAoMesmoCanal()
+    {
+        _tikTok.Sala(Sala(aoVivo: true));
+        _tikTok.Socket();
+        _tikTok.Sala(Sala(aoVivo: true));
+        _tikTok.Socket();
+        using var leitor = Novo();
+        leitor.Ligar("fulano");
+        await Esperar(() => leitor.Estado == EstadoDoTikTok.Conectado);
+
+        _tikTok.Sessao = "nova";
+        leitor.Recomecar();
+
+        await Esperar(() => _tikTok.SessoesAbertas.Count == 2);
+        Assert.Equal([null, "nova"], _tikTok.SessoesAbertas);
+        Assert.Equal("fulano", leitor.Canal);
+    }
+
+    [Fact]
+    public void Recomecar_Desligado_NaoFazNada()
+    {
+        using var leitor = Novo();
+        leitor.Recomecar();
+        Assert.Null(leitor.Canal);
+        Assert.Equal(EstadoDoTikTok.Desligado, leitor.Estado);
+    }
+
     /// <summary>As respostas da sala e os WebSockets que o leitor vai receber, na ordem.</summary>
     private sealed class TikTokFalso : IConexaoComOTikTok
     {
@@ -327,8 +410,23 @@ public class LeitorDoTikTokTestes
             return Task.FromResult(ListaDePresentes);
         }
 
+        /// <summary>A sessão da conta conectada (null = sem conta) e o que o TikTok diz dela.</summary>
+        public string? Sessao { get; set; }
+
+        public SituacaoDaSessao Situacao { get; set; } = SituacaoDaSessao.Valida;
+
+        /// <summary>A sessão usada em cada conexão aberta.</summary>
+        public List<string?> SessoesAbertas { get; } = [];
+
+        public bool ComSessao => Sessao != null;
+
+        public Task<SituacaoDaSessao> ConferirSessaoAsync(CancellationToken cancelar) =>
+            Task.FromResult(Sessao == null ? SituacaoDaSessao.Valida : Situacao);
+
         public Task<ISocketDoTikTok> AbrirAsync(string idDaSala, CancellationToken cancelar)
         {
+            lock (SessoesAbertas)
+                SessoesAbertas.Add(Sessao);
             lock (Abertos)
                 Abertos.Add(idDaSala);
             return _sockets.TryDequeue(out SocketFalso? socket)

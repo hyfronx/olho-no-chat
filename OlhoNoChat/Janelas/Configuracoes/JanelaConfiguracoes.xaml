@@ -8,7 +8,7 @@
                           Height="720" Width="800" MinHeight="480" MinWidth="680"
                           Topmost="True"
                           FocusManager.FocusedElement="{Binding ElementName=listaDePaginas}">
-    <!-- Configurações: sete abas; "Salvar" grava e aplica sem fechar. DataContext = LogicaConfiguracoes.
+    <!-- Configurações: oito abas; "Salvar" grava e aplica sem fechar. DataContext = LogicaConfiguracoes.
          A aba mostrada é a da mesma posição em "paginas": as duas listas ficam sempre na mesma ordem. -->
     <janelas:JanelaComMoldura.Navegacao>
         <ListBox x:Name="listaDePaginas" Style="{StaticResource ListaDeNavegacao}" ItemContainerStyle="{StaticResource ItemDaNavegacao}"
@@ -23,6 +23,12 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE77B;" Style="{StaticResource IconeDaNavegacao}" />
                     <TextBlock Text="Twitch" />
+                </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem AutomationProperties.Name="TikTok">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8D6;" Style="{StaticResource IconeDaNavegacao}" />
+                    <TextBlock Text="TikTok" />
                 </StackPanel>
             </ListBoxItem>
             <ListBoxItem AutomationProperties.Name="Aparência">
@@ -61,6 +67,7 @@
     <Grid x:Name="paginas">
         <local:PaginaChat x:Name="paginaChat" DataContext="{Binding Chat}" />
         <local:PaginaTwitch x:Name="paginaTwitch" DataContext="{Binding Twitch}" Visibility="Collapsed" />
+        <local:PaginaTikTok x:Name="paginaTikTok" DataContext="{Binding TikTok}" Visibility="Collapsed" />
         <local:PaginaAparencia x:Name="paginaAparencia" DataContext="{Binding Aparencia}" Visibility="Collapsed" />
         <local:PaginaSom x:Name="paginaSom" DataContext="{Binding Som}" Visibility="Collapsed" />
         <local:PaginaOverlay x:Name="paginaOverlay" DataContext="{Binding Overlay}" Visibility="Collapsed" />

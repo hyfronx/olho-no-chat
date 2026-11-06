@@ -161,6 +161,8 @@ public sealed class Opcoes
     public bool EsconderBordasAoAbrir { get; set; } = false;
     public bool EsconderIconeDaBarraDeTarefas { get; set; } = false;
     public bool ProcurarAtualizacoes { get; set; } = true;
+    // "Receber versões beta": null = o canal com que o app foi instalado (o instalador da beta já vem na beta)
+    public bool? VersoesBeta { get; set; }
     public bool PermitirVariasCopias { get; set; } = false;
     // Atalhos: null = sem atalho (apagado pela pessoa)
     public Atalho? AtalhoBordas { get; set; } = new(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);

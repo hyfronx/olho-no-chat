@@ -29,6 +29,13 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     [ObservableProperty]
     private bool _procurarAtualizacoes;
 
+    /// <summary>"Receber versões beta".</summary>
+    [ObservableProperty]
+    private bool _versoesBeta;
+
+    /// <summary>O último "Salvar" trocou entre as versões normais e as beta (a janela procura a versão do canal novo).</summary>
+    public bool CanalMudouAoGravar { get; private set; }
+
     [ObservableProperty]
     private bool _permitirVariasCopias;
 
@@ -88,6 +95,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         EsconderBordasAoAbrir = opcoes.EsconderBordasAoAbrir;
         EsconderIconeDaBarraDeTarefas = opcoes.EsconderIconeDaBarraDeTarefas;
         ProcurarAtualizacoes = opcoes.ProcurarAtualizacoes;
+        VersoesBeta = ProcuraDeAtualizacoes.NaBeta(opcoes);
         PermitirVariasCopias = opcoes.PermitirVariasCopias;
         AtalhoBordas = opcoes.AtalhoBordas;
         AtalhoModoRolagem = opcoes.AtalhoModoRolagem;
@@ -103,6 +111,10 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         opcoes.EsconderBordasAoAbrir = EsconderBordasAoAbrir;
         opcoes.EsconderIconeDaBarraDeTarefas = EsconderIconeDaBarraDeTarefas;
         opcoes.ProcurarAtualizacoes = ProcurarAtualizacoes;
+        // Só vira escolha gravada quando muda: sem mexer, continua seguindo o canal da instalação
+        CanalMudouAoGravar = VersoesBeta != ProcuraDeAtualizacoes.NaBeta(opcoes);
+        if (CanalMudouAoGravar)
+            opcoes.VersoesBeta = VersoesBeta;
         opcoes.PermitirVariasCopias = PermitirVariasCopias;
         // Um atalho apagado fica sem valor no arquivo
         opcoes.AtalhoBordas = SoSeExiste(AtalhoBordas);
@@ -121,6 +133,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         estado["Geral.EsconderBordasAoAbrir"] = EsconderBordasAoAbrir.ToString();
         estado["Geral.EsconderIconeDaBarraDeTarefas"] = EsconderIconeDaBarraDeTarefas.ToString();
         estado[ChaveProcurarAtualizacoes] = ProcurarAtualizacoes.ToString();
+        estado["Geral.VersoesBeta"] = VersoesBeta.ToString();
         estado["Geral.PermitirVariasCopias"] = PermitirVariasCopias.ToString();
         estado["Geral.AtalhoBordas"] = Atalho.TextoOuNenhum(AtalhoBordas);
         estado["Geral.AtalhoModoRolagem"] = Atalho.TextoOuNenhum(AtalhoModoRolagem);

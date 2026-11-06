@@ -1929,6 +1929,12 @@
             return pause;
         },
 
+        // A notice of the app in the status pill (only this chat, never the overlay): once, it fades after a while
+        appNotice(text) {
+            multiPillText = '';
+            showPill('disconnected multi', String(text || ''), 15000);
+        },
+
         // Chat Multiplataforma: how the YouTube, the Kick or the TikTok reading is (the app reads them): connecting,
         // connected, waiting, failed, notfound or off
         platformState(platform, newState) {

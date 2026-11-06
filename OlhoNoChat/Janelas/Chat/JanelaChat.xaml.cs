@@ -43,6 +43,7 @@ public partial class JanelaChat : Window
     private readonly LeitorDoYouTube _youTube;
     private readonly LeitorDaKick _kick;
     private readonly LeitorDoTikTok _tikTok;
+    private readonly ContaDoTikTok _contaDoTikTok;
     private readonly ServidorDoOverlay _overlay;
     // O endereço do overlay ocupado: o balão (com as bordas) e o aviso na página (sem elas) ainda não apareceram. Um aviso
     // por problema: volta só depois que o overlay abrir (ou for desligado) e der problema de novo
@@ -72,8 +73,8 @@ public partial class JanelaChat : Window
 
     public JanelaChat(ILogger<JanelaChat> log, ArquivoDeConfiguracoes arquivo, ContaDaTwitch conta, AutorizacaoNoNavegador autorizacao,
         EnvioDeMensagem envio, ListaDeEmotes listaDeEmotes, ImagensDeEmotes imagensDeEmotes, ApiDaTwitch api, EventSubDaTwitch eventSub,
-        LeitorDoYouTube youTube, LeitorDaKick kick, LeitorDoTikTok tikTok, ProcuraDeAtualizacoes atualizacoes, IconeDaBandeja bandeja,
-        ServidorDoOverlay overlay)
+        LeitorDoYouTube youTube, LeitorDaKick kick, LeitorDoTikTok tikTok, ContaDoTikTok contaDoTikTok, ProcuraDeAtualizacoes atualizacoes,
+        IconeDaBandeja bandeja, ServidorDoOverlay overlay)
     {
         InitializeComponent();
 
@@ -87,6 +88,7 @@ public partial class JanelaChat : Window
         _youTube = youTube;
         _kick = kick;
         _tikTok = tikTok;
+        _contaDoTikTok = contaDoTikTok;
         _overlay = overlay;
         _atualizacoes = atualizacoes;
         _bandeja = bandeja;
@@ -1009,6 +1011,16 @@ public partial class JanelaChat : Window
             Dispatcher.BeginInvoke(() => NaPaginaDaPlataforma(ContratoComAPagina.ApagarDoTikTok(ids, logins)));
         // Presentes, seguidores, compartilhamentos e Superfãs: a página esconde os desligados (cada um tem o seu interruptor)
         _tikTok.AvisoRecebido += aviso => Dispatcher.BeginInvoke(() => NaPaginaDaPlataforma(ContratoComAPagina.AdicionarAvisoDoTikTok(aviso)));
+        // A conta do TikTok (aba TikTok) conectou ou desconectou: conecta de novo, com ou sem ela. Recusada pelo TikTok, a
+        // leitura já seguiu sem ela: só avisa, uma vez
+        _contaDoTikTok.Mudou += () => Dispatcher.BeginInvoke(() =>
+        {
+            if (_contaDoTikTok.Conta == null && _contaDoTikTok.FoiRecusada)
+                NaPaginaDaPlataforma(ContratoComAPagina.AvisoDoApp(
+                    "TikTok: a conta desconectou (o TikTok não aceita mais a sessão). Conecte de novo em Configurações › TikTok."));
+            else
+                _tikTok.Recomecar();
+        });
     }
 
     // Lê o TikTok só com o Chat Multiplataforma ligado e um canal do TikTok (as mensagens vão para a página do Padrão)
@@ -1253,7 +1265,7 @@ public partial class JanelaChat : Window
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
-        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub),
+        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub), new LogicaTikTok(_contaDoTikTok),
             overlay: new AcoesDoOverlay(() => _overlay.Estado, () => _overlay.Conectados, _overlay.Limpar,
                 MandarTesteDoOverlay, EncontrarOutraPortaDoOverlay));
         var janela = new JanelaConfiguracoes(logica, this);

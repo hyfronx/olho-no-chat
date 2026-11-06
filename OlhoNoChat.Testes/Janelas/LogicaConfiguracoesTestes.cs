@@ -1,3 +1,4 @@
+using OlhoNoChat.TikTok;
 using System.IO;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -46,7 +47,9 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         var conta = Montar.Conta(new TwitchFalsa(), new ContaSalvaNaMemoria());
         var twitch = new LogicaTwitch(new AutorizacaoNoNavegador(NullLogger<AutorizacaoNoNavegador>.Instance), conta,
             new EventSubDaTwitch(new ApiDaTwitch(new TwitchFalsa()), conta, NullLogger<EventSubDaTwitch>.Instance));
-        return new LogicaConfiguracoes(_arquivo, twitch, (arquivo, volume, saida) => _previas.Add((arquivo, volume, saida)));
+        var tikTok = new LogicaTikTok(new ContaDoTikTok(NullLogger<ContaDoTikTok>.Instance,
+            new CofreDoTikTok(Path.Combine(_pasta, "Cofre"), "x", usarTpm: false)));
+        return new LogicaConfiguracoes(_arquivo, twitch, tikTok, (arquivo, volume, saida) => _previas.Add((arquivo, volume, saida)));
     }
 
     // O que está gravado no arquivo agora
@@ -483,6 +486,43 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     }
 
     // ----- "Não procurar atualizações automaticamente" com a janela aberta (decisão 2) -----
+
+    [Fact]
+    public void VersoesBeta_SemEscolha_SegueAInstalacao_ENaoGravaNada()
+    {
+        var c = Abrir();
+        Assert.False(c.Geral.VersoesBeta); // rodando fora de uma instalação: canal normal
+        c.Salvar();
+        Assert.Null(Gravadas().VersoesBeta);
+        Assert.False(c.Geral.CanalMudouAoGravar);
+    }
+
+    [Fact]
+    public void VersoesBeta_LigarESalvar_GravaEProcuraNaHora()
+    {
+        var c = Abrir();
+        int procuras = 0;
+        c.ProcurarAtualizacoesPedido += () => procuras++;
+
+        c.Geral.VersoesBeta = true;
+        Assert.True(c.TemMudancas);
+        c.Salvar();
+
+        Assert.True(Gravadas().VersoesBeta);
+        Assert.Equal(1, procuras);
+        c.Salvar(); // sem mudar de novo, não procura de novo
+        Assert.Equal(1, procuras);
+    }
+
+    [Fact]
+    public void VersoesBeta_Desligar_VoltaParaANormal()
+    {
+        var c = Abrir(o => o.VersoesBeta = true);
+        Assert.True(c.Geral.VersoesBeta);
+        c.Geral.VersoesBeta = false;
+        c.Salvar();
+        Assert.False(Gravadas().VersoesBeta);
+    }
 
     [Fact]
     public void ProcuraAutomaticaDesligada_InterruptorAcompanhaSemContarComoMudanca()

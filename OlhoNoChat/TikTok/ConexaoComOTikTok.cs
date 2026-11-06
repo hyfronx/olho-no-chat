@@ -16,6 +16,24 @@ public interface IConexaoComOTikTok
 
     /// <summary>O JSON da <see cref="ListaDePresentes"/> da sala (em português).</summary>
     Task<string> PresentesAsync(string idDaSala, CancellationToken cancelar);
+
+    /// <summary>Lê com a conta do TikTok conectada (a aba TikTok).</summary>
+    bool ComSessao => false;
+
+    /// <summary>Se o TikTok ainda aceita a sessão da conta conectada (sem conta: <see cref="SituacaoDaSessao.Valida"/>).</summary>
+    Task<SituacaoDaSessao> ConferirSessaoAsync(CancellationToken cancelar) => Task.FromResult(SituacaoDaSessao.Valida);
+}
+
+/// <summary>O que o TikTok disse da sessão da conta conectada.</summary>
+public enum SituacaoDaSessao
+{
+    Valida,
+
+    /// <summary>O TikTok não aceita mais a sessão (saiu da conta, trocou a senha, venceu).</summary>
+    Recusada,
+
+    /// <summary>Sem resposta (sem internet, TikTok fora do ar): não dá para saber.</summary>
+    SemResposta,
 }
 
 /// <summary>O WebSocket do chat de uma live. Um envio de cada vez.</summary>
@@ -30,7 +48,7 @@ public interface ISocketDoTikTok : IDisposable
 /// <summary>
 /// Os pedidos de verdade, como o site do TikTok faz para quem assiste sem conta: um cookie de visitante ("ttwid", que o
 /// TikTok dá na página das lives), a sala pelo <c>api-live/user/room</c> e o WebSocket do chat com esse cookie. Nada
-/// disso pede login nem assinatura. O WebSocket fica aqui, e não na página do chat, porque o navegador não deixa pôr o
+/// disso pede login nem assinatura. Com a conta do TikTok conectada (opcional), a sessão dela vai só no WebSocket. O WebSocket fica aqui, e não na página do chat, porque o navegador não deixa pôr o
 /// cookie num WebSocket para outro site.
 /// </summary>
 public sealed class ConexaoComOTikTok : IConexaoComOTikTok
@@ -59,7 +77,59 @@ public sealed class ConexaoComOTikTok : IConexaoComOTikTok
         Timeout = TimeSpan.FromSeconds(20),
     };
 
+    // Só para a conferência da sessão: sem seguir redirecionamentos, que poderiam levar o cookie para outro endereço
+    private static readonly HttpClient HttpDaSessao = new(new SocketsHttpHandler
+    {
+        UseCookies = false,
+        AllowAutoRedirect = false,
+        AutomaticDecompression = DecompressionMethods.All,
+    })
+    {
+        BaseAddress = new Uri("https://www.tiktok.com"),
+        Timeout = TimeSpan.FromSeconds(20),
+    };
+
     private string? _ttwid;
+    private readonly Func<string?> _sessao;
+
+    /// <param name="sessao">A sessão da conta conectada na hora de conectar, ou null para ler sem conta.</param>
+    public ConexaoComOTikTok(Func<string?>? sessao = null) => _sessao = sessao ?? (() => null);
+
+    public bool ComSessao => _sessao() != null;
+
+    public async Task<SituacaoDaSessao> ConferirSessaoAsync(CancellationToken cancelar) =>
+        _sessao() is { } sessao ? (await ConferirAsync(sessao, cancelar).ConfigureAwait(false)).Situacao : SituacaoDaSessao.Valida;
+
+    /// <summary>
+    /// Confere uma sessão com o TikTok (o mesmo pedido que o site faz para saber quem está logado) e devolve o @ e o
+    /// id da conta. A sessão só vai no cabeçalho, para o TikTok, por HTTPS.
+    /// </summary>
+    public static async Task<(SituacaoDaSessao Situacao, string Login, string Id)> ConferirAsync(string sessao, CancellationToken cancelar)
+    {
+        try
+        {
+            using HttpRequestMessage pedido = Pedido("/passport/web/account/info/?aid=1988&app_name=tiktok_web&device_platform=web_pc");
+            pedido.Headers.Add("Cookie", "sessionid=" + sessao);
+            using HttpResponseMessage resposta = await HttpDaSessao.SendAsync(pedido, cancelar).ConfigureAwait(false);
+            if (!resposta.IsSuccessStatusCode)
+                return (SituacaoDaSessao.SemResposta, "", "");
+            using var json = System.Text.Json.JsonDocument.Parse(await resposta.Content.ReadAsStringAsync(cancelar).ConfigureAwait(false));
+            System.Text.Json.JsonElement raiz = json.RootElement;
+            if (raiz.TryGetProperty("data", out var dados) && dados.ValueKind == System.Text.Json.JsonValueKind.Object
+                && dados.TryGetProperty("username", out var nome) && nome.ValueKind == System.Text.Json.JsonValueKind.String
+                && nome.GetString() is { Length: > 0 } login)
+            {
+                string id = dados.TryGetProperty("user_id_str", out var i) && i.ValueKind == System.Text.Json.JsonValueKind.String ? i.GetString()! : "";
+                return (SituacaoDaSessao.Valida, login.ToLowerInvariant(), id);
+            }
+            return (SituacaoDaSessao.Recusada, "", "");
+        }
+        catch (Exception e) when (e is HttpRequestException or System.Text.Json.JsonException
+                                      or TaskCanceledException && !cancelar.IsCancellationRequested)
+        {
+            return (SituacaoDaSessao.SemResposta, "", "");
+        }
+    }
 
     public async Task<string> SalaAsync(string canal, CancellationToken cancelar)
     {
@@ -96,7 +166,10 @@ public sealed class ConexaoComOTikTok : IConexaoComOTikTok
         foreach (string servidor in Servidores)
         {
             var socket = new ClientWebSocket();
-            socket.Options.SetRequestHeader("Cookie", "ttwid=" + ttwid);
+            // Com a conta conectada, a sessão vai junto: o TikTok manda também as mensagens que só mostra para quem
+            // está logado
+            string? sessao = _sessao();
+            socket.Options.SetRequestHeader("Cookie", "ttwid=" + ttwid + (sessao != null ? "; sessionid=" + sessao : ""));
             socket.Options.SetRequestHeader("Origin", "https://www.tiktok.com");
             socket.Options.SetRequestHeader("User-Agent", Navegador);
             try

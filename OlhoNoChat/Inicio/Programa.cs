@@ -35,6 +35,9 @@ public static class Programa
         // Trata as chamadas do instalador (instalar, atualizar, desinstalar) e sai sozinho nesses casos
         VelopackApp.Build().Run();
 
+        // As proteções do processo (a sessão da conta do TikTok fica na memória): antes de qualquer janela ou DLL
+        Sistema.Blindagem.Ligar();
+
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
         // Os estilos próprios valem para todas as janelas (e para o menu do ícone perto do relógio)
         app.Resources.MergedDictionaries.Add(new ResourceDictionary
@@ -68,6 +71,8 @@ public static class Programa
 
             // A cópia que continua aberta termina a conversão do arquivo antigo e passa a gravar
             _arquivo.ComecarAGravar();
+            // Um login do TikTok interrompido (o app fechado no meio) deixou a pasta do navegador: sai agora
+            Janelas.LoginDoTikTok.JanelaLoginDoTikTok.ApagarSobras();
 
             AppDomain.CurrentDomain.UnhandledException += (_, e) => ErroInesperado(e.ExceptionObject);
             app.DispatcherUnhandledException += (_, e) =>
@@ -131,7 +136,14 @@ public static class Programa
         servicos.AddSingleton<EventSubDaTwitch>();
         servicos.AddSingleton(sp => new LeitorDoYouTube(sp.GetRequiredService<ILogger<LeitorDoYouTube>>()));
         servicos.AddSingleton(sp => new LeitorDaKick(sp.GetRequiredService<ILogger<LeitorDaKick>>()));
-        servicos.AddSingleton(sp => new LeitorDoTikTok(sp.GetRequiredService<ILogger<LeitorDoTikTok>>()));
+        servicos.AddSingleton<ContaDoTikTok>();
+        servicos.AddSingleton(sp =>
+        {
+            var conta = sp.GetRequiredService<ContaDoTikTok>();
+            var leitor = new LeitorDoTikTok(sp.GetRequiredService<ILogger<LeitorDoTikTok>>(), conta);
+            leitor.SessaoRecusada += conta.SessaoRecusada;
+            return leitor;
+        });
         servicos.AddSingleton(sp => new ProcuraDeAtualizacoes(sp.GetRequiredService<ILogger<ProcuraDeAtualizacoes>>(),
             () => arquivo.Opcoes, arquivo.Gravar));
         servicos.AddSingleton<IconeDaBandeja>();

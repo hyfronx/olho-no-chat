@@ -115,6 +115,10 @@ public static class ContratoComAPagina
         })({{JsonDeConfiguracoes(opcoes)}}, {{JsonSerializer.Serialize(css)}});
         """;
 
+    /// <summary>Um aviso do app no balão de estado do chat (nunca vai para o overlay da live).</summary>
+    public static string AvisoDoApp(string texto) =>
+        $"window.oncChat && window.oncChat.appNotice && window.oncChat.appNotice({JsonSerializer.Serialize(texto)});";
+
     /// <summary>Uma linha de ação (como /me), na cor dada: os resgates de pontos do canal.</summary>
     public static string AdicionarAcao(string nome, string cor, string texto) =>
         $"window.oncChat && window.oncChat.addAction({JsonSerializer.Serialize(nome)}, {JsonSerializer.Serialize(cor)}, " +

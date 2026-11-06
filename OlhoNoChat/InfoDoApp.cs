@@ -39,6 +39,16 @@ public static class InfoDoApp
     public static string PastaDeDados =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), NomeDaPastaDeDados);
 
+    /// <summary>
+    /// A sessão da conta do TikTok (<see cref="TikTok.CofreDoTikTok"/>): em %LocalAppData%, só neste computador (não vai
+    /// junto quando o Windows sincroniza o perfil), numa pasta fechada só para o usuário, fora da pasta da instalação.
+    /// </summary>
+    public static string PastaDoCofre =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), NomeDaPastaDeDados + "-Cofre");
+
+    /// <summary>O nome da chave do cofre no chip de segurança (TPM).</summary>
+    public const string ChaveDoCofre = NomeDaPastaDeDados + ".SessaoDoTikTok";
+
     /// <summary>Versão instalada pelo Velopack, ou "de desenvolvimento" rodando direto da compilação.</summary>
     public static string Versao => VelopackLocator.Current?.CurrentlyInstalledVersion?.ToString() ?? "de desenvolvimento";
 

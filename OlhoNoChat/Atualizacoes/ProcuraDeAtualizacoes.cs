@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using OlhoNoChat.Configuracoes;
 using OlhoNoChat.Janelas.NovaVersao;
 using Velopack;
+using Velopack.Locators;
 using Velopack.Sources;
 
 namespace OlhoNoChat.Atualizacoes;
@@ -87,7 +88,14 @@ public sealed class ProcuraDeAtualizacoes
 
     private async Task ProcurarAgoraAsync(bool manual, Window? dono)
     {
-        var gerenciador = new UpdateManager(Fonte());
+        // O canal escolhido ("Receber versões beta"). Saindo da beta, a última normal vale mesmo sendo menor (volta para
+        // ela); entrando na beta, só uma beta mais nova que a versão instalada (nunca volta para trás)
+        bool beta = NaBeta(_opcoes());
+        var gerenciador = new UpdateManager(Fonte(beta), new UpdateOptions
+        {
+            ExplicitChannel = beta ? CanalBeta : CanalNormal,
+            AllowVersionDowngrade = !beta && InstaladoNaBeta,
+        });
 
 #if DEBUG
         // Rodando direto da compilação não há o que atualizar: só o visual da janela, com versões de exemplo
@@ -103,6 +111,18 @@ public sealed class ProcuraDeAtualizacoes
         {
             _log.LogInformation("Procurando atualizações...");
             nova = await gerenciador.CheckForUpdatesAsync();
+            // Na beta, uma versão normal mais nova que a última beta também vale (a versão final de uma beta sai só como
+            // normal): quem entrou pelo instalador da beta passa a seguir as normais; quem ligou a opção continua na beta
+            if (beta)
+            {
+                var normal = new UpdateManager(Fonte(false), new UpdateOptions { ExplicitChannel = CanalNormal });
+                UpdateInfo? novaNormal = await normal.CheckForUpdatesAsync();
+                if (novaNormal != null && (nova == null || novaNormal.TargetFullRelease.Version > nova.TargetFullRelease.Version))
+                {
+                    gerenciador = normal;
+                    nova = novaNormal;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -192,12 +212,25 @@ public sealed class ProcuraDeAtualizacoes
             MessageBox.Show(texto, titulo, MessageBoxButton.OK, icone);
     }
 
-    private static IUpdateSource Fonte()
+    /// <summary>O canal das versões normais (o padrão do Velopack no Windows).</summary>
+    public const string CanalNormal = "win";
+
+    /// <summary>O canal das versões beta (as releases marcadas como pré-lançamento no GitHub).</summary>
+    public const string CanalBeta = "beta";
+
+    /// <summary>O app foi instalado (ou atualizado por último) pelo canal beta.</summary>
+    public static bool InstaladoNaBeta => VelopackLocator.IsCurrentSet && VelopackLocator.Current.Channel == CanalBeta;
+
+    /// <summary>Recebe as versões beta: a escolha da aba Geral, ou, sem escolha, o canal com que foi instalado.</summary>
+    public static bool NaBeta(Opcoes opcoes) => opcoes.VersoesBeta ?? InstaladoNaBeta;
+
+    // Na beta, as releases de pré-lançamento entram na procura
+    private static IUpdateSource Fonte(bool beta)
     {
 #if DEBUG
         return new SimpleFileSource(new DirectoryInfo(InfoDoApp.PastaDoTesteDeAtualizacao));
 #else
-        return new GithubSource(InfoDoApp.EnderecoDoRepositorio, null, false);
+        return new GithubSource(InfoDoApp.EnderecoDoRepositorio, null, beta);
 #endif
     }
 }

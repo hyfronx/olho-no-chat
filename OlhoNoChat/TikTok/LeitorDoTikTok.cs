@@ -63,8 +63,9 @@ public sealed class LeitorDoTikTok : IDisposable
     private string? _salaDosNomes;
     private readonly JuntadorDePresentes _presentes;
 
-    public LeitorDoTikTok(ILogger<LeitorDoTikTok> log)
-        : this(log, new ConexaoComOTikTok(), EsperaPorLive, EsperaSemConexao, ConexaoComOTikTok.IntervaloDasBatidas, TempoSemNada,
+    /// <param name="conta">A conta do TikTok conectada (aba TikTok): com ela, lê como quem está logado.</param>
+    public LeitorDoTikTok(ILogger<LeitorDoTikTok> log, ContaDoTikTok? conta = null)
+        : this(log, new ConexaoComOTikTok(conta == null ? null : () => conta.Sessao), EsperaPorLive, EsperaSemConexao, ConexaoComOTikTok.IntervaloDasBatidas, TempoSemNada,
             TimeSpan.FromSeconds(1))
     {
     }
@@ -95,6 +96,9 @@ public sealed class LeitorDoTikTok : IDisposable
 
     /// <summary>Um presente (o combo inteiro), alguém que seguiu, compartilhou ou virou Superfã (em outra thread).</summary>
     public event Action<AvisoDoTikTok>? AvisoRecebido;
+
+    /// <summary>O TikTok não aceita mais a sessão da conta conectada (em outra thread): a leitura segue sem ela.</summary>
+    public event Action? SessaoRecusada;
 
     /// <summary>O nome do canal (sem o @), ou null.</summary>
     public string? Canal { get; private set; }
@@ -135,6 +139,24 @@ public sealed class LeitorDoTikTok : IDisposable
             Canal = null;
         }
         Mudar(EstadoDoTikTok.Desligado);
+    }
+
+    /// <summary>
+    /// Conecta de novo ao mesmo canal (a conta do TikTok conectou ou desconectou): as mensagens na tela continuam, e
+    /// as que chegarem nesse instante se perdem.
+    /// </summary>
+    public void Recomecar()
+    {
+        string? canal;
+        lock (_trava)
+        {
+            canal = Canal;
+            if (canal == null || Estado is EstadoDoTikTok.Desligado or EstadoDoTikTok.CanalNaoExiste)
+                return;
+            Parar();
+            Canal = null;
+        }
+        Ligar(canal);
     }
 
     public void Dispose() => Desligar();
@@ -194,6 +216,13 @@ public sealed class LeitorDoTikTok : IDisposable
             {
                 _log.LogInformation("TikTok: @{Canal} não está ao vivo.", canal);
                 return (EstadoDoTikTok.EsperandoALive, false);
+            }
+            // Com a conta conectada, confere antes se o TikTok ainda aceita a sessão (uma recusada viraria leitura sem
+            // conta sem ninguém saber): recusada, avisa e esta conexão já vai sem ela
+            if (_tikTok.ComSessao && await _tikTok.ConferirSessaoAsync(cancelar).ConfigureAwait(false) == SituacaoDaSessao.Recusada)
+            {
+                _log.LogInformation("TikTok: a sessão da conta conectada foi recusada; lendo sem conta.");
+                SessaoRecusada?.Invoke();
             }
             socket = await _tikTok.AbrirAsync(sala.IdDaSala, cancelar).ConfigureAwait(false);
         }

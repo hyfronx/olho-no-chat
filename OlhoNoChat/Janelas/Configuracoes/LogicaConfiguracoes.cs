@@ -4,7 +4,7 @@ using OlhoNoChat.Configuracoes;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A janela Configurações sem a tela: as sete abas, o tipo de chat escolhido (que as outras abas seguem antes de
+/// A janela Configurações sem a tela: as oito abas, o tipo de chat escolhido (que as outras abas seguem antes de
 /// salvar), "Salvar" (grava sem fechar), "Restaurar tudo para o padrão" e a conferência de mudanças. Nada vai para as
 /// opções antes de <see cref="Salvar"/>; conectar e desconectar a conta são na hora (aba Twitch).
 /// </summary>
@@ -13,8 +13,8 @@ public sealed class LogicaConfiguracoes
     private readonly ArquivoDeConfiguracoes _arquivo;
     private Dictionary<string, string> _estadoSalvo;
 
-    public LogicaConfiguracoes(ArquivoDeConfiguracoes arquivo, LogicaTwitch twitch, Action<string?, float, int>? tocarPrevia = null,
-        AcoesDoOverlay? overlay = null)
+    public LogicaConfiguracoes(ArquivoDeConfiguracoes arquivo, LogicaTwitch twitch, LogicaTikTok tikTok,
+        Action<string?, float, int>? tocarPrevia = null, AcoesDoOverlay? overlay = null)
     {
         _arquivo = arquivo;
         Chat = new LogicaChat(() => _arquivo.Opcoes, _arquivo.Gravar);
@@ -23,6 +23,7 @@ public sealed class LogicaConfiguracoes
         Geral = new LogicaGeral();
         Overlay = new LogicaOverlay(overlay);
         Twitch = twitch;
+        TikTok = tikTok;
         Sobre = new LogicaSobre();
 
         Chat.PropertyChanged += ChatMudou;
@@ -47,9 +48,10 @@ public sealed class LogicaConfiguracoes
     public LogicaGeral Geral { get; }
     public LogicaOverlay Overlay { get; }
     public LogicaTwitch Twitch { get; }
+    public LogicaTikTok TikTok { get; }
     public LogicaSobre Sobre { get; }
 
-    private IEnumerable<LogicaDaPagina> Paginas => [Chat, Aparencia, Som, Geral, Overlay, Twitch];
+    private IEnumerable<LogicaDaPagina> Paginas => [Chat, Aparencia, Som, Geral, Overlay, Twitch, TikTok];
 
     // Trocar o tipo na lista muda na hora o que as abas mostram; os prefixos dos comandos aparecem na dica do overlay
     private void ChatMudou(object? sender, PropertyChangedEventArgs e)
@@ -111,6 +113,9 @@ public sealed class LogicaConfiguracoes
         Twitch.Salvou(opcoes);
         _estadoSalvo = Estado();
         Salvou?.Invoke();
+        // Trocou entre as versões normais e as beta: procura já a versão do canal escolhido
+        if (Geral.CanalMudouAoGravar)
+            ProcurarAtualizacoesPedido?.Invoke();
     }
 
     /// <summary>
