@@ -69,13 +69,13 @@
                 </StackPanel>
             </Border>
 
-            <!-- Padrão e Chat oficial da Twitch (que imita o Padrão). Cor, contorno e fonte ficam desbotados no chat oficial
-                 com o CSS próprio (não valem); o horário vale sempre -->
+            <!-- Padrão e Chat oficial da Twitch (que imita o Padrão). Cor, contorno e fonte não valem no chat oficial com o
+                 CSS próprio (ficam editáveis, como todas as opções); o horário vale sempre -->
             <StackPanel x:Name="painelTextoDasMensagens" Visibility="{Binding ComTextoDasMensagens, Converter={StaticResource VisivelSe}}">
                 <TextBlock Text="Texto das mensagens" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
                     <StackPanel>
-                        <Grid x:Name="linhaCorDoTexto" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
+                        <Grid x:Name="linhaCorDoTexto">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -91,7 +91,7 @@
                                       SelectedValuePath="Valor" SelectedValue="{Binding CorDoTexto}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid x:Name="linhaContorno" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
+                        <Grid x:Name="linhaContorno">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -107,7 +107,7 @@
                                       SelectedValuePath="Valor" SelectedValue="{Binding ContornoDasLetras}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid x:Name="linhaFonte" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding CorContornoEFonteValem}">
+                        <Grid x:Name="linhaFonte">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />

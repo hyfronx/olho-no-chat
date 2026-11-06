@@ -63,9 +63,8 @@
                                          AutomationProperties.Name="Chat Multiplataforma" />
                     </Grid>
                     <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                    <!-- Desbotada com o Chat Multiplataforma desligado -->
-                    <Grid x:Name="linhaHistoricoDoYouTube" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}"
-                          IsEnabled="{Binding ChatMultiplataforma}">
+                    <!-- Vale só com o Chat Multiplataforma ligado -->
+                    <Grid x:Name="linhaHistoricoDoYouTube" Margin="36,0,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -101,10 +100,9 @@
                                              AutomationProperties.Name="Apagar mensagens antigas" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <!-- Desbotada com o interruptor desligado. O deslizante só dá tempos que valem (os da lista e o salvo);
+                        <!-- Vale só com o interruptor ligado. O deslizante só dá tempos que valem (os da lista e o salvo);
                              o máximo vem antes da posição, para a posição não ser cortada pelo máximo velho -->
-                        <Grid x:Name="linhaTempoParaApagar" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}"
-                              IsEnabled="{Binding ApagarMensagensAntigas}">
+                        <Grid x:Name="linhaTempoParaApagar" Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -140,8 +138,8 @@
                                              AutomationProperties.Name="Continuar no ritmo de leitura" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <!-- Desbotada com a velocidade automática -->
-                        <Grid x:Name="linhaVelocidadeFixa" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding VelocidadeFixa}">
+                        <!-- Não vale com a velocidade automática -->
+                        <Grid x:Name="linhaVelocidadeFixa" Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -215,8 +213,7 @@
                                              AutomationProperties.Name="Esconder bots e comandos" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <!-- Os prefixos valem também para o "Esconder comandos" do overlay, ligado ou não o de cima: a caixa
-                             nunca fica desbotada -->
+                        <!-- Os prefixos valem também para o "Esconder comandos" do overlay, ligado ou não o de cima -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -266,8 +263,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Os avisos de cada plataforma, cada tipo com o seu interruptor; os do YouTube e do TikTok desbotados sem o
-                     Chat Multiplataforma -->
+                <!-- Os avisos de cada plataforma, cada tipo com o seu interruptor; os do YouTube e do TikTok só valem com o
+                     Chat Multiplataforma (a dica diz) -->
                 <TextBlock Text="Avisos" Style="{DynamicResource TituloDaSecao}" />
                 <TextBlock Text="Escolha quais avisos aparecem no chat. Os do YouTube e do TikTok só aparecem com o Chat Multiplataforma ligado."
                            Style="{DynamicResource Dica}" Margin="2,0,0,8" />
@@ -288,7 +285,7 @@
                                              AutomationProperties.Name="Avisos da Twitch" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -304,7 +301,7 @@
                         </Grid>
                         <!-- Os quatro do TikTok juntos -->
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -319,7 +316,7 @@
                                              AutomationProperties.Name="Presentes do TikTok" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -334,7 +331,7 @@
                                              AutomationProperties.Name="Seguidores do TikTok" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -349,7 +346,7 @@
                                              AutomationProperties.Name="Compartilhamentos do TikTok" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ChatMultiplataforma}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -428,8 +425,8 @@
                             <ctl:Interruptor x:Name="interruptorBetterTtv" IsChecked="{Binding BetterTtv}" AutomationProperties.Name="BetterTTV" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <!-- O menu e o 7TV são opções da BetterTTV (ChatOficialDaTwitch): desbotadas com ela desligada -->
-                        <Grid x:Name="linhaMenuDoBetterTtv" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding BetterTtv}">
+                        <!-- O menu e o 7TV são opções da BetterTTV (ChatOficialDaTwitch): só valem com ela ligada -->
+                        <Grid x:Name="linhaMenuDoBetterTtv" Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -441,7 +438,7 @@
                                              AutomationProperties.Name="Menu de emotes do BetterTTV" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid x:Name="linha7tv" Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding BetterTtv}">
+                        <Grid x:Name="linha7tv" Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

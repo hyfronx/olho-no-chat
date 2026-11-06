@@ -81,31 +81,4 @@ public sealed class LogicaAparenciaTestes
     }
 
     // ----- Cor do texto, contorno e fonte -----
-
-    [Theory]
-    [InlineData(TipoDeChat.Padrao, true, true)]
-    [InlineData(TipoDeChat.Padrao, false, true)]
-    [InlineData(TipoDeChat.ChatOficial, true, true)]
-    [InlineData(TipoDeChat.ChatOficial, false, false)]
-    public void CorContornoEFonte_SoNaoValemNoChatOficialComOCssProprio(TipoDeChat tipo, bool aparenciaPadrao, bool valem)
-    {
-        var aparencia = new LogicaAparencia { TipoNaTela = tipo, AparenciaPadraoNoChatOficial = aparenciaPadrao };
-
-        Assert.Equal(valem, aparencia.CorContornoEFonteValem);
-    }
-
-    [Fact]
-    public void CorContornoEFonte_AvisamAoTrocarOTipoEAAparenciaPadrao()
-    {
-        var aparencia = new LogicaAparencia { TipoNaTela = TipoDeChat.Padrao, AparenciaPadraoNoChatOficial = false };
-        var mudancas = new List<string?>();
-        aparencia.PropertyChanged += (_, e) => mudancas.Add(e.PropertyName);
-
-        aparencia.TipoNaTela = TipoDeChat.ChatOficial;
-        Assert.False(aparencia.CorContornoEFonteValem);
-        aparencia.AparenciaPadraoNoChatOficial = true;
-        Assert.True(aparencia.CorContornoEFonteValem);
-
-        Assert.Equal(2, mudancas.Count(nome => nome == nameof(LogicaAparencia.CorContornoEFonteValem)));
-    }
 }

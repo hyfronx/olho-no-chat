@@ -71,7 +71,7 @@ public sealed partial class LogicaFiltros : ObservableObject
     [ObservableProperty]
     private bool _destacarVips;
 
-    /// <summary>No modo "Nada" as linhas de moderadores e VIPs ficam desbotadas e desativadas.</summary>
+    /// <summary>Os moderadores e VIPs valem fora do modo "Nada" (no "Nada" a tela avisa que não valem).</summary>
     public bool ModeradoresEVipsAtivos => Modo != ModoDaLista.Nada;
 
     public string RotuloModeradores => Modo == ModoDaLista.SoALista ? "Mostrar também todos os moderadores" : "Destacar todos os moderadores";

@@ -137,11 +137,11 @@
                 </StackPanel>
             </Border>
 
-            <!-- Moderadores e VIPs: desbotados no "Nada"; as cores somem no "Mostrar só" -->
+            <!-- Moderadores e VIPs: não valem no "Nada" (o aviso abaixo diz); as cores somem no "Mostrar só" -->
             <TextBlock Text="Moderadores e VIPs" Style="{DynamicResource TituloDaSecao}" />
             <Border x:Name="cartaoModeradoresEVips" Style="{DynamicResource Cartao}">
                 <StackPanel>
-                    <Grid x:Name="linhaModeradores" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ModeradoresEVipsAtivos}">
+                    <Grid x:Name="linhaModeradores">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -166,7 +166,7 @@
                                          AutomationProperties.Name="Todos os moderadores" />
                     </Grid>
                     <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                    <Grid x:Name="linhaVips" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ModeradoresEVipsAtivos}">
+                    <Grid x:Name="linhaVips">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />

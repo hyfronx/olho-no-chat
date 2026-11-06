@@ -209,11 +209,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     // --- Como as mensagens aparecem ---------------------------------------------------------------------------
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SomemNaLista))]
     private bool _overlaySome;
-
-    /// <summary>O tempo de sumir só vale com "As mensagens somem" e uma embaixo da outra (a faixa tira sozinha).</summary>
-    public bool SomemNaLista => OverlaySome && EmLista;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDoSumir))]
@@ -229,7 +225,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
 
     /// <summary>Verdadeiro: as que couberem na fonte do OBS; falso: no máximo <see cref="Mensagens"/>. É o que fica gravado.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ComLimiteDeMensagens), nameof(Quantidade))]
+    [NotifyPropertyChangedFor(nameof(Quantidade))]
     private bool _preencherArea;
 
     /// <summary>"Quantas mensagens" na tela: "As que couberem" ou "Até um número" (o <see cref="PreencherArea"/>).</summary>
@@ -243,9 +239,6 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
                 PreencherArea = value == QuantasCouberem;
         }
     }
-
-    /// <summary>O número de mensagens só vale uma embaixo da outra e com "Até um número".</summary>
-    public bool ComLimiteDeMensagens => EmLista && !PreencherArea;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDasMensagens))]
@@ -269,15 +262,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     private string _contorno = "theme";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ComCartao))]
     private string _fundo = "none";
-
-    /// <summary>O escuro vale para o cartão e para o balão.</summary>
-    public bool ComCartao => Fundo is "card" or "bubble";
 
     /// <summary>"Uma embaixo da outra" ou "Faixa horizontal" (passando da direita para a esquerda).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EmLista), nameof(EmFaixa), nameof(SomemNaLista), nameof(ComLimiteDeMensagens))]
+    [NotifyPropertyChangedFor(nameof(EmLista), nameof(EmFaixa))]
     private string _disposicao = "list";
 
     /// <summary>Quantas, somem, onde entram, alinhamento e animação só valem (e só aparecem) uma embaixo da outra.</summary>

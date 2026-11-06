@@ -76,7 +76,6 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     // Aparência (CSS) do chat oficial: com a aparência padrão, o editor mostra o CSS do app só para ler
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDoEditorDoChatOficial))]
-    [NotifyPropertyChangedFor(nameof(CorContornoEFonteValem))]
     private bool _aparenciaPadraoNoChatOficial;
 
     /// <summary>O CSS próprio do chat oficial (o que é gravado com a aparência padrão desligada).</summary>
@@ -96,14 +95,6 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
     /// o chat recarrega e as mensagens da tela somem.
     /// </summary>
     public bool TemaRecarregaOChat => Tema != _temaSalvo;
-
-    /// <summary>
-    /// "Cor do texto", "Contorno das letras" e "Fonte" valem no Padrão (também por cima do CSS do tema "Nenhum") e, no
-    /// chat oficial, só com a aparência padrão: com o CSS próprio ficam desbotadas. O horário vale sempre.
-    /// </summary>
-    public bool CorContornoEFonteValem => !ComChatOficial || AparenciaPadraoNoChatOficial;
-
-    protected override void TipoMudou() => OnPropertyChanged(nameof(CorContornoEFonteValem));
 
     /// <summary>
     /// O editor do chat oficial: o CSS padrão do app (somente leitura) ou o CSS próprio. Desligar e ligar de novo a

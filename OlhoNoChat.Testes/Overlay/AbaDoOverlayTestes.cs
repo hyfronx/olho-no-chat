@@ -29,14 +29,12 @@ public sealed class AbaDoOverlayTestes
         var aba = new LogicaOverlay();
         aba.Carregar(new Opcoes());
         Assert.Equal(LogicaOverlay.Quantidades[0].Valor, aba.Quantidade);
-        Assert.False(aba.ComLimiteDeMensagens);
 
         aba.Quantidade = LogicaOverlay.Quantidades[1].Valor;
         var gravadas = new Opcoes();
         aba.Gravar(gravadas);
 
         Assert.False(aba.PreencherArea);
-        Assert.True(aba.ComLimiteDeMensagens);
         Assert.False(gravadas.PreencherAreaNoOverlay);
     }
 
@@ -74,7 +72,6 @@ public sealed class AbaDoOverlayTestes
         aba.PreencherArea = false;
 
         Assert.Contains(nameof(LogicaOverlay.Quantidade), avisadas);
-        Assert.Contains(nameof(LogicaOverlay.ComLimiteDeMensagens), avisadas);
     }
 
     [Fact]

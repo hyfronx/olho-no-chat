@@ -199,7 +199,7 @@
                                       SelectedValuePath="Valor" SelectedValue="{Binding Disposicao}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding EmFaixa}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -237,7 +237,7 @@
                                           SelectedValuePath="Valor" SelectedValue="{Binding Quantidade}" />
                             </Grid>
                             <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                            <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComLimiteDeMensagens}">
+                            <Grid Margin="36,0,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -265,7 +265,7 @@
                                                  AutomationProperties.Name="As mensagens somem" />
                             </Grid>
                             <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                            <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding SomemNaLista}">
+                            <Grid Margin="36,0,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -429,7 +429,7 @@
                                       SelectedValuePath="Valor" SelectedValue="{Binding Fundo}" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComCartao}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -483,7 +483,7 @@
                             <ctl:Interruptor x:Name="interruptorPrimeiraVez" Grid.Column="2" IsChecked="{Binding PrimeiraVez}" AutomationProperties.Name="Selo de primeira vez na live" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding MultiplataformaNaTela}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -580,7 +580,7 @@
                             <ctl:Interruptor x:Name="interruptorTamanho" Grid.Column="2" IsChecked="{Binding LimitarTamanho}" AutomationProperties.Name="Cortar mensagens longas" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding LimitarTamanho}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -607,7 +607,7 @@
                             <ctl:Interruptor x:Name="interruptorEmotes" Grid.Column="2" IsChecked="{Binding LimitarEmotes}" AutomationProperties.Name="Limitar emotes por mensagem" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding LimitarEmotes}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -685,7 +685,7 @@
                             <ctl:Interruptor x:Name="interruptorResgates" Grid.Column="1" IsChecked="{Binding Resgates}" AutomationProperties.Name="Resgates de pontos do canal" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding MultiplataformaNaTela}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -696,7 +696,7 @@
                             <ctl:Interruptor x:Name="interruptorSuperChats" Grid.Column="1" IsChecked="{Binding SuperChats}" AutomationProperties.Name="Super Chats do YouTube" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding MultiplataformaNaTela}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -707,7 +707,7 @@
                             <ctl:Interruptor x:Name="interruptorMembros" Grid.Column="1" IsChecked="{Binding MembrosDoYouTube}" AutomationProperties.Name="Membros do YouTube" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding MultiplataformaNaTela}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -718,7 +718,7 @@
                             <ctl:Interruptor x:Name="interruptorPresentes" Grid.Column="1" IsChecked="{Binding PresentesDoTikTok}" AutomationProperties.Name="Presentes do TikTok" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                        <Grid Margin="36,0,0,0" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding MultiplataformaNaTela}">
+                        <Grid Margin="36,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

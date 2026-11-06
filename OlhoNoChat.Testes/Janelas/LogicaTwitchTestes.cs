@@ -87,23 +87,4 @@ public sealed class LogicaTwitchTestes
     }
 
     // ----- Fechar a caixa depois de enviar -----
-
-    [Fact]
-    public void FecharDepoisDeEnviar_SoValeComAtalhoSalvo()
-    {
-        LogicaTwitch aba = Aba(new ContaSalvaNaMemoria());
-        var avisos = new List<string?>();
-        aba.PropertyChanged += (_, e) => avisos.Add(e.PropertyName);
-
-        aba.Carregar(new Opcoes { AtalhoEscrever = null });
-        Assert.False(aba.ComAtalhoDeEscrever);
-
-        avisos.Clear();
-        aba.Salvou(new Opcoes { AtalhoEscrever = new Atalho(Key.F11, ModifierKeys.Control | ModifierKeys.Alt) });
-        Assert.True(aba.ComAtalhoDeEscrever);
-        Assert.Contains(nameof(LogicaTwitch.ComAtalhoDeEscrever), avisos);
-
-        aba.Salvou(new Opcoes { AtalhoEscrever = new Atalho(Key.None, ModifierKeys.None) });
-        Assert.False(aba.ComAtalhoDeEscrever);
-    }
 }

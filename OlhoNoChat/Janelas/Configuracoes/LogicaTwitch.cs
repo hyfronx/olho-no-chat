@@ -107,9 +107,6 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
 
     public string DicaDeFecharDepoisDeEnviar => TextoDaDicaDeFechar(_atalhoEscreverSalvo);
 
-    /// <summary>Há atalho salvo para "Escrever no chat da Twitch": sem ele, "Fechar a caixa depois de enviar" não vale.</summary>
-    public bool ComAtalhoDeEscrever => Atalho.Existe(_atalhoEscreverSalvo);
-
     /// <summary>Por que a Twitch recusou os resgates ("" = sem problema).</summary>
     public string ProblemaDosResgates => _resgates.Problema;
 
@@ -149,7 +146,6 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         OnPropertyChanged(nameof(DicaDoAutoMod));
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
-        OnPropertyChanged(nameof(ComAtalhoDeEscrever));
 
         MostrarConta();
         // A foto e uma conferência nova do acesso
@@ -173,7 +169,6 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
-        OnPropertyChanged(nameof(ComAtalhoDeEscrever));
         OnPropertyChanged(nameof(DicaDoAutoMod));
     }
 

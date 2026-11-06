@@ -803,7 +803,6 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.Equal(TipoDeChat.Padrao, c.Chat.Tipo);
         Assert.False(c.Chat.PodeEscolherOTipo);
         Assert.True(c.Twitch.MultiplataformaNaTela);
-        Assert.False(c.Twitch.SemMultiplataforma);
         Assert.True(c.Som.ComPadrao);
         Assert.True(c.TemMudancas);
     }

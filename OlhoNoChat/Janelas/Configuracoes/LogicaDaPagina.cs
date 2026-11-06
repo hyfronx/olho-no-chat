@@ -25,7 +25,6 @@ public abstract class LogicaDaPagina : ObservableObject
             OnPropertyChanged(nameof(ComChatOficial));
             OnPropertyChanged(nameof(ComEndereco));
             OnPropertyChanged(nameof(ComTextoDasMensagens));
-            TipoMudou();
         }
     }
 
@@ -35,15 +34,8 @@ public abstract class LogicaDaPagina : ObservableObject
     public bool MultiplataformaNaTela
     {
         get => _multiplataformaNaTela;
-        set
-        {
-            if (SetProperty(ref _multiplataformaNaTela, value))
-                OnPropertyChanged(nameof(SemMultiplataforma));
-        }
+        set => SetProperty(ref _multiplataformaNaTela, value);
     }
-
-    /// <summary>Os recursos só da Twitch podem ser usados (desligados no Chat Multiplataforma).</summary>
-    public bool SemMultiplataforma => !MultiplataformaNaTela;
 
     public bool ComPadrao => TipoNaTela == TipoDeChat.Padrao;
     public bool ComChatOficial => TipoNaTela == TipoDeChat.ChatOficial;
@@ -63,8 +55,4 @@ public abstract class LogicaDaPagina : ObservableObject
     /// antes dá o mesmo estado.
     /// </summary>
     public abstract void Estado(IDictionary<string, string> estado);
-
-    protected virtual void TipoMudou()
-    {
-    }
 }

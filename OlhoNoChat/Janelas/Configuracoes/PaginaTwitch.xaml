@@ -72,7 +72,7 @@
                 </Grid>
             </Border>
 
-            <!-- Chat Multiplataforma ligado na aba Chat: o que vem abaixo fica desligado (a conta continua conectada) -->
+            <!-- Chat Multiplataforma ligado na aba Chat: o que vem abaixo não vale, mas continua editável (a conta continua conectada) -->
             <Border x:Name="avisoMultiplataforma" Style="{DynamicResource CartaoDeAviso}" Margin="0,10,0,0"
                     Visibility="{Binding MultiplataformaNaTela, Converter={StaticResource VisivelSe}}">
                 <Grid>
@@ -82,15 +82,15 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
                     <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="Escrever no chat e mostrar os resgates de pontos ficam desligados enquanto o Chat Multiplataforma estiver ligado (aba Chat). A conta continua conectada e o AutoMod continua funcionando." />
+                               Text="Escrever no chat e mostrar os resgates de pontos não funcionam enquanto o Chat Multiplataforma estiver ligado (aba Chat), mas dá para deixar as opções prontas. A conta continua conectada e o AutoMod continua funcionando." />
                 </Grid>
             </Border>
 
-            <StackPanel x:Name="recursosDaTwitch" IsEnabled="{Binding SemMultiplataforma}">
+            <StackPanel x:Name="recursosDaTwitch">
                 <TextBlock Text="Escrever no chat" Style="{DynamicResource TituloDaSecao}" />
                 <Border Style="{DynamicResource Cartao}">
-                    <!-- Desbotada fora do Chat oficial da Twitch: só nele dá para usar a caixa da Twitch -->
-                    <Grid x:Name="linhaCaixaDeDigitar" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComChatOficial}">
+                    <!-- A caixa da Twitch só existe no Chat oficial da Twitch (a dica diz) -->
+                    <Grid x:Name="linhaCaixaDeDigitar">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -101,7 +101,7 @@
                             <TextBlock Text="Caixa de digitar" Style="{DynamicResource Rotulo}" />
                             <TextBlock x:Name="dicaCaixaDeDigitar" Text="{Binding DicaDaCaixa}" Style="{DynamicResource Dica}" />
                             <TextBlock x:Name="avisoCaixaSoNoChatOficial" Style="{DynamicResource Dica}" Margin="0,6,0,0"
-                                       Text="Só dá para escolher com o tipo de chat &quot;Chat oficial da Twitch&quot; (aba Chat)."
+                                       Text="A caixa da Twitch só funciona com o tipo de chat &quot;Chat oficial da Twitch&quot; (aba Chat)."
                                        Visibility="{Binding ComChatOficial, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
                         </StackPanel>
                         <ComboBox x:Name="listaCaixaDeDigitar" Grid.Column="2" Style="{DynamicResource ListaDaLinha}"
@@ -112,8 +112,8 @@
                     </Grid>
                 </Border>
                 <Border Style="{DynamicResource Cartao}">
-                    <!-- Desbotada sem atalho salvo para "Escrever no chat da Twitch" (a dica diz onde escolher um) -->
-                    <Grid x:Name="linhaFecharDepoisDeEnviar" Style="{DynamicResource LinhaDependente}" IsEnabled="{Binding ComAtalhoDeEscrever}">
+                    <!-- Vale só com um atalho salvo para "Escrever no chat da Twitch" (a dica diz onde escolher um) -->
+                    <Grid x:Name="linhaFecharDepoisDeEnviar">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />

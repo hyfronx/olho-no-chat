@@ -47,20 +47,6 @@ public sealed class OpcoesDoOverlayTestes
     }
 
     [Fact]
-    public void Aba_MensagensNaTelaSoValeSemPreencherENaLista()
-    {
-        var aba = new LogicaOverlay();
-        aba.Carregar(new Opcoes());
-
-        Assert.True(aba.PreencherArea);
-        Assert.False(aba.ComLimiteDeMensagens);
-        aba.PreencherArea = false;
-        Assert.True(aba.ComLimiteDeMensagens);
-        aba.Disposicao = "ticker";
-        Assert.False(aba.ComLimiteDeMensagens);
-    }
-
-    [Fact]
     public void Corrigir_NumerosForaDosLimitesVoltamParaDentro()
     {
         Opcoes o = Corrigidas("""
@@ -110,14 +96,11 @@ public sealed class OpcoesDoOverlayTestes
     }
 
     [Fact]
-    public void Aba_EscuroValeParaCartaoEBalao_EFaixaEscondeAsOpcoesDaLista()
+    public void Aba_FaixaEscondeAsOpcoesDaLista()
     {
         var aba = new LogicaOverlay();
         aba.Carregar(new Opcoes());
 
-        Assert.False(aba.ComCartao);
-        aba.Fundo = "bubble";
-        Assert.True(aba.ComCartao);
         Assert.True(aba.EmLista);
         aba.Disposicao = "ticker";
         Assert.False(aba.EmLista);

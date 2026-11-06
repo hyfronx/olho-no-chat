@@ -75,15 +75,6 @@
         <Setter Property="Margin" Value="0,0,16,0" />
     </Style>
 
-    <!-- Linhas que dependem de outra opção ficam desbotadas enquanto ela está desligada -->
-    <Style x:Key="LinhaDependente" TargetType="FrameworkElement">
-        <Style.Triggers>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.45" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
     <!-- ===== Páginas e cartões ===== -->
 
     <Style x:Key="PainelDaPagina" TargetType="StackPanel">
