@@ -188,7 +188,8 @@ public class LeitorDaKickTestes
         leitor.Ligar("seucanal");
 
         await Esperar(() => _estados.Contains(EstadoDaKick.SemConexao));
-        await Esperar(() => _kick.Canais.Count == 2);
+        // Pelo menos 2: o leitor continua tentando a cada 50 ms, e numa máquina lenta a conferência pode chegar depois
+        await Esperar(() => _kick.Canais.Count >= 2);
         Assert.True(recusado.Fechado);
     }
 
@@ -200,7 +201,8 @@ public class LeitorDaKickTestes
         leitor.Ligar("seucanal");
 
         await Esperar(() => _estados.Contains(EstadoDaKick.SemConexao));
-        await Esperar(() => _kick.Canais.Count == 2);
+        // Pelo menos 2: o leitor continua tentando a cada 50 ms, e numa máquina lenta a conferência pode chegar depois
+        await Esperar(() => _kick.Canais.Count >= 2);
     }
 
     [Fact]
@@ -234,7 +236,10 @@ public class LeitorDaKickTestes
 
         leitor.Ligar("outro");
         antigo.Chega(Mensagem("m1", "Viewer1", "do antigo"));
-        await Esperar(() => _kick.Canais.Count == 2);
+        // Pelo menos 2: sem socket para o "outro", o leitor continua tentando a cada 50 ms (numa máquina lenta a
+        // conferência pode chegar depois da 2ª tentativa)
+        await Esperar(() => _kick.Canais.Count >= 2);
+        Assert.Equal("outro", _kick.Canais.ElementAt(1));
         await Task.Delay(Espera);
 
         Assert.Empty(_eventos);
