@@ -55,6 +55,12 @@ public sealed class Opcoes
     public const int VelocidadeDaFaixaMinima = 30;
     public const int VelocidadeDaFaixaMaxima = 400;
     public const int VelocidadeDaFaixaPadrao = 120;
+    public const int InclinacaoNoOverlayMinima = 5;
+    public const int InclinacaoNoOverlayMaxima = 60;
+    public const int InclinacaoNoOverlayPadrao = 30;
+    public const int ConeDoFunilMinimo = 1;
+    public const int ConeDoFunilMaximo = 10;
+    public const int ConeDoFunilPadrao = 5;
 
     public int Versao { get; set; } = VersaoAtual;
 
@@ -206,6 +212,29 @@ public sealed class Opcoes
     public string DirecaoDoOverlay { get; set; } = "bottom";
     /// <summary>"left" ou "right".</summary>
     public string AlinhamentoDoOverlay { get; set; } = "left";
+    /// <summary>
+    /// "Saída suave" (aba Overlay > Visual, pedido do usuário em 2026-11-06; ligada por padrão): na borda por onde as
+    /// mensagens antigas saem, elas somem num degradê em vez de ficarem cortadas.
+    /// </summary>
+    public bool SaidaSuaveNoOverlay { get; set; } = true;
+    /// <summary>
+    /// "Perspectiva" (aba Overlay > Visual, pedido do usuário em 2026-11-06): "none" (desligada, o padrão), "left" (o lado
+    /// esquerdo mais para dentro da tela) ou "right" (o direito).
+    /// </summary>
+    public string PerspectivaNoOverlay { get; set; } = "none";
+    /// <summary>
+    /// O formato da perspectiva: "funnel" (funil, o padrão: as mensagens ficam no meio da fonte do OBS e se fecham por cima
+    /// e por baixo, o que o usuário queria desde o começo) ou "tilt" (inclinada: ficam embaixo e sobem em direção ao lado
+    /// de dentro).
+    /// </summary>
+    public string FormatoDaPerspectivaNoOverlay { get; set; } = "funnel";
+    /// <summary>
+    /// "Cone" do funil (pedido do usuário em 2026-11-07, com desenho): o quanto as linhas de cima e de baixo se fecham para o
+    /// lado de dentro, de 1 (quase retas) a 10 (bem fechadas). Muda a profundidade da perspectiva, não o giro.
+    /// </summary>
+    public int ConeDoFunilNoOverlay { get; set; } = ConeDoFunilPadrao;
+    /// <summary>O quanto as mensagens giram com a perspectiva, em graus.</summary>
+    public int InclinacaoNoOverlay { get; set; } = InclinacaoNoOverlayPadrao;
     /// <summary>Como as mensagens entram e saem (<see cref="Overlay.ContratoDoOverlay.Animacoes"/>; "none" = sem animação).</summary>
     public string AnimacaoDoOverlay { get; set; } = "pop"; // "Pular", escolha do usuário (2026-11-06)
     public bool SelosNoOverlay { get; set; } = true;
@@ -363,6 +392,10 @@ public sealed class Opcoes
         VelocidadeDaFaixaNoOverlay = Math.Clamp(VelocidadeDaFaixaNoOverlay, VelocidadeDaFaixaMinima, VelocidadeDaFaixaMaxima);
         DirecaoDoOverlay = UmDe(DirecaoDoOverlay, ["bottom", "top"], padrao.DirecaoDoOverlay);
         AlinhamentoDoOverlay = UmDe(AlinhamentoDoOverlay, ["left", "right"], padrao.AlinhamentoDoOverlay);
+        PerspectivaNoOverlay = UmDe(PerspectivaNoOverlay, ["none", "left", "right"], padrao.PerspectivaNoOverlay);
+        FormatoDaPerspectivaNoOverlay = UmDe(FormatoDaPerspectivaNoOverlay, ["funnel", "tilt"], padrao.FormatoDaPerspectivaNoOverlay);
+        InclinacaoNoOverlay = Math.Clamp(InclinacaoNoOverlay, InclinacaoNoOverlayMinima, InclinacaoNoOverlayMaxima);
+        ConeDoFunilNoOverlay = Math.Clamp(ConeDoFunilNoOverlay, ConeDoFunilMinimo, ConeDoFunilMaximo);
         AnimacaoDoOverlay = UmDe(AnimacaoDoOverlay, Overlay.ContratoDoOverlay.Animacoes, padrao.AnimacaoDoOverlay);
         LinksNoOverlay = UmDe(LinksNoOverlay, ["replace", "show", "hide"], padrao.LinksNoOverlay);
         PalavrasProibidasNoOverlay ??= [];

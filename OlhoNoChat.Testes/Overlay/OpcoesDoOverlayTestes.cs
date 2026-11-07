@@ -51,7 +51,7 @@ public sealed class OpcoesDoOverlayTestes
     {
         Opcoes o = Corrigidas("""
             {"SegundosParaSumirNoOverlay":1,"SegundosDeAtrasoNoOverlay":-3,"MensagensNoOverlay":999,"TamanhoDoTextoNoOverlay":2,
-             "OpacidadeDoFundoNoOverlay":150,"CaracteresNoOverlay":5,"EmotesNoOverlay":0}
+             "OpacidadeDoFundoNoOverlay":150,"CaracteresNoOverlay":5,"EmotesNoOverlay":0,"InclinacaoNoOverlay":90,"ConeDoFunilNoOverlay":0}
             """);
 
         Assert.Equal(Opcoes.SegundosParaSumirNoOverlayMinimo, o.SegundosParaSumirNoOverlay);
@@ -61,6 +61,8 @@ public sealed class OpcoesDoOverlayTestes
         Assert.Equal(100, o.OpacidadeDoFundoNoOverlay);
         Assert.Equal(Opcoes.CaracteresNoOverlayMinimo, o.CaracteresNoOverlay);
         Assert.Equal(Opcoes.EmotesNoOverlayMinimo, o.EmotesNoOverlay);
+        Assert.Equal(Opcoes.InclinacaoNoOverlayMaxima, o.InclinacaoNoOverlay);
+        Assert.Equal(Opcoes.ConeDoFunilMinimo, o.ConeDoFunilNoOverlay);
     }
 
     [Fact]
@@ -68,7 +70,7 @@ public sealed class OpcoesDoOverlayTestes
     {
         Opcoes o = Corrigidas("""
             {"FonteDoOverlay":"Comic Sans MS","ContornoNoOverlay":"neon","FundoNoOverlay":null,"DirecaoDoOverlay":"left",
-             "AlinhamentoDoOverlay":"center","AnimacaoDoOverlay":"spin","LinksNoOverlay":"",
+             "AlinhamentoDoOverlay":"center","PerspectivaNoOverlay":"up","FormatoDaPerspectivaNoOverlay":"cone","AnimacaoDoOverlay":"spin","LinksNoOverlay":"",
              "PalavrasProibidasNoOverlay":["feio",null,"  "]}
             """);
         var padrao = new Opcoes();
@@ -78,6 +80,8 @@ public sealed class OpcoesDoOverlayTestes
         Assert.Equal(padrao.FundoNoOverlay, o.FundoNoOverlay);
         Assert.Equal(padrao.DirecaoDoOverlay, o.DirecaoDoOverlay);
         Assert.Equal(padrao.AlinhamentoDoOverlay, o.AlinhamentoDoOverlay);
+        Assert.Equal(padrao.PerspectivaNoOverlay, o.PerspectivaNoOverlay);
+        Assert.Equal(padrao.FormatoDaPerspectivaNoOverlay, o.FormatoDaPerspectivaNoOverlay);
         Assert.Equal(padrao.AnimacaoDoOverlay, o.AnimacaoDoOverlay);
         Assert.Equal(padrao.LinksNoOverlay, o.LinksNoOverlay);
         Assert.Equal(["feio"], o.PalavrasProibidasNoOverlay);

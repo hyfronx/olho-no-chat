@@ -448,6 +448,83 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE7B3;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Saída suave" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="As mensagens mais antigas somem num degradê na borda, em vez de ficarem cortadas." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ctl:Interruptor x:Name="interruptorSaidaSuave" Grid.Column="2" IsChecked="{Binding SaidaSuave}" AutomationProperties.Name="Saída suave" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE809;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Perspectiva" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="As mensagens ficam inclinadas, entrando na tela pelo lado escolhido. Fica melhor com elas alinhadas do outro lado (aba Mensagens)." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ComboBox x:Name="listaPerspectiva" Grid.Column="2" Style="{DynamicResource ListaDaLinha}" AutomationProperties.Name="Perspectiva"
+                                      ItemsSource="{x:Static local:LogicaOverlay.Perspectivas}" DisplayMemberPath="Nome"
+                                      SelectedValuePath="Valor" SelectedValue="{Binding Perspectiva}" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <!-- Formato e inclinação sempre editáveis: dá para deixar prontos antes de ligar a perspectiva -->
+                        <Grid Margin="36,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}" Margin="0,0,12,0">
+                                <TextBlock Text="Formato" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Funil: as mensagens ficam no meio e se fecham por cima e por baixo. Inclinada: ficam embaixo e sobem em direção ao lado de dentro." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <ComboBox x:Name="listaFormatoDaPerspectiva" Grid.Column="1" Style="{DynamicResource ListaDaLinha}" AutomationProperties.Name="Formato da perspectiva"
+                                      ItemsSource="{x:Static local:LogicaOverlay.FormatosDaPerspectiva}" DisplayMemberPath="Nome"
+                                      SelectedValuePath="Valor" SelectedValue="{Binding FormatoDaPerspectiva}" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid Margin="36,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}" Margin="0,0,12,0">
+                                <TextBlock Text="Cone do funil" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Vale no Funil: o quanto as linhas de cima e de baixo se fecham para o lado de dentro." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <Slider x:Name="deslizanteCone" Grid.Column="1" Width="200" VerticalAlignment="Center" AutomationProperties.Name="Cone do funil"
+                                    Minimum="1" Maximum="10" SmallChange="1" LargeChange="1" TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Value="{Binding Cone}" />
+                            <TextBlock Grid.Column="2" Width="96" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0" Style="{DynamicResource Rotulo}" Text="{Binding TextoDoCone}" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid Margin="36,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}" Margin="0,0,12,0">
+                                <TextBlock Text="Inclinação" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Vale com a perspectiva ligada. Mais inclinado entra mais na tela; menos inclinado fica mais fácil de ler." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <Slider x:Name="deslizanteInclinacao" Grid.Column="1" Width="200" VerticalAlignment="Center" AutomationProperties.Name="Inclinação"
+                                    Minimum="5" Maximum="60" SmallChange="1" LargeChange="5" TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Value="{Binding Inclinacao}" />
+                            <TextBlock Grid.Column="2" Width="96" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0" Style="{DynamicResource Rotulo}" Text="{Binding TextoDaInclinacao}" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE8EC;" Style="{DynamicResource IconeDoCartao}" />
                             <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
                                 <TextBlock Text="Selos" Style="{DynamicResource Rotulo}" />
