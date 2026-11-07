@@ -35,6 +35,54 @@ body.ov-right #ov-lines {
     text-align: right;
 }
 
+/* "Saída suave": the oldest lines fade out at the edge they leave by (the top; the bottom with "Em cima"), instead of
+   being cut. In the strip both ends fade, where the lines come in and go out. */
+body.ov-soft-edge #ov-lines {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.5em);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 2.5em);
+}
+
+body.ov-soft-edge.ov-top #ov-lines {
+    -webkit-mask-image: linear-gradient(to top, transparent 0, #000 2.5em);
+    mask-image: linear-gradient(to top, transparent 0, #000 2.5em);
+}
+
+body.ov-soft-edge.ov-ticker #ov-lines {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3em, #000 calc(100% - 3em), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 3em, #000 calc(100% - 3em), transparent 100%);
+}
+
+/* "Perspectiva": the lines turn around the near side, so that side keeps its size and the far side goes into the
+   screen (smaller, never out of the source). rotateY with a positive angle sends the right side away. */
+body.ov-tilt-left #ov-lines {
+    transform-origin: right center;
+    transform: perspective(1200px) rotateY(calc(-1 * var(--ov-tilt, 20deg)));
+}
+
+body.ov-tilt-right #ov-lines {
+    transform-origin: left center;
+    transform: perspective(1200px) rotateY(var(--ov-tilt, 20deg));
+}
+
+/* "Funil": the lines sit in the middle of the source (auto margins; once they fill it, the oldest leave by the edge
+   as usual) and turn around its middle with a depth as big as the source's width (overlay.js), so they close in from
+   above and below, more with a bigger "Inclinação". Fixed: nothing moves as lines come and go. */
+body.ov-funnel:not(.ov-ticker) #ov-lines > .ov-line:first-child {
+    margin-top: auto;
+}
+
+body.ov-funnel:not(.ov-ticker) #ov-lines > .ov-line:last-child {
+    margin-bottom: auto;
+}
+
+body.ov-funnel.ov-tilt-left #ov-lines {
+    transform: perspective(var(--ov-depth, 600px)) rotateY(calc(-1 * var(--ov-tilt, 30deg)));
+}
+
+body.ov-funnel.ov-tilt-right #ov-lines {
+    transform: perspective(var(--ov-depth, 600px)) rotateY(var(--ov-tilt, 30deg));
+}
+
 .ov-line {
     flex: none;
     max-width: 100%;

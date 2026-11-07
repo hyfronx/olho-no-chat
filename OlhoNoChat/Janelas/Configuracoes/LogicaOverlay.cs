@@ -78,6 +78,19 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         new("À direita", "right"),
     ];
 
+    public static IReadOnlyList<OpcaoDaLista> Perspectivas { get; } =
+    [
+        new("Desligada", "none"),
+        new("Esquerda para dentro", "left"),
+        new("Direita para dentro", "right"),
+    ];
+
+    public static IReadOnlyList<OpcaoDaLista> FormatosDaPerspectiva { get; } =
+    [
+        new("Funil", "funnel"),
+        new("Inclinada", "tilt"),
+    ];
+
     public static IReadOnlyList<OpcaoDaLista> Animacoes { get; } =
     [
         new("Deslizar", "slide"),
@@ -313,6 +326,32 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     private string _alinhamento = "left";
 
     [ObservableProperty]
+    private bool _saidaSuave = true;
+
+    [ObservableProperty]
+    private string _perspectiva = "none";
+
+    [ObservableProperty]
+    private string _formatoDaPerspectiva = "funnel";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDoCone))]
+    private double _cone = Opcoes.ConeDoFunilPadrao;
+
+    public string TextoDoCone => Math.Round(Cone) switch
+    {
+        <= 3 => "Aberto",
+        <= 7 => "Médio",
+        _ => "Fechado",
+    } + $" ({Math.Round(Cone):0})";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaInclinacao))]
+    private double _inclinacao = Opcoes.InclinacaoNoOverlayPadrao;
+
+    public string TextoDaInclinacao => $"{Math.Round(Inclinacao):0}°";
+
+    [ObservableProperty]
     private string _animacao = "pop";
 
     [ObservableProperty]
@@ -434,6 +473,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         OpacidadeDoFundo = opcoes.OpacidadeDoFundoNoOverlay;
         Direcao = opcoes.DirecaoDoOverlay;
         Alinhamento = opcoes.AlinhamentoDoOverlay;
+        SaidaSuave = opcoes.SaidaSuaveNoOverlay;
+        Perspectiva = opcoes.PerspectivaNoOverlay;
+        FormatoDaPerspectiva = opcoes.FormatoDaPerspectivaNoOverlay;
+        Cone = opcoes.ConeDoFunilNoOverlay;
+        Inclinacao = opcoes.InclinacaoNoOverlay;
         Animacao = opcoes.AnimacaoDoOverlay;
         Selos = opcoes.SelosNoOverlay;
         Horario = opcoes.HorarioNoOverlay;
@@ -480,6 +524,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         opcoes.OpacidadeDoFundoNoOverlay = Inteiro(OpacidadeDoFundo, 0, 100);
         opcoes.DirecaoDoOverlay = Direcao;
         opcoes.AlinhamentoDoOverlay = Alinhamento;
+        opcoes.SaidaSuaveNoOverlay = SaidaSuave;
+        opcoes.PerspectivaNoOverlay = Perspectiva;
+        opcoes.FormatoDaPerspectivaNoOverlay = FormatoDaPerspectiva;
+        opcoes.ConeDoFunilNoOverlay = Inteiro(Cone, Opcoes.ConeDoFunilMinimo, Opcoes.ConeDoFunilMaximo);
+        opcoes.InclinacaoNoOverlay = Inteiro(Inclinacao, Opcoes.InclinacaoNoOverlayMinima, Opcoes.InclinacaoNoOverlayMaxima);
         opcoes.AnimacaoDoOverlay = Animacao;
         opcoes.SelosNoOverlay = Selos;
         opcoes.HorarioNoOverlay = Horario;
@@ -536,6 +585,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         estado["Overlay.OpacidadeDoFundo"] = TextoDaOpacidade;
         estado["Overlay.Direcao"] = Direcao;
         estado["Overlay.Alinhamento"] = Alinhamento;
+        estado["Overlay.SaidaSuave"] = SaidaSuave.ToString();
+        estado["Overlay.Perspectiva"] = Perspectiva;
+        estado["Overlay.FormatoDaPerspectiva"] = FormatoDaPerspectiva;
+        estado["Overlay.Cone"] = TextoDoCone;
+        estado["Overlay.Inclinacao"] = TextoDaInclinacao;
         estado["Overlay.Animacao"] = Animacao;
         estado["Overlay.Selos"] = Selos.ToString();
         estado["Overlay.Horario"] = Horario.ToString();

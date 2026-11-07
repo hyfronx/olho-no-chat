@@ -49,6 +49,13 @@
         const body = document.body.classList;
         body.toggle('ov-top', options.direction === 'top');
         body.toggle('ov-right', options.align === 'right');
+        body.toggle('ov-soft-edge', options.softEdge !== false); // "Saída suave"
+        // "Perspectiva": the side that goes into the screen, and how much
+        body.toggle('ov-tilt-left', options.perspective === 'left');
+        body.toggle('ov-tilt-right', options.perspective === 'right');
+        root.setProperty('--ov-tilt', (Number(options.tilt) || 30) + 'deg');
+        body.toggle('ov-funnel', options.perspective !== 'none' && options.perspectiveShape !== 'tilt');
+        placeFunnel();
         body.toggle('ov-card', options.background === 'card');
         body.toggle('ov-bubble', options.background === 'bubble');
         body.toggle('ov-ticker', options.layout === 'ticker');
@@ -190,6 +197,16 @@
     }
 
     // --- On the screen ------------------------------------------------------------------------------------
+
+    // "Perspectiva" in the "Funil" shape: the lines stay in the middle of the source (overlay.css) and turn around its
+    // middle, so they close in from above and below. The depth follows the source's width, for the same look at any size,
+    // and the "Cone do funil" (1 to 10): a shorter depth closes the lines above and below more. 5 = the source's width.
+    function placeFunnel() {
+        const cone = Math.min(10, Math.max(1, Number(options && options.cone) || 5));
+        const factor = 2.5 * Math.pow(0.35 / 2.5, (cone - 1) / 9) / (2.5 * Math.pow(0.35 / 2.5, 4 / 9));
+        document.documentElement.style.setProperty('--ov-depth', Math.round(Math.max(120, box.clientWidth * factor)) + 'px');
+    }
+    window.addEventListener('resize', placeFunnel);
 
     function lines() {
         return [...box.children];

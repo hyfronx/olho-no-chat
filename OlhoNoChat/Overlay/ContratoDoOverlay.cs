@@ -53,6 +53,12 @@ public static class ContratoDoOverlay
         backgroundOpacity = Math.Round(opcoes.OpacidadeDoFundoNoOverlay / 100.0, 2),
         direction = opcoes.DirecaoDoOverlay,
         align = opcoes.AlinhamentoDoOverlay,
+        // "Perspectiva": "none", "left" ou "right" (o lado mais para dentro da tela) e a inclinação em graus
+        softEdge = opcoes.SaidaSuaveNoOverlay,
+        perspective = opcoes.PerspectivaNoOverlay,
+        perspectiveShape = opcoes.FormatoDaPerspectivaNoOverlay,
+        cone = opcoes.ConeDoFunilNoOverlay,
+        tilt = opcoes.InclinacaoNoOverlay,
         animation = opcoes.AnimacaoDoOverlay,
         // "Esconder GIFs" do chat (aba Chat) vale também para a live
         hideGifs = opcoes.EsconderGifs,
