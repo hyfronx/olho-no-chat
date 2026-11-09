@@ -7,12 +7,14 @@ namespace OlhoNoChat.Janelas.Chat;
 /// Os avisos que aparecem por cima da página do chat (qualquer página, também a de boas-vindas): uma caixa no topo que
 /// não recebe cliques, some depois de 10 s e é trocada por um aviso novo. Os que precisam esperar a página carregar
 /// ficam guardados: o de bordas ocultas, o de que dá para escrever (também espera as Configurações fecharem) e o do
-/// arquivo de configurações ilegível (decisão 20).
+/// arquivo de configurações ilegível (decisão 20). Os dois primeiros são dicas de ajuda: com "Mostrar dicas de ajuda"
+/// desligado (aba Geral), não aparecem.
 /// </summary>
 public sealed class AvisosNoChat
 {
     private readonly Func<bool> _paginaPronta;
     private readonly Action<string> _executar;
+    private readonly Func<bool> _dicasLigadas;
     private bool _bordasOcultasEsperando;
     private bool _daParaEscreverEsperando;
     private string? _avisoDasConfiguracoes;
@@ -20,10 +22,12 @@ public sealed class AvisosNoChat
     /// <param name="paginaPronta">Uma página carregou e o navegador está funcionando.</param>
     /// <param name="executar">Roda um script na página aberta.</param>
     /// <param name="avisoDasConfiguracoes">O aviso do arquivo de configurações ilegível, mostrado uma vez (ou null).</param>
-    public AvisosNoChat(Func<bool> paginaPronta, Action<string> executar, string? avisoDasConfiguracoes)
+    /// <param name="dicasLigadas">"Mostrar dicas de ajuda" (as de bordas ocultas e de escrever).</param>
+    public AvisosNoChat(Func<bool> paginaPronta, Action<string> executar, string? avisoDasConfiguracoes, Func<bool> dicasLigadas)
     {
         _paginaPronta = paginaPronta;
         _executar = executar;
+        _dicasLigadas = dicasLigadas;
         _avisoDasConfiguracoes = avisoDasConfiguracoes;
     }
 
@@ -61,7 +65,7 @@ public sealed class AvisosNoChat
     }
 
     /// <summary>As bordas foram ocultas: o aviso aparece quando a página estiver pronta.</summary>
-    public void PedirBordasOcultas() => _bordasOcultasEsperando = true;
+    public void PedirBordasOcultas() => _bordasOcultasEsperando = _dicasLigadas();
 
     /// <summary>As bordas voltaram: o aviso some na hora e o que estava esperando é esquecido.</summary>
     public void EsconderBordasOcultas()
@@ -71,7 +75,7 @@ public sealed class AvisosNoChat
     }
 
     /// <summary>O tipo de chat passou a ser de canal nas Configurações: aparece quando elas fecharem e a página carregar.</summary>
-    public void PedirDaParaEscrever() => _daParaEscreverEsperando = true;
+    public void PedirDaParaEscrever() => _daParaEscreverEsperando = _dicasLigadas();
 
     /// <summary>
     /// Mostra os avisos que estão esperando, se a página já está pronta. O mais importante (o das configurações) por
@@ -86,6 +90,10 @@ public sealed class AvisosNoChat
     {
         if (!_paginaPronta())
             return;
+
+        // Desligadas enquanto esperavam: não aparecem mais
+        if (!_dicasLigadas())
+            _bordasOcultasEsperando = _daParaEscreverEsperando = false;
 
         if (_bordasOcultasEsperando && bordasOcultas)
         {

@@ -25,11 +25,22 @@ public partial class FaixaDoCanal : UserControl
 
     private LogicaFaixaDoCanal? _logica;
     private bool _piscando;
+    // A troca entre os viewers e os nomes dos canais, só com a faixa fechada na tela e algum número
+    private readonly DispatcherTimer _troca = new();
 
     public FaixaDoCanal()
     {
         InitializeComponent();
-        IsVisibleChanged += (_, _) => MostrarPonto();
+        _troca.Tick += (_, _) =>
+        {
+            if (_logica != null)
+                _troca.Interval = _logica.Alternar();
+        };
+        IsVisibleChanged += (_, _) =>
+        {
+            MostrarPonto();
+            AtualizarTroca();
+        };
     }
 
     public LogicaFaixaDoCanal? Logica
@@ -56,6 +67,7 @@ public partial class FaixaDoCanal : UserControl
                 value.PedirFocoNoTikTok += FocarNoTikTok;
             }
             MostrarPonto();
+            AtualizarTroca();
         }
     }
 
@@ -72,6 +84,27 @@ public partial class FaixaDoCanal : UserControl
             or nameof(LogicaFaixaDoCanal.ConexaoDoYouTube) or nameof(LogicaFaixaDoCanal.ConexaoDaKick)
             or nameof(LogicaFaixaDoCanal.ConexaoDoTikTok))
             MostrarPonto();
+        if (e.PropertyName is nameof(LogicaFaixaDoCanal.TemViewersNaFaixa) or nameof(LogicaFaixaDoCanal.EditorAberto))
+            AtualizarTroca();
+    }
+
+    // Começa pelos viewers; sem número, sem a faixa na tela ou com ela aberta, para e volta aos nomes
+    private void AtualizarTroca()
+    {
+        bool trocar = _logica is { TemViewersNaFaixa: true, EditorAberto: false } && IsVisible;
+        if (trocar == _troca.IsEnabled)
+            return;
+        if (trocar)
+        {
+            _troca.Interval = LogicaFaixaDoCanal.TempoDosViewers;
+            _troca.Start();
+        }
+        else
+        {
+            _troca.Stop();
+            if (_logica != null)
+                _logica.MostrandoNomes = false;
+        }
     }
 
     private void MostrarPonto()

@@ -50,6 +50,23 @@
             <Setter Property="VerticalAlignment" Value="Bottom" />
             <Setter Property="Margin" Value="0,0,-4,-3" />
         </Style>
+        <!-- Quantos assistem ("Mostrar viewers"): o olho e o número curto no lugar do nome do canal, que volta por um instante
+             de tempos em tempos (LogicaFaixaDoCanal.Alternar); some sem número (Tag vazia) -->
+        <Style x:Key="ViewersNaFaixa" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="DockPanel.Dock" Value="Left" />
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="NumeroDosViewers" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
         <!-- O nome: cortado com "…" quando não cabe; dentro de uma moldura (Grid com ClipToBounds) onde desliza com o mouse
              em cima, ver NomeQueDesliza -->
         <Style x:Key="NomeNaFaixa" TargetType="TextBlock">
@@ -72,7 +89,7 @@
                  Multiplataforma, com canal. Sem espaço, só os nomes compridos são cortados (PainelDosCanais) e deslizam
                  com o mouse em cima (NomeQueDesliza). -->
             <Button x:Name="botaoTrocarCanal" Style="{StaticResource BotaoPlano}" Height="30" Padding="10,0,10,0"
-                    AutomationProperties.Name="Trocar canal" ToolTip="{Binding DicaDaFaixa}"
+                    AutomationProperties.Name="Trocar canal"
                     Visibility="{Binding EditorAberto, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" Click="TrocarCanal_Click"
                     MouseEnter="Faixa_MouseEnter" MouseLeave="Faixa_MouseLeave">
                 <Grid>
@@ -86,7 +103,11 @@
                                 <ContentControl Template="{StaticResource LogoDaTwitch}" Focusable="False" />
                                 <Ellipse x:Name="pontoDeConexao" Style="{StaticResource PontoNoLogo}" Visibility="Collapsed" />
                             </Grid>
-                            <Grid ClipToBounds="True">
+                            <StackPanel Tag="{Binding ViewersDaTwitch}" Style="{StaticResource ViewersNaFaixa}">
+                                <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE890;" FontSize="11" Margin="0,1,3,0" Foreground="{StaticResource TextoDaDica}" />
+                                <TextBlock Text="{Binding ViewersDaTwitch}" Style="{StaticResource NomeNaFaixa}" />
+                            </StackPanel>
+                            <Grid ClipToBounds="True" Visibility="{Binding NomeDaTwitchNaTela, Converter={StaticResource VisivelSe}}">
                                 <TextBlock x:Name="textoCanal" Text="{Binding CanalSalvo}" Style="{StaticResource NomeNaFaixa}" />
                             </Grid>
                         </DockPanel>
@@ -95,7 +116,11 @@
                                 <ContentControl Template="{StaticResource LogoDoYouTube}" Focusable="False" />
                                 <Ellipse x:Name="pontoDoYouTube" Style="{StaticResource PontoNoLogo}" />
                             </Grid>
-                            <Grid ClipToBounds="True">
+                            <StackPanel Tag="{Binding ViewersDoYouTube}" Style="{StaticResource ViewersNaFaixa}">
+                                <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE890;" FontSize="11" Margin="0,1,3,0" Foreground="{StaticResource TextoDaDica}" />
+                                <TextBlock Text="{Binding ViewersDoYouTube}" Style="{StaticResource NomeNaFaixa}" />
+                            </StackPanel>
+                            <Grid ClipToBounds="True" Visibility="{Binding NomeDoYouTubeNaTela, Converter={StaticResource VisivelSe}}">
                                 <TextBlock x:Name="textoYouTube" Text="{Binding YouTubeSalvo}" Style="{StaticResource NomeNaFaixa}" />
                             </Grid>
                         </DockPanel>
@@ -104,7 +129,11 @@
                                 <ContentControl Template="{StaticResource LogoDaKick}" Focusable="False" />
                                 <Ellipse x:Name="pontoDaKick" Style="{StaticResource PontoNoLogo}" />
                             </Grid>
-                            <Grid ClipToBounds="True">
+                            <StackPanel Tag="{Binding ViewersDaKick}" Style="{StaticResource ViewersNaFaixa}">
+                                <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE890;" FontSize="11" Margin="0,1,3,0" Foreground="{StaticResource TextoDaDica}" />
+                                <TextBlock Text="{Binding ViewersDaKick}" Style="{StaticResource NomeNaFaixa}" />
+                            </StackPanel>
+                            <Grid ClipToBounds="True" Visibility="{Binding NomeDaKickNaTela, Converter={StaticResource VisivelSe}}">
                                 <TextBlock x:Name="textoKick" Text="{Binding KickSalvo}" Style="{StaticResource NomeNaFaixa}" />
                             </Grid>
                         </DockPanel>
@@ -113,12 +142,22 @@
                                 <ContentControl Template="{StaticResource LogoDoTikTok}" Focusable="False" />
                                 <Ellipse x:Name="pontoDoTikTok" Style="{StaticResource PontoNoLogo}" />
                             </Grid>
-                            <Grid ClipToBounds="True">
+                            <StackPanel Tag="{Binding ViewersDoTikTok}" Style="{StaticResource ViewersNaFaixa}">
+                                <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE890;" FontSize="11" Margin="0,1,3,0" Foreground="{StaticResource TextoDaDica}" />
+                                <TextBlock Text="{Binding ViewersDoTikTok}" Style="{StaticResource NomeNaFaixa}" />
+                            </StackPanel>
+                            <Grid ClipToBounds="True" Visibility="{Binding NomeDoTikTokNaTela, Converter={StaticResource VisivelSe}}">
                                 <TextBlock x:Name="textoTikTok" Text="{Binding TikTokSalvo, StringFormat=@{0}}" Style="{StaticResource NomeNaFaixa}" />
                             </Grid>
                         </DockPanel>
                     </ctl:PainelDosCanais>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- A soma dos viewers, com mais de um canal com número -->
+                        <StackPanel Tag="{Binding ViewersNoTotal}" Style="{StaticResource ViewersNaFaixa}" Margin="0,0,10,0">
+                            <TextBlock Text="Total" Style="{StaticResource NumeroDosViewers}" Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding ViewersNoTotal}" Style="{StaticResource NumeroDosViewers}" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Texto}" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE8AB;" FontSize="12" Foreground="{StaticResource LaranjaClaro}" />
                         <!-- Com mais de um canal, só o ícone (o texto fica na dica) -->
                         <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource LaranjaClaro}"

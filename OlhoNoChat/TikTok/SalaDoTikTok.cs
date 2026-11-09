@@ -4,9 +4,10 @@ namespace OlhoNoChat.TikTok;
 
 /// <summary>
 /// A resposta do <c>api-live/user/room</c> do site do TikTok (sem login nem assinatura): se o perfil existe, se está ao
-/// vivo, o id da sala da live e o id do dono (para reconhecer as mensagens dele no chat).
+/// vivo, o id da sala da live, o id do dono (para reconhecer as mensagens dele no chat) e quantos assistem
+/// (<c>liveRoom.liveRoomStats.userCount</c>; null quando não vem).
 /// </summary>
-public sealed record SalaDoTikTok(bool Existe, bool AoVivo, string IdDaSala, string IdDoDono)
+public sealed record SalaDoTikTok(bool Existe, bool AoVivo, string IdDaSala, string IdDoDono, long? Viewers = null)
 {
     /// <summary>O código que o TikTok devolve quando o perfil não existe.</summary>
     public const long PerfilNaoExiste = 19881007;
@@ -28,10 +29,16 @@ public sealed record SalaDoTikTok(bool Existe, bool AoVivo, string IdDaSala, str
 
         string sala = Texto(usuario, "roomId");
         // liveRoom.status: 2 = ao vivo, 4 = acabou
-        bool aoVivo = sala.Length > 0 && sala != "0" && dados.TryGetProperty("liveRoom", out JsonElement live)
+        JsonElement live = dados.TryGetProperty("liveRoom", out JsonElement l) && l.ValueKind == JsonValueKind.Object ? l : default;
+        bool aoVivo = sala.Length > 0 && sala != "0"
                       && live.ValueKind == JsonValueKind.Object && live.TryGetProperty("status", out JsonElement status)
                       && status.TryGetInt32(out int s) && s == 2;
-        return new SalaDoTikTok(true, aoVivo, sala, Texto(usuario, "id"));
+        long? viewers = aoVivo && live.TryGetProperty("liveRoomStats", out JsonElement estatisticas)
+                        && estatisticas.ValueKind == JsonValueKind.Object
+                        && estatisticas.TryGetProperty("userCount", out JsonElement contagem) && contagem.TryGetInt64(out long numero)
+            ? numero
+            : null;
+        return new SalaDoTikTok(true, aoVivo, sala, Texto(usuario, "id"), viewers);
     }
 
     private static string Texto(JsonElement objeto, string nome) =>

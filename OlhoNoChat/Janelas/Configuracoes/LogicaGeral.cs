@@ -26,6 +26,10 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     [ObservableProperty]
     private bool _esconderIconeDaBarraDeTarefas;
 
+    /// <summary>As dicas no topo do chat (bordas ocultas, dá para escrever).</summary>
+    [ObservableProperty]
+    private bool _mostrarDicasDeAjuda;
+
     [ObservableProperty]
     private bool _procurarAtualizacoes;
 
@@ -94,6 +98,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     {
         EsconderBordasAoAbrir = opcoes.EsconderBordasAoAbrir;
         EsconderIconeDaBarraDeTarefas = opcoes.EsconderIconeDaBarraDeTarefas;
+        MostrarDicasDeAjuda = opcoes.MostrarDicasDeAjuda;
         ProcurarAtualizacoes = opcoes.ProcurarAtualizacoes;
         VersoesBeta = ProcuraDeAtualizacoes.NaBeta(opcoes);
         PermitirVariasCopias = opcoes.PermitirVariasCopias;
@@ -110,6 +115,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     {
         opcoes.EsconderBordasAoAbrir = EsconderBordasAoAbrir;
         opcoes.EsconderIconeDaBarraDeTarefas = EsconderIconeDaBarraDeTarefas;
+        opcoes.MostrarDicasDeAjuda = MostrarDicasDeAjuda;
         opcoes.ProcurarAtualizacoes = ProcurarAtualizacoes;
         // Só vira escolha gravada quando muda: sem mexer, continua seguindo o canal da instalação
         CanalMudouAoGravar = VersoesBeta != ProcuraDeAtualizacoes.NaBeta(opcoes);
@@ -132,6 +138,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     {
         estado["Geral.EsconderBordasAoAbrir"] = EsconderBordasAoAbrir.ToString();
         estado["Geral.EsconderIconeDaBarraDeTarefas"] = EsconderIconeDaBarraDeTarefas.ToString();
+        estado["Geral.MostrarDicasDeAjuda"] = MostrarDicasDeAjuda.ToString();
         estado[ChaveProcurarAtualizacoes] = ProcurarAtualizacoes.ToString();
         estado["Geral.VersoesBeta"] = VersoesBeta.ToString();
         estado["Geral.PermitirVariasCopias"] = PermitirVariasCopias.ToString();

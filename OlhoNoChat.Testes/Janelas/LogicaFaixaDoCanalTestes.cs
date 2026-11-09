@@ -42,13 +42,12 @@ public class LogicaFaixaDoCanalTestes
     }
 
     [Fact]
-    public void ComCanal_FechadaComONomeEODaTroca()
+    public void ComCanal_FechadaComONome()
     {
         var logica = Nova();
 
         Assert.False(logica.EditorAberto);
         Assert.Equal("hyfronx", logica.CanalSalvo);
-        Assert.Equal("Clique para trocar de canal.", logica.DicaDaFaixa);
     }
 
     [Fact]
@@ -205,19 +204,18 @@ public class LogicaFaixaDoCanalTestes
     }
 
     [Fact]
-    public void Conexao_PontoEDica()
+    public void Conexao_Ponto()
     {
         var logica = Nova();
 
         logica.PaginaComecouACarregar(paginaDeCanal: true);
         Assert.Equal(EstadoDaConexao.Conectando, logica.Conexao);
-        Assert.Equal("Conectando ao chat de hyfronx…\nClique para trocar de canal.", logica.DicaDaFaixa);
 
         logica.PaginaAvisou(EstadoDaConexao.Conectado);
-        Assert.Equal("Conectado ao chat de hyfronx.\nClique para trocar de canal.", logica.DicaDaFaixa);
+        Assert.Equal(EstadoDaConexao.Conectado, logica.Conexao);
 
         logica.PaginaAvisou(EstadoDaConexao.SemConexao);
-        Assert.Equal("Sem conexão com o chat. Tentando de novo…\nClique para trocar de canal.", logica.DicaDaFaixa);
+        Assert.Equal(EstadoDaConexao.SemConexao, logica.Conexao);
 
         logica.PaginaComecouACarregar(paginaDeCanal: false);
         Assert.Equal(EstadoDaConexao.Nenhum, logica.Conexao);
@@ -259,7 +257,7 @@ public class LogicaFaixaDoCanalTestes
     }
 
     [Fact]
-    public void ComMultiplataforma_MostraOYouTubeEADicaDosDois()
+    public void ComMultiplataforma_MostraOYouTube()
     {
         _opcoes.ChatMultiplataforma = true;
         _opcoes.CanalDoYouTube = "https://www.youtube.com/@Hyfronx/live";
@@ -268,14 +266,6 @@ public class LogicaFaixaDoCanalTestes
         Assert.True(logica.YouTubeNaFaixa);
         Assert.Equal("@Hyfronx", logica.YouTubeSalvo);
         Assert.Equal(LogicaFaixaDoCanal.DicaMultiplataforma, logica.Dica);
-
-        logica.ConexaoDoYouTube = EstadoDoYouTube.EsperandoALive;
-        Assert.Equal("YouTube: @Hyfronx não está ao vivo. Esperando a live começar…\nClique para trocar de canal.", logica.DicaDaFaixa);
-
-        logica.PaginaAvisou(EstadoDaConexao.Conectado);
-        logica.ConexaoDoYouTube = EstadoDoYouTube.Conectado;
-        Assert.Equal("Twitch: Conectado ao chat de hyfronx.\nYouTube: lendo o chat da live de @Hyfronx.\nClique para trocar de canal.",
-            logica.DicaDaFaixa);
     }
 
     [Fact]
@@ -342,7 +332,7 @@ public class LogicaFaixaDoCanalTestes
     // --- Chat Multiplataforma: o canal da Kick na mesma faixa ---------------------------------------------
 
     [Fact]
-    public void ComMultiplataforma_MostraAKickEADicaDasTres()
+    public void ComMultiplataforma_MostraAKick()
     {
         _opcoes.ChatMultiplataforma = true;
         _opcoes.CanalDoYouTube = "@Hyfronx";
@@ -352,28 +342,17 @@ public class LogicaFaixaDoCanalTestes
         Assert.True(logica.KickNaFaixa);
         Assert.True(logica.OutrosCanaisNaFaixa);
         Assert.Equal("gaules", logica.KickSalvo);
-
-        logica.PaginaAvisou(EstadoDaConexao.Conectado);
-        logica.ConexaoDoYouTube = EstadoDoYouTube.Conectado;
-        logica.ConexaoDaKick = EstadoDaKick.Conectado;
-        Assert.Equal("Twitch: Conectado ao chat de hyfronx.\nYouTube: lendo o chat da live de @Hyfronx.\nKick: lendo o chat de gaules.\n" +
-                     "Clique para trocar de canal.", logica.DicaDaFaixa);
-
-        logica.ConexaoDaKick = EstadoDaKick.CanalNaoExiste;
-        Assert.EndsWith("Kick: não achei o canal gaules na Kick. Confira o nome.\nClique para trocar de canal.", logica.DicaDaFaixa);
     }
 
     [Fact]
-    public void SoAKick_SemYouTubeNaDica()
+    public void SoAKick_SemYouTube()
     {
         _opcoes.ChatMultiplataforma = true;
         _opcoes.CanalDaKick = "gaules";
         var logica = Nova();
-        logica.ConexaoDaKick = EstadoDaKick.SemConexao;
 
         Assert.False(logica.YouTubeNaFaixa);
         Assert.True(logica.OutrosCanaisNaFaixa);
-        Assert.Equal("Kick: sem conexão com a Kick. Tentando de novo…\nClique para trocar de canal.", logica.DicaDaFaixa);
     }
 
     [Fact]
@@ -440,7 +419,7 @@ public class LogicaFaixaDoCanalTestes
     // --- Chat Multiplataforma: o canal do TikTok na mesma faixa -------------------------------------------
 
     [Fact]
-    public void ComMultiplataforma_MostraOTikTokComOArrobaNaDica()
+    public void ComMultiplataforma_MostraOTikTokSemOArroba()
     {
         _opcoes.ChatMultiplataforma = true;
         _opcoes.CanalDoTikTok = "fulano.live";
@@ -450,16 +429,6 @@ public class LogicaFaixaDoCanalTestes
         Assert.True(logica.OutrosCanaisNaFaixa);
         Assert.True(logica.VariosCanaisNaFaixa); // com a Twitch
         Assert.Equal("fulano.live", logica.TikTokSalvo);
-
-        logica.PaginaAvisou(EstadoDaConexao.Conectado);
-        logica.ConexaoDoTikTok = EstadoDoTikTok.Conectado;
-        Assert.Equal("Twitch: Conectado ao chat de hyfronx.\nTikTok: lendo o chat da live de @fulano.live.\nClique para trocar de canal.",
-            logica.DicaDaFaixa);
-
-        logica.ConexaoDoTikTok = EstadoDoTikTok.EsperandoALive;
-        Assert.Contains("TikTok: @fulano.live não está ao vivo. Esperando a live começar…", logica.DicaDaFaixa);
-        logica.ConexaoDoTikTok = EstadoDoTikTok.CanalNaoExiste;
-        Assert.Contains("TikTok: não achei o perfil @fulano.live no TikTok. Confira o nome.", logica.DicaDaFaixa);
     }
 
     [Fact]

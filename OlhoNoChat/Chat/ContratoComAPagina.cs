@@ -401,6 +401,28 @@ public static class ContratoComAPagina
     public static string LinksClicaveis(bool clicaveis) =>
         $"document.body && document.body.classList.toggle('onc-links-on', {(clicaveis ? "true" : "false")});";
 
+    /// <summary>
+    /// "Mostrar viewers" sem as bordas (com elas, a faixa do canal mostra): a linha no topo do Padrão, com o logo e o
+    /// número curto de cada plataforma e a soma. null, ou sem nenhum número, tira a linha.
+    /// </summary>
+    public static string MostrarViewers(Viewers? viewers)
+    {
+        var itens = new List<object>();
+        if (viewers != null)
+        {
+            foreach ((string plataforma, long? numero) in new[]
+                     { ("twitch", viewers.Twitch), ("youtube", viewers.YouTube), ("kick", viewers.Kick), ("tiktok", viewers.TikTok) })
+            {
+                if (numero is { } n)
+                    itens.Add(new { platform = plataforma, text = Viewers.Curto(n) });
+            }
+        }
+        string dados = itens.Count == 0
+            ? "null"
+            : JsonSerializer.Serialize(new { items = itens, total = viewers?.Total is { } total ? Viewers.Curto(total) : null });
+        return $"window.oncChat && window.oncChat.viewers && window.oncChat.viewers({dados});";
+    }
+
     /// <summary>Chat oficial: mostra a caixa de digitar da Twitch e põe o cursor nela.</summary>
     public const string AbrirCaixaDaTwitch =
         "(function () { document.body.classList.add('onc-writing'); var caixa = document.querySelector('[data-a-target=\"chat-input\"]'); if (caixa) caixa.focus(); })();";

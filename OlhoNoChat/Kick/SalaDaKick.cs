@@ -41,6 +41,18 @@ public sealed record SalaDaKick(long IdDoCanal, long IdDaSala, IReadOnlyList<Ins
         return new SalaDaKick(idDoCanal, numeroDaSala, [.. insignias.OrderBy(i => i.Meses)]);
     }
 
+    /// <summary>Quantos assistem agora (<c>livestream.viewer_count</c>), ou null com o canal fora do ar.</summary>
+    /// <exception cref="JsonException">Não é JSON.</exception>
+    public static long? LerViewers(string json)
+    {
+        using JsonDocument documento = JsonDocument.Parse(json);
+        return documento.RootElement.ValueKind == JsonValueKind.Object
+               && documento.RootElement.TryGetProperty("livestream", out JsonElement live) && live.ValueKind == JsonValueKind.Object
+               && live.TryGetProperty("viewer_count", out JsonElement n) && n.TryGetInt64(out long numero)
+            ? numero
+            : null;
+    }
+
     /// <summary>A insígnia de quem assina há tantos meses: a dos mais meses alcançados (pelo menos a primeira); null se o canal não tem.</summary>
     public string? InsigniaPara(int meses)
     {

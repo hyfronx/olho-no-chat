@@ -80,6 +80,25 @@
                 </StackPanel>
             </Border>
 
+            <!-- Quantos assistem: em qualquer tipo de chat (sem as bordas, só no Padrão) -->
+            <Border Style="{DynamicResource Cartao}" Margin="0,4,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE890;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Mostrar viewers" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Style="{DynamicResource Dica}"
+                                   Text="Mostra quantas pessoas estão assistindo cada canal ao vivo, ao lado do nome na faixa do canal, e a soma quando tem mais de um. Sem as bordas, aparece no topo do chat (no Padrão). Atualiza a cada minuto." />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorViewers" Grid.Column="2" IsChecked="{Binding MostrarViewers}"
+                                     AutomationProperties.Name="Mostrar viewers" />
+                </Grid>
+            </Border>
+
             <!-- Padrão -->
             <StackPanel x:Name="painelChatPadrao" Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">
                 <TextBlock Text="Mensagens" Style="{DynamicResource TituloDaSecao}" />

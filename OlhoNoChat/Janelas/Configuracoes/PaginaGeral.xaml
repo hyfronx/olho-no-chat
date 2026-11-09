@@ -57,6 +57,22 @@
                                      AutomationProperties.Name="Esconder o ícone da barra de tarefas" />
                 </Grid>
             </Border>
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE897;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Mostrar dicas de ajuda" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="Os avisos no topo do chat que explicam como usar, como o que aparece ao esconder as bordas (como mostrar de novo) e o de que dá para escrever no chat. Os avisos de problemas aparecem sempre." Style="{DynamicResource Dica}" />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorDicasDeAjuda" Grid.Column="2" IsChecked="{Binding MostrarDicasDeAjuda}"
+                                     AutomationProperties.Name="Mostrar dicas de ajuda" />
+                </Grid>
+            </Border>
 
             <TextBlock Text="Atalhos de teclado" Style="{DynamicResource TituloDaSecao}" />
             <Border Style="{DynamicResource Cartao}" Padding="0">

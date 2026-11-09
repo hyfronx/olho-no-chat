@@ -106,10 +106,10 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     // Na caixa, com o @ como o TikTok mostra
     private string TikTokNaCaixa => TikTokSalvo.Length > 0 ? "@" + TikTokSalvo : string.Empty;
 
-    /// <summary>A faixa fechada tem o YouTube, a Kick ou o TikTok: a dica diz o estado de cada plataforma.</summary>
+    /// <summary>A faixa fechada tem o YouTube, a Kick ou o TikTok.</summary>
     public bool OutrosCanaisNaFaixa => YouTubeNaFaixa || KickNaFaixa || TikTokNaFaixa;
 
-    /// <summary>A faixa fechada tem mais de um canal: o "Trocar canal" vira só o ícone (o texto fica na dica).</summary>
+    /// <summary>A faixa fechada tem mais de um canal: o "Trocar canal" vira só o ícone.</summary>
     public bool VariosCanaisNaFaixa => new[] { TwitchNaFaixa, YouTubeNaFaixa, KickNaFaixa, TikTokNaFaixa }.Count(sim => sim) > 1;
 
     private string DicaInicial => Multiplataforma ? DicaMultiplataforma : DicaPadrao;
@@ -145,85 +145,92 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
     public bool PodeConfirmar => !Procurando;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDaConexao _conexao;
 
     /// <summary>A leitura do chat do YouTube (o ponto do YouTube na faixa).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDoYouTube _conexaoDoYouTube;
 
     /// <summary>A leitura do chat da Kick (o ponto da Kick na faixa).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDaKick _conexaoDaKick;
 
     /// <summary>A leitura do chat do TikTok (o ponto do TikTok na faixa).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DicaDaFaixa))]
     private EstadoDoTikTok _conexaoDoTikTok;
 
-    /// <summary>A dica da faixa fechada: a conexão (de cada plataforma no Chat Multiplataforma) e o que o clique faz.</summary>
-    public string DicaDaFaixa
+    // --- Viewers ---------------------------------------------------------------------------------------------
+
+    /// <summary>Quanto tempo a faixa mostra os viewers antes de mostrar os nomes dos canais por um instante.</summary>
+    public static readonly TimeSpan TempoDosViewers = TimeSpan.FromSeconds(20);
+
+    /// <summary>Quanto tempo os nomes dos canais aparecem no lugar dos viewers.</summary>
+    public static readonly TimeSpan TempoDosNomes = TimeSpan.FromSeconds(4);
+
+    /// <summary>"Mostrar viewers": quantos assistem cada canal agora (<see cref="Viewers.Nenhum"/> com a opção desligada).</summary>
+    [ObservableProperty]
+    private Viewers _viewers = Viewers.Nenhum;
+
+    /// <summary>A faixa está no instante dos nomes (ver <see cref="Alternar"/>).</summary>
+    [ObservableProperty]
+    private bool _mostrandoNomes;
+
+    partial void OnViewersChanged(Viewers value) => AvisarViewers();
+
+    partial void OnMostrandoNomesChanged(bool value) => AvisarViewers();
+
+    // Só os das plataformas que estão na faixa
+    private Viewers ViewersNaFaixa => new(
+        TwitchNaFaixa ? Viewers.Twitch : null,
+        YouTubeNaFaixa ? Viewers.YouTube : null,
+        KickNaFaixa ? Viewers.Kick : null,
+        TikTokNaFaixa ? Viewers.TikTok : null);
+
+    /// <summary>Algum canal da faixa tem número: a faixa alterna entre os viewers e os nomes.</summary>
+    public bool TemViewersNaFaixa => ViewersNaFaixa.Algum;
+
+    /// <summary>
+    /// Os viewers ficam <see cref="TempoDosViewers"/> na tela e os nomes só <see cref="TempoDosNomes"/>: troca e diz quanto
+    /// tempo o que entrou fica.
+    /// </summary>
+    public TimeSpan Alternar()
     {
-        get
-        {
-            string canal = CanalSalvo;
-            string? estado = Conexao switch
-            {
-                EstadoDaConexao.Conectando => $"Conectando ao chat de {canal}…",
-                EstadoDaConexao.Conectado => $"Conectado ao chat de {canal}.",
-                EstadoDaConexao.SemConexao => "Sem conexão com o chat. Tentando de novo…",
-                _ => null,
-            };
-            if (OutrosCanaisNaFaixa)
-            {
-                var linhas = new List<string>();
-                if (estado != null)
-                    linhas.Add("Twitch: " + estado);
-                if (YouTubeNaFaixa)
-                    linhas.Add("YouTube: " + TextoDoEstadoDoYouTube(ConexaoDoYouTube, YouTubeSalvo));
-                if (KickNaFaixa)
-                    linhas.Add("Kick: " + TextoDoEstadoDaKick(ConexaoDaKick, KickSalvo));
-                if (TikTokNaFaixa)
-                    linhas.Add("TikTok: " + TextoDoEstadoDoTikTok(ConexaoDoTikTok, TikTokNaCaixa));
-                estado = string.Join("\n", linhas);
-            }
-            return estado == null ? "Clique para trocar de canal." : estado + "\nClique para trocar de canal.";
-        }
+        MostrandoNomes = !MostrandoNomes;
+        return MostrandoNomes ? TempoDosNomes : TempoDosViewers;
     }
 
-    /// <summary>O estado da leitura do YouTube em palavras.</summary>
-    public static string TextoDoEstadoDoYouTube(EstadoDoYouTube estado, string canal) => estado switch
-    {
-        EstadoDoYouTube.Procurando => $"procurando a live de {canal}…",
-        EstadoDoYouTube.Conectado => $"lendo o chat da live de {canal}.",
-        EstadoDoYouTube.EsperandoALive => $"{canal} não está ao vivo. Esperando a live começar…",
-        EstadoDoYouTube.CanalNaoExiste => $"não achei o canal {canal} no YouTube. Confira o nome.",
-        EstadoDoYouTube.SemConexao => "sem conexão com o YouTube. Tentando de novo…",
-        _ => "desligado.",
-    };
+    /// <summary>O número curto no lugar do nome do canal da Twitch agora ("" = mostra o nome).</summary>
+    public string ViewersDaTwitch => NaTela(ViewersNaFaixa.Twitch);
 
-    /// <summary>O estado da leitura da Kick em palavras.</summary>
-    public static string TextoDoEstadoDaKick(EstadoDaKick estado, string canal) => estado switch
-    {
-        EstadoDaKick.Conectando => $"conectando ao chat de {canal}…",
-        EstadoDaKick.Conectado => $"lendo o chat de {canal}.",
-        EstadoDaKick.SemConexao => "sem conexão com a Kick. Tentando de novo…",
-        EstadoDaKick.CanalNaoExiste => $"não achei o canal {canal} na Kick. Confira o nome.",
-        _ => "desligado.",
-    };
+    public string ViewersDoYouTube => NaTela(ViewersNaFaixa.YouTube);
 
-    /// <summary>O estado da leitura do TikTok em palavras.</summary>
-    public static string TextoDoEstadoDoTikTok(EstadoDoTikTok estado, string canal) => estado switch
+    public string ViewersDaKick => NaTela(ViewersNaFaixa.Kick);
+
+    public string ViewersDoTikTok => NaTela(ViewersNaFaixa.TikTok);
+
+    // Sem número (fora do ar), o canal mostra sempre o nome
+    public bool NomeDaTwitchNaTela => ViewersDaTwitch.Length == 0;
+
+    public bool NomeDoYouTubeNaTela => ViewersDoYouTube.Length == 0;
+
+    public bool NomeDaKickNaTela => ViewersDaKick.Length == 0;
+
+    public bool NomeDoTikTokNaTela => ViewersDoTikTok.Length == 0;
+
+    /// <summary>A soma, no fim da faixa, com mais de um canal com número ("" = sem soma). Fica também no instante dos nomes.</summary>
+    public string ViewersNoTotal => Curto(ViewersNaFaixa.Total);
+
+    private string NaTela(long? numero) => MostrandoNomes ? string.Empty : Curto(numero);
+
+    private static string Curto(long? numero) => numero is { } n ? Viewers.Curto(n) : string.Empty;
+
+    private void AvisarViewers()
     {
-        EstadoDoTikTok.Procurando => $"procurando a live de {canal}…",
-        EstadoDoTikTok.Conectado => $"lendo o chat da live de {canal}.",
-        EstadoDoTikTok.EsperandoALive => $"{canal} não está ao vivo. Esperando a live começar…",
-        EstadoDoTikTok.CanalNaoExiste => $"não achei o perfil {canal} no TikTok. Confira o nome.",
-        EstadoDoTikTok.SemConexao => "sem conexão com o TikTok. Tentando de novo…",
-        _ => "desligado.",
-    };
+        foreach (string nome in (string[])[nameof(TemViewersNaFaixa), nameof(ViewersDaTwitch), nameof(ViewersDoYouTube),
+                     nameof(ViewersDaKick), nameof(ViewersDoTikTok), nameof(NomeDaTwitchNaTela), nameof(NomeDoYouTubeNaTela),
+                     nameof(NomeDaKickNaTela), nameof(NomeDoTikTokNaTela), nameof(ViewersNoTotal)])
+            OnPropertyChanged(nome);
+    }
 
     partial void OnTextoChanged(string value)
     {
@@ -443,7 +450,7 @@ public sealed partial class LogicaFaixaDoCanal : ObservableObject
         OnPropertyChanged(nameof(TwitchNaFaixa));
         OnPropertyChanged(nameof(VariosCanaisNaFaixa));
         OnPropertyChanged(nameof(ExemploDaTwitch));
-        OnPropertyChanged(nameof(DicaDaFaixa));
+        AvisarViewers();
     }
 
     // --- Conexão ---------------------------------------------------------------------------------------------

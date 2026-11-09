@@ -42,6 +42,10 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private bool _mostrarHistoricoDoYouTube;
 
+    /// <summary>Quantos assistem cada canal ao vivo, na faixa do canal (sem as bordas, no topo do Padrão).</summary>
+    [ObservableProperty]
+    private bool _mostrarViewers;
+
     partial void OnChatMultiplataformaChanged(bool value)
     {
         if (value)
@@ -217,6 +221,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
         TipoDeChat = (int)TiposDeChat.Ler(opcoes.TipoDeChat);
         ChatMultiplataforma = opcoes.ChatMultiplataforma;
         MostrarHistoricoDoYouTube = opcoes.MostrarHistoricoDoYouTube;
+        MostrarViewers = opcoes.MostrarViewers;
         ApagarMensagensAntigas = opcoes.ApagarMensagensAntigas;
         // O deslizante volta aos tempos da lista, mais o salvo quando é outro; o máximo muda antes da posição
         int segundos = LerSegundosParaApagar(opcoes.SegundosParaApagar);
@@ -253,6 +258,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
     {
         opcoes.ChatMultiplataforma = ChatMultiplataforma && TipoNaTela == Tipos.Padrao;
         opcoes.MostrarHistoricoDoYouTube = MostrarHistoricoDoYouTube;
+        opcoes.MostrarViewers = MostrarViewers;
         switch (TipoNaTela)
         {
             case Tipos.Padrao:
@@ -296,6 +302,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
         estado["Chat.TipoDeChat"] = TipoDeChat.ToString();
         estado["Chat.ChatMultiplataforma"] = ChatMultiplataforma.ToString();
         estado["Chat.MostrarHistoricoDoYouTube"] = MostrarHistoricoDoYouTube.ToString();
+        estado["Chat.MostrarViewers"] = MostrarViewers.ToString();
         estado["Chat.ApagarMensagensAntigas"] = ApagarMensagensAntigas.ToString();
         estado["Chat.SegundosParaApagar"] = SegundosParaApagar.ToString(CultureInfo.InvariantCulture);
         estado["Chat.VelocidadeAutomaticaAoContinuar"] = VelocidadeAutomaticaAoContinuar.ToString();

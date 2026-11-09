@@ -25,7 +25,7 @@ public sealed record ParteDoTikTok(string Texto, string? Imagem = null);
 /// O que veio num quadro do WebSocket: as mensagens novas, as que um moderador apagou (pelo id da mensagem ou de
 /// quem mandou), se a live acabou, o id do quadro a confirmar (<see cref="QuadrosDoTikTok.Confirmar"/>, ou 0), as
 /// mensagens de presente (ainda por juntar, ver <see cref="JuntadorDePresentes"/>) e os outros avisos (seguiu,
-/// compartilhou, Superfã).
+/// compartilhou, Superfã) e quantos assistem agora (WebcastRoomUserSeqMessage; null quando não veio).
 /// </summary>
 public sealed record LoteDoTikTok(
     IReadOnlyList<ItemDoTikTok> Mensagens,
@@ -34,7 +34,8 @@ public sealed record LoteDoTikTok(
     bool LiveAcabou,
     ulong Confirmar,
     IReadOnlyList<EnvioDePresente> Presentes,
-    IReadOnlyList<AvisoDoTikTok> Avisos)
+    IReadOnlyList<AvisoDoTikTok> Avisos,
+    long? Viewers = null)
 {
     public static readonly LoteDoTikTok Vazio = new([], [], [], false, 0, [], []);
 }
@@ -92,6 +93,7 @@ public static class QuadrosDoTikTok
         var presentes = new List<EnvioDePresente>();
         var avisos = new List<AvisoDoTikTok>();
         bool acabou = false;
+        long? viewers = null;
         foreach (Protobuf bruta in lote.Mensagens(1))
         {
             if (bruta.Sim(6) && !comHistorico) // histórico
@@ -142,6 +144,10 @@ public static class QuadrosDoTikTok
                         && Aviso(IdDe(m, bruta), m.Mensagem(50), TipoDeAvisoDoTikTok.Superfa) is { } superfa)
                         avisos.Add(superfa);
                     break;
+                case "WebcastRoomUserSeqMessage":
+                    // Campo 3: quantos estão na live agora (o 7 é o total de quem já passou)
+                    viewers = (long)m.Numero(3);
+                    break;
                 case "WebcastSubNotifyMessage":
                     // O aviso antigo de assinatura: campo 7 = 0 é "assinou"
                     if (m.Numero(7) == 0 && Aviso(IdDe(m, bruta), m.Mensagem(2), TipoDeAvisoDoTikTok.Superfa) is { } assinou)
@@ -149,7 +155,7 @@ public static class QuadrosDoTikTok
                     break;
             }
         }
-        return new LoteDoTikTok(mensagens, apagadas, usuariosApagados, acabou, envelope.Numero(2), presentes, avisos);
+        return new LoteDoTikTok(mensagens, apagadas, usuariosApagados, acabou, envelope.Numero(2), presentes, avisos, viewers);
     }
 
     // Uma mensagem de presente: quem (7), qual (2; 15 = 16 nome, 1.1 imagem, 12 moedas, 11 tipo), contagem (5), fim (9) e

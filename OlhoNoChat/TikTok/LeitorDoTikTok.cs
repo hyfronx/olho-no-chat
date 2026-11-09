@@ -97,6 +97,12 @@ public sealed class LeitorDoTikTok : IDisposable
     /// <summary>Um presente (o combo inteiro), alguém que seguiu, compartilhou ou virou Superfã (em outra thread).</summary>
     public event Action<AvisoDoTikTok>? AvisoRecebido;
 
+    /// <summary>
+    /// Quantos assistem a live agora (em outra thread): ao conectar, se a sala disse, e depois quando o TikTok conta de
+    /// novo (mais ou menos a cada 10 a 30 s). Ao sair de Conectado o número vale nada (ver <see cref="EstadoMudou"/>).
+    /// </summary>
+    public event Action<long>? ViewersMudou;
+
     /// <summary>O TikTok não aceita mais a sessão da conta conectada (em outra thread): a leitura segue sem ela.</summary>
     public event Action? SessaoRecusada;
 
@@ -241,6 +247,8 @@ public sealed class LeitorDoTikTok : IDisposable
                 await Enviar(socket, envio, QuadrosDoTikTok.EntrarNaSala(sala.IdDaSala), cancelar).ConfigureAwait(false);
                 _log.LogInformation("TikTok: lendo o chat da live {Sala}.", sala.IdDaSala);
                 Mudar(EstadoDoTikTok.Conectado, leitura);
+                if (sala.Viewers is { } viewers)
+                    ViewersMudou?.Invoke(viewers);
                 _ = BaterAsync(socket, envio, sala.IdDaSala, fim.Token);
                 _presentes.Limpar();
                 _ = RelogioDosPresentesAsync(leitura, fim.Token);
@@ -395,6 +403,8 @@ public sealed class LeitorDoTikTok : IDisposable
         }
         foreach (AvisoDoTikTok aviso in lote.Avisos)
             AvisoRecebido?.Invoke(aviso);
+        if (lote.Viewers is { } viewers)
+            ViewersMudou?.Invoke(viewers);
     }
 
     // Sem leitura vale sempre (Desligar); com leitura, só se ela ainda for a atual

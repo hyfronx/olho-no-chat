@@ -43,6 +43,7 @@ public partial class JanelaChat : Window
     private readonly LeitorDoYouTube _youTube;
     private readonly LeitorDaKick _kick;
     private readonly LeitorDoTikTok _tikTok;
+    private readonly ContagemDeViewers _viewers;
     private readonly ContaDoTikTok _contaDoTikTok;
     private readonly ServidorDoOverlay _overlay;
     // O endereço do overlay ocupado: o balão (com as bordas) e o aviso na página (sem elas) ainda não apareceram. Um aviso
@@ -89,6 +90,7 @@ public partial class JanelaChat : Window
         _kick = kick;
         _tikTok = tikTok;
         _contaDoTikTok = contaDoTikTok;
+        _viewers = new ContagemDeViewers(log, new FontesDeViewers(), () => youTube.LiveAtual);
         _overlay = overlay;
         _atualizacoes = atualizacoes;
         _bandeja = bandeja;
@@ -111,7 +113,7 @@ public partial class JanelaChat : Window
 
         _navegador = new NavegadorDoChat(log, grade, linha: 2, () => Opcoes, () => _logica.LinksClicaveis);
         _avisos = new AvisosNoChat(() => _navegador.PaginaPronta && _navegador.Controle?.CoreWebView2 != null, _navegador.Executar,
-            arquivo.Aviso);
+            arquivo.Aviso, () => Opcoes.MostrarDicasDeAjuda);
         _sempreNaFrente = new SempreNaFrente(this, () => !_fechando && _janelaDeConfiguracoes == null);
         _canto = new CantoDeRedimensionar(this, () => _logica.BordasVisiveis && WindowState == WindowState.Normal);
         cartaoFaltaWebView2.Instalado += () => _ = PrepararNavegadorAsync();
@@ -124,6 +126,7 @@ public partial class JanelaChat : Window
         LigarYouTube();
         LigarKick();
         LigarTikTok();
+        LigarViewers();
         LigarOverlay();
         _som.SaidaVoltouParaAPadrao += GravarSaidaDeSomPadrao;
         _conta.Mudou += () => Dispatcher.BeginInvoke(ContaMudou);
@@ -180,6 +183,7 @@ public partial class JanelaChat : Window
             _youTube.Desligar();
             _kick.Desligar();
             _tikTok.Desligar();
+            _viewers.Dispose();
             _overlay.Desligar();
             _som.Dispose();
             _sempreNaFrente.Dispose();
@@ -267,6 +271,7 @@ public partial class JanelaChat : Window
         AtualizarYouTube();
         AtualizarKick();
         AtualizarTikTok();
+        AtualizarViewers();
         FicarPronta();
     }
 
@@ -377,6 +382,7 @@ public partial class JanelaChat : Window
         if (_navegador.Pagina is not ChatPadrao)
             return;
 
+        MostrarViewersNaPagina();
         (bool ligado, bool aviso) = _logica.RolagemDaPagina;
         Atalho? atalho = Opcoes.AtalhoModoRolagem;
         _navegador.Executar(ContratoComAPagina.ModoRolagem(ligado, aviso, Atalho.Existe(atalho) ? atalho.ToString() : string.Empty));
@@ -810,6 +816,7 @@ public partial class JanelaChat : Window
         AtualizarYouTube();
         AtualizarKick();
         AtualizarTikTok();
+        AtualizarViewers();
         _caixa.Atualizar();
         AplicarEstado();
     }
@@ -927,6 +934,7 @@ public partial class JanelaChat : Window
         {
             _faixa.ConexaoDoYouTube = estado;
             ContarAPaginaOsEstados();
+            _viewers.ContarAgora(); // a live começou ou acabou
         });
         _youTube.MensagemRecebida += item =>
         {
@@ -1005,6 +1013,8 @@ public partial class JanelaChat : Window
         {
             _faixa.ConexaoDoTikTok = estado;
             ContarAPaginaOsEstados();
+            if (estado != EstadoDoTikTok.Conectado)
+                _viewers.TikTok(null);
         });
         _tikTok.MensagemRecebida += item => Dispatcher.BeginInvoke(() => NaPaginaDaPlataforma(ContratoComAPagina.AdicionarDoTikTok(item)));
         _tikTok.MensagensApagadas += (ids, logins) =>
@@ -1032,6 +1042,40 @@ public partial class JanelaChat : Window
             _tikTok.Ligar(canal);
         else
             _tikTok.Desligar();
+    }
+
+    // --- Viewers ("Mostrar viewers", aba Chat) ----------------------------------------------------------------
+
+    private void LigarViewers()
+    {
+        _viewers.Mudou += _ => Dispatcher.BeginInvoke(MostrarOsViewers);
+        _tikTok.ViewersMudou += viewers => _viewers.TikTok(viewers);
+    }
+
+    // Conta os canais da faixa (o YouTube, a Kick e o TikTok só no Chat Multiplataforma), só com a opção ligada
+    private void AtualizarViewers()
+    {
+        bool ligado = Opcoes.MostrarViewers && _temWebView2;
+        string twitch = PaginaDoChat.CanalSalvo(Opcoes);
+        _viewers.Contar(ligado && twitch.Length > 0 ? twitch : null,
+            ligado && ChatMultiplataforma.CanalALer(Opcoes) != null,
+            ligado ? ChatMultiplataforma.KickALer(Opcoes) : null,
+            ligado && ChatMultiplataforma.TikTokALer(Opcoes) != null);
+        MostrarOsViewers();
+    }
+
+    // Com as bordas, na faixa do canal; sem elas, no topo do Padrão
+    private void MostrarOsViewers()
+    {
+        _faixa.Viewers = Opcoes.MostrarViewers ? _viewers.Atual : Viewers.Nenhum;
+        MostrarViewersNaPagina();
+    }
+
+    private void MostrarViewersNaPagina()
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.MostrarViewers(
+                Opcoes.MostrarViewers && !_logica.BordasVisiveis ? _viewers.Atual : null));
     }
 
     // Chat Multiplataforma: o aviso de conexão da página junta todas as plataformas; a da Twitch ela mesma lê, a do
@@ -1309,6 +1353,7 @@ public partial class JanelaChat : Window
         AtualizarYouTube();
         AtualizarKick();
         AtualizarTikTok();
+        AtualizarViewers();
         AtualizarOverlay();
         ContarAPaginaOsEstados(); // o Chat Multiplataforma pode ter sido ligado agora
 

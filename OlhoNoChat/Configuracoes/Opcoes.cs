@@ -81,6 +81,10 @@ public sealed class Opcoes
     public string CanalDaKick { get; set; } = string.Empty;
     /// <summary>O nome do canal do TikTok, sem o @ (<see cref="TikTok.CanalDoTikTok"/>); trocado na faixa do canal.</summary>
     public string CanalDoTikTok { get; set; } = string.Empty;
+    /// <summary>
+    /// "Mostrar viewers": quantos assistem cada canal ao vivo, na faixa do canal (sem as bordas, no topo do Padrão).
+    /// </summary>
+    public bool MostrarViewers { get; set; } = false;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Os segundos em texto: a aba Chat grava um número inteiro (deslizante de 10 s a 10 min) e mostra o padrão quando o texto salvo não vale.</summary>
@@ -166,6 +170,11 @@ public sealed class Opcoes
     // Geral
     public bool EsconderBordasAoAbrir { get; set; } = false;
     public bool EsconderIconeDaBarraDeTarefas { get; set; } = false;
+    /// <summary>
+    /// As dicas de ajuda no topo do chat (<see cref="Janelas.Chat.AvisosNoChat"/>): como mostrar as bordas de novo e que
+    /// dá para escrever. Os avisos de problema e de resposta a um atalho aparecem sempre.
+    /// </summary>
+    public bool MostrarDicasDeAjuda { get; set; } = true;
     public bool ProcurarAtualizacoes { get; set; } = true;
     // "Receber versões beta": null = o canal com que o app foi instalado (o instalador da beta já vem na beta)
     public bool? VersoesBeta { get; set; }

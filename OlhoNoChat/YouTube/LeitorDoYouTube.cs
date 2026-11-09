@@ -94,6 +94,9 @@ public sealed class LeitorDoYouTube : IDisposable
 
     public EstadoDoYouTube Estado { get; private set; }
 
+    /// <summary>A live sendo lida (para pedir quantos assistem, ver <see cref="ViewersDoYouTube"/>); null fora de Conectado.</summary>
+    public PaginaDaLive? LiveAtual { get; private set; }
+
     /// <summary>Mostrar o histórico que o YouTube manda ao conectar (opção "Mostrar as mensagens de antes de conectar").</summary>
     public bool MostrarHistorico { get; set; }
 
@@ -187,6 +190,11 @@ public sealed class LeitorDoYouTube : IDisposable
 
         DateTimeOffset conectadoEm = DateTimeOffset.UtcNow;
         _log.LogInformation("YouTube: lendo o chat da live {Live}.", pagina.IdDaLive);
+        lock (_trava)
+        {
+            if (leitura == _leitura)
+                LiveAtual = pagina;
+        }
         Mudar(EstadoDoYouTube.Conectado, leitura);
 
         string? continuacao = pagina.Continuacao;
@@ -247,7 +255,11 @@ public sealed class LeitorDoYouTube : IDisposable
     {
         lock (_trava)
         {
-            if ((leitura != null && leitura != _leitura) || Estado == estado)
+            if (leitura != null && leitura != _leitura)
+                return;
+            if (estado != EstadoDoYouTube.Conectado)
+                LiveAtual = null;
+            if (Estado == estado)
                 return;
             Estado = estado;
         }

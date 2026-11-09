@@ -1218,6 +1218,39 @@
         refreshReadingPill();
     }
 
+    // --- Viewers ------------------------------------------------------------------------------------
+    // "Mostrar viewers" without the borders (with them, the app's channel strip shows them): at the top right, each
+    // platform's logo and how many are watching, one under the other, and the sum (only with more than one). Over the
+    // chat (it doesn't push the messages down); the scroll mode banner goes under it (--onc-viewers-h). The app counts them (Chat/ContagemDeViewers.cs) and sends { items: [{ platform, text }], total } or null.
+
+    const viewersBar = document.createElement('div');
+    viewersBar.id = 'onc-viewers';
+
+    function showViewers(viewers) {
+        const items = viewers && Array.isArray(viewers.items) ? viewers.items : [];
+        if (!items.length) {
+            viewersBar.remove();
+            document.body.style.setProperty('--onc-viewers-h', '0px');
+            return;
+        }
+        viewersBar.replaceChildren(...items.map(item => {
+            const part = document.createElement('span');
+            part.className = 'onc-viewers-item';
+            const icon = document.createElement('span');
+            icon.className = 'onc-platform ' + String(item.platform || '');
+            part.append(icon, String(item.text || ''));
+            return part;
+        }));
+        if (viewers.total) {
+            const total = document.createElement('span');
+            total.className = 'onc-viewers-total';
+            total.append('Total ', Object.assign(document.createElement('b'), { textContent: String(viewers.total) }));
+            viewersBar.append(total);
+        }
+        if (!viewersBar.isConnected) document.body.appendChild(viewersBar);
+        document.body.style.setProperty('--onc-viewers-h', (viewersBar.offsetHeight + 4) + 'px');
+    }
+
     // --- Scrolling -----------------------------------------------------------------------------------
     // The newest message stays in view ("pinned"). In "modo rolagem" (the window takes clicks) the chat can be
     // scrolled back: new messages then don't pull it down, and old lines are kept longer while being read.
@@ -1615,7 +1648,7 @@
         if (!count) return;
         // At the top, under what is already there: the connection pill (while not faded) and the scroll mode banner
         let top = 6;
-        for (const above of [pill, scrollBanner]) {
+        for (const above of [viewersBar, pill, scrollBanner]) {
             if (!above.isConnected || above.classList.contains('faded') || getComputedStyle(above).display === 'none') continue;
             const rect = above.getBoundingClientRect();
             if (rect.height) top = Math.max(top, rect.bottom + 4);
@@ -1933,6 +1966,11 @@
         appNotice(text) {
             multiPillText = '';
             showPill('disconnected multi', String(text || ''), 15000);
+        },
+
+        // "Mostrar viewers" without the borders: { items: [{ platform, text }], total } or null (see "Viewers")
+        viewers(viewers) {
+            showViewers(viewers);
         },
 
         // Chat Multiplataforma: how the YouTube, the Kick or the TikTok reading is (the app reads them): connecting,

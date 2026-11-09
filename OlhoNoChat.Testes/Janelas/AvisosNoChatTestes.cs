@@ -7,10 +7,11 @@ namespace OlhoNoChat.Testes.Janelas;
 public class AvisosNoChatTestes
 {
     private bool _pronta;
+    private bool _dicas = true;
     private readonly List<string> _scripts = [];
     private static readonly Atalho CtrlAltF9 = new(Key.F9, ModifierKeys.Control | ModifierKeys.Alt);
 
-    private AvisosNoChat Novos(string? avisoDasConfiguracoes = null) => new(() => _pronta, _scripts.Add, avisoDasConfiguracoes);
+    private AvisosNoChat Novos(string? avisoDasConfiguracoes = null) => new(() => _pronta, _scripts.Add, avisoDasConfiguracoes, () => _dicas);
 
     // O texto que um script de mostrar põe na página
     private List<string> Mostrados() => _scripts.Where(s => s.Contains("onc-toast") && s.Contains("createElement"))
@@ -68,6 +69,35 @@ public class AvisosNoChatTestes
 
         avisos.MostrarOsQueEsperam(false, configuracoesAbertas: false, CtrlAltF9, () => "pode escrever");
         Assert.Equal(["pode escrever"], Mostrados());
+    }
+
+    [Fact]
+    public void DicasDesligadas_BordasOcultasEEscreverNaoAparecem()
+    {
+        _pronta = true;
+        _dicas = false;
+        var avisos = Novos("arquivo ilegível");
+        avisos.PedirBordasOcultas();
+        avisos.PedirDaParaEscrever();
+
+        avisos.MostrarOsQueEsperam(true, false, CtrlAltF9, () => "pode escrever");
+
+        // O de problema aparece sempre
+        Assert.Equal(["arquivo ilegível"], Mostrados());
+    }
+
+    [Fact]
+    public void DicasDesligadasEnquantoEsperavam_NaoAparecemNemDepoisDeLigar()
+    {
+        var avisos = Novos();
+        avisos.PedirBordasOcultas();
+        _dicas = false;
+        _pronta = true;
+        avisos.MostrarOsQueEsperam(true, false, CtrlAltF9, () => null);
+        _dicas = true;
+        avisos.MostrarOsQueEsperam(true, false, CtrlAltF9, () => null);
+
+        Assert.Empty(Mostrados());
     }
 
     [Fact]
