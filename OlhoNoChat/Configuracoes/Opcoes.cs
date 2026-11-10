@@ -18,8 +18,11 @@ namespace OlhoNoChat.Configuracoes;
 /// </remarks>
 public sealed class Opcoes
 {
-    /// <summary>Formato do arquivo: muda só se um dia o arquivo precisar ser convertido de novo.</summary>
-    public const int VersaoAtual = 1;
+    /// <summary>
+    /// Formato do arquivo: muda quando um arquivo antigo precisa de uma mudança uma vez só, ao abrir pela primeira vez a
+    /// versão nova (ver <see cref="Corrigir"/>). 2 = o "Mostrar viewers" ligado para todo mundo (2.10.3).
+    /// </summary>
+    public const int VersaoAtual = 2;
 
     public const int TemaNenhum = 0;
     public const int TemaPadrao = 1;
@@ -83,8 +86,10 @@ public sealed class Opcoes
     public string CanalDoTikTok { get; set; } = string.Empty;
     /// <summary>
     /// "Mostrar viewers": quantos assistem cada canal ao vivo, na faixa do canal (sem as bordas, no topo do Padrão).
+    /// Ligado por padrão desde a 2.10.3 (antes desligado); quem já tinha o app ganha ele ligado uma vez só, em
+    /// <see cref="Corrigir"/>.
     /// </summary>
-    public bool MostrarViewers { get; set; } = false;
+    public bool MostrarViewers { get; set; } = true;
     public string EnderecoPersonalizado { get; set; } = string.Empty;
     public bool ApagarMensagensAntigas { get; set; } = false;
     /// <summary>Os segundos em texto: a aba Chat grava um número inteiro (deslizante de 10 s a 10 min) e mostra o padrão quando o texto salvo não vale.</summary>
@@ -375,6 +380,11 @@ public sealed class Opcoes
         NovidadesVistas.RemoveAll(novidade => novidade == null);
         ListaDeUsuarios.RemoveAll(nome => nome == null);
         UsuariosBloqueados.RemoveAll(nome => nome == null);
+
+        // O "Mostrar viewers" passou a vir ligado (pedido do usuário em 2026-11-10): o arquivo de antes (versão 1) ganha
+        // ele ligado uma vez; depois a versão gravada é 2, e quem desligar não tem ele ligado de novo
+        if (Versao < 2)
+            MostrarViewers = true;
 
         Conta ??= new ContaGravada();
         Conta.Corrigir();

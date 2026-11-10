@@ -363,6 +363,26 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
     }
 
     [Fact]
+    public void MostrarViewers_ArquivoDaVersao1DesligadoLigaUmaVez()
+    {
+        File.WriteAllText(Novo, """{ "Versao": 1, "MostrarViewers": false }""");
+
+        var o = ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes;
+
+        Assert.True(o.MostrarViewers);
+        Assert.Equal(Opcoes.VersaoAtual, o.Versao);
+    }
+
+    [Fact]
+    public void MostrarViewers_DesligadoDepoisDaVersao2ContinuaDesligado()
+    {
+        // A pessoa desligou depois que ele veio ligado: o arquivo já é da versão 2
+        File.WriteAllText(Novo, ArquivoDeConfiguracoes.ParaJson(new Opcoes { MostrarViewers = false }));
+
+        Assert.False(ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.MostrarViewers);
+    }
+
+    [Fact]
     public void AtalhoDaPausaJaUsadoPorOutro_FicaSemAtalho()
     {
         // Quem já tinha posto Ctrl + Alt + F6 nas bordas: a pausa (nova, com o mesmo padrão) não funcionaria
