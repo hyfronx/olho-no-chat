@@ -370,8 +370,7 @@ public sealed class ServidorDoOverlay : IDisposable
             else if (caminho == "/overlay/eventos")
                 await TransmitirParaAsync(resposta, cancelar).ConfigureAwait(false);
             else if (caminho == "/overlay/quem")
-                Responder(resposta, 200, "application/json; charset=utf-8", JsonSerializer.Serialize(new { app = Marca }));
-            else if (Arquivos.TryGetValue(caminho, out var arquivo) && File.Exists(Path.Combine(_pasta, arquivo.Arquivo)))
+                Responder(resposta, 200, "application/json; charset=utf-8", JsonSerializer.Serialize(new { app = Marca }));            else if (Arquivos.TryGetValue(caminho, out var arquivo) && File.Exists(Path.Combine(_pasta, arquivo.Arquivo)))
                 Responder(resposta, 200, arquivo.Tipo, await File.ReadAllTextAsync(Path.Combine(_pasta, arquivo.Arquivo), cancelar).ConfigureAwait(false));
             else
                 Responder(resposta, 404, "text/plain; charset=utf-8", string.Empty);

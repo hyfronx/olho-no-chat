@@ -127,8 +127,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [ObservableProperty]
     private string _resultadoDaProcura = string.Empty;
 
-    /// <summary>O endereço que está valendo (o da porta salva).</summary>
+    /// <summary>O endereço que está valendo (o da porta salva): o "ver no navegador" abre ele.</summary>
     public string Endereco => ServidorDoOverlay.EnderecoDa(_portaSalva);
+
+    /// <summary>O arquivo que vai no OBS (Arquivo local): espera o app abrir e mostra o overlay.</summary>
+    public string CaminhoDoArquivo { get; } = ArquivoDoObs.Caminho;
 
     private EstadoDoOverlay EstadoAgora => _acoes?.Estado() ?? EstadoDoOverlay.Desligado;
 
@@ -167,7 +170,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
             {
                 EstadoDoOverlay.Funcionando => conectados switch
                 {
-                    0 => "Funcionando, mas nenhum OBS está conectado. Cole o endereço numa Fonte de navegador do OBS.",
+                    0 => "Funcionando, mas nenhum OBS está conectado. Coloque o arquivo (ou o endereço) abaixo numa Fonte de navegador do OBS.",
                     1 => "Funcionando. O OBS está conectado.",
                     _ => $"Funcionando. {conectados} Fontes de navegador conectadas.",
                 },
@@ -202,7 +205,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         }
         _portaSalva = nova.Value;
         Porta = nova.Value.ToString(CultureInfo.InvariantCulture);
-        ResultadoDaProcura = "Pronto, o overlay mudou de endereço. Agora troque no OBS:";
+        ResultadoDaProcura = "Pronto, o overlay mudou de endereço. Agora atualize no OBS:";
         MostrarPassosDoObs = true;
         OnPropertyChanged(nameof(Endereco));
         AtualizarEstado();

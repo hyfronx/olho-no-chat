@@ -51,6 +51,8 @@ public partial class JanelaChat : Window
     private bool _balaoDoOverlayPendente;
     private bool _avisoDoOverlayNaPaginaPendente;
     private bool _problemaDoOverlayAvisado;
+    // O sinal de vida para o arquivo do OBS, enquanto o overlay funciona (ver ArquivoDoObs)
+    private readonly DispatcherTimer _sinalDoOverlay = new() { Interval = ArquivoDoObs.IntervaloDoSinal };
     private const string AvisoDoOverlay = "aviso-do-overlay";
     private readonly ProcuraDeAtualizacoes _atualizacoes;
     private readonly IconeDaBandeja _bandeja;
@@ -852,11 +854,29 @@ public partial class JanelaChat : Window
         };
         _overlay.EstadoMudou += _ => Dispatcher.BeginInvoke(OverlayMudou);
         _overlay.ConectadosMudaram += () => Dispatcher.BeginInvoke(() => _janelaDeConfiguracoes?.Logica.Overlay.AtualizarEstado());
+        _sinalDoOverlay.Tick += (_, _) => ArquivoDoObs.DarSinalDeVida();
     }
 
-    // Abre (ou continua aberto, com as opções novas) só com a opção ligada; a porta é a gravada
+    // Funcionando, o arquivo do OBS fica sabendo (e troca para o overlay); parado, o sinal deixa de valer na hora
+    private void AtualizarSinalDoOverlay()
+    {
+        if (_overlay.Estado == EstadoDoOverlay.Funcionando)
+        {
+            ArquivoDoObs.DarSinalDeVida();
+            _sinalDoOverlay.Start();
+        }
+        else
+        {
+            _sinalDoOverlay.Stop();
+            ArquivoDoObs.TirarSinalDeVida();
+        }
+    }
+
+    // Abre (ou continua aberto, com as opções novas) só com a opção ligada; a porta é a gravada. O arquivo do OBS é conferido
+    // sempre (apagado de algum jeito, volta; a porta mudou, ele passa a esperar pela nova)
     private void AtualizarOverlay()
     {
+        ArquivoDoObs.Garantir(Opcoes.PortaDoOverlay);
         if (Opcoes.OverlayLigado)
             _overlay.Ligar(Opcoes.PortaDoOverlay, ContratoDoOverlay.JsonDasOpcoes(Opcoes));
         else
@@ -866,6 +886,7 @@ public partial class JanelaChat : Window
     private void OverlayMudou()
     {
         _janelaDeConfiguracoes?.Logica.Overlay.AtualizarEstado();
+        AtualizarSinalDoOverlay();
         if (_overlay.Estado is EstadoDoOverlay.PortaOcupada or EstadoDoOverlay.OutroOlhoNoChat)
         {
             if (_problemaDoOverlayAvisado)

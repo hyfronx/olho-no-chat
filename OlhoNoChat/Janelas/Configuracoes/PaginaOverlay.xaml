@@ -63,7 +63,36 @@
                                            Visibility="{Binding ResultadoDaProcura, Converter={StaticResource VisivelSe}}" />
                                 <TextBlock x:Name="textoPassos" Style="{DynamicResource Dica}" Margin="0,4,0,0"
                                            Visibility="{Binding MostrarPassosDoObs, Converter={StaticResource VisivelSe}}"
-                                           Text="1. Clique em Copiar, abaixo.&#10;2. No OBS, clique duas vezes na Fonte de navegador do overlay.&#10;3. No campo URL, apague o endereço antigo, cole o novo e clique em OK." />
+                                           Text="1. No OBS, clique duas vezes na Fonte de navegador do overlay.&#10;2. Com o arquivo: clique em &quot;Atualizar cache da página atual&quot; e em OK.&#10;    Com o endereço: copie o novo, abaixo, cole no campo URL e clique em OK." />
+                            </StackPanel>
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <!-- Dois jeitos de pôr no OBS: o arquivo (recomendado: aparece mesmo com o OBS aberto antes do app) e o endereço -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE8A5;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="No OBS, com o arquivo (recomendado)" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Style="{DynamicResource Dica}"
+                                           Text="1. Clique em Copiar, aqui embaixo.&#10;2. No OBS, em Fontes, clique em + e em Navegador.&#10;3. Deixe &quot;Arquivo local&quot; marcado e clique em Explorar.&#10;4. Cole no campo &quot;Nome&quot;, embaixo (não na barra de cima), e clique em Abrir.&#10;É só uma vez. O overlay aparece mesmo se o OBS abrir antes do app." />
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="caixaArquivo" IsReadOnly="True" Text="{Binding CaminhoDoArquivo, Mode=OneWay}"
+                                             AutomationProperties.Name="Arquivo do overlay para o OBS" />
+                                    <Button x:Name="botaoCopiar" Grid.Column="1" Margin="8,0,0,0" ToolTip="Copiar o caminho do arquivo"
+                                            AutomationProperties.Name="Copiar o caminho do arquivo" Click="Copiar_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8C8;" Style="{DynamicResource Icone}" FontSize="12" Foreground="{DynamicResource LaranjaClaro}" />
+                                            <TextBlock x:Name="textoCopiar" Text="Copiar" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                             </StackPanel>
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
@@ -74,8 +103,8 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE71B;" Style="{DynamicResource IconeDoCartao}" />
                             <StackPanel Grid.Column="1">
-                                <TextBlock Text="Endereço para o OBS" Style="{DynamicResource Rotulo}" />
-                                <TextBlock Text="No OBS, em Fontes, clique em + > Navegador e cole este endereço no campo URL. É só uma vez: o endereço não muda." Style="{DynamicResource Dica}" />
+                                <TextBlock Text="Ou com o endereço" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Numa Fonte de navegador com &quot;Arquivo local&quot; desmarcado, cole no campo URL. Assim, abra o app antes do OBS: se o OBS abrir primeiro, o overlay fica vazio até você atualizar a fonte." Style="{DynamicResource Dica}" />
                                 <Grid Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -84,11 +113,11 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="caixaEndereco" IsReadOnly="True" Text="{Binding Endereco, Mode=OneWay}"
                                              AutomationProperties.Name="Endereço do overlay" />
-                                    <Button x:Name="botaoCopiar" Grid.Column="1" Margin="8,0,0,0" ToolTip="Copiar o endereço"
-                                            AutomationProperties.Name="Copiar o endereço" Click="Copiar_Click">
+                                    <Button x:Name="botaoCopiarEndereco" Grid.Column="1" Margin="8,0,0,0" ToolTip="Copiar o endereço"
+                                            AutomationProperties.Name="Copiar o endereço" Click="CopiarEndereco_Click">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="&#xE8C8;" Style="{DynamicResource Icone}" FontSize="12" Foreground="{DynamicResource LaranjaClaro}" />
-                                            <TextBlock x:Name="textoCopiar" Text="Copiar" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="textoCopiarEndereco" Text="Copiar" Margin="6,0,0,0" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                     <!-- Desligado, a dica diz o que falta para usar -->

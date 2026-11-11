@@ -41,24 +41,36 @@ public partial class PaginaOverlay : UserControl
 
     private void Copiar_Click(object sender, RoutedEventArgs e)
     {
-        if (Logica == null)
-            return;
+        if (Logica != null)
+            Copiar(Logica.CaminhoDoArquivo, textoCopiar);
+    }
+
+    private void CopiarEndereco_Click(object sender, RoutedEventArgs e)
+    {
+        if (Logica != null)
+            Copiar(Logica.Endereco, textoCopiarEndereco);
+    }
+
+    private void Copiar(string texto, TextBlock textoDoBotao)
+    {
         try
         {
-            Clipboard.SetText(Logica.Endereco);
+            Clipboard.SetText(texto);
         }
         catch (COMException)
         {
             return; // outro programa está com a área de transferência aberta
         }
-        // "Copiado" por um instante, no próprio botão
-        textoCopiar.Text = "Copiado";
+        // "Copiado" por um instante, no próprio botão (só um dos dois de cada vez)
         _voltarOCopiar?.Stop();
+        textoCopiar.Text = "Copiar";
+        textoCopiarEndereco.Text = "Copiar";
+        textoDoBotao.Text = "Copiado";
         _voltarOCopiar = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _voltarOCopiar.Tick += (_, _) =>
         {
             _voltarOCopiar?.Stop();
-            textoCopiar.Text = "Copiar";
+            textoDoBotao.Text = "Copiar";
         };
         _voltarOCopiar.Start();
     }

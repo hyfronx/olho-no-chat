@@ -32,8 +32,13 @@ public static class Programa
     [STAThread]
     public static void Main()
     {
-        // Trata as chamadas do instalador (instalar, atualizar, desinstalar) e sai sozinho nesses casos
-        VelopackApp.Build().Run();
+        // Trata as chamadas do instalador (instalar, atualizar, desinstalar) e sai sozinho nesses casos. O arquivo do overlay
+        // para o OBS nasce com a instalação (ou na atualização, para quem já tinha o app) e só sai com a desinstalação.
+        VelopackApp.Build()
+            .OnAfterInstallFastCallback(_ => ArquivoDoObs.CriarSeFaltar())
+            .OnAfterUpdateFastCallback(_ => ArquivoDoObs.CriarSeFaltar())
+            .OnBeforeUninstallFastCallback(_ => ArquivoDoObs.Apagar())
+            .Run();
 
         // As proteções do processo (a sessão da conta do TikTok fica na memória): antes de qualquer janela ou DLL
         Sistema.Blindagem.Ligar();
@@ -159,6 +164,7 @@ public static class Programa
     private static void AoSair()
     {
         _arquivo?.Gravar();
+        ArquivoDoObs.TirarSinalDeVida(); // o arquivo do OBS volta a esperar o app
         _servicos?.Dispose();
         _instanciaUnica?.Dispose();
     }
