@@ -72,6 +72,19 @@ public sealed class AbaDoOverlayTestes
         aba.PreencherArea = false;
 
         Assert.Contains(nameof(LogicaOverlay.Quantidade), avisadas);
+        Assert.Contains(nameof(LogicaOverlay.AteUmNumeroEscolhido), avisadas);
+    }
+
+    // "No máximo" só aparece com "Até um número"
+    [Fact]
+    public void AteUmNumeroEscolhido_SoSemAsQueCouberem()
+    {
+        var aba = new LogicaOverlay();
+        aba.Carregar(new Opcoes());
+        Assert.False(aba.AteUmNumeroEscolhido);
+
+        aba.Quantidade = LogicaOverlay.Quantidades[1].Valor;
+        Assert.True(aba.AteUmNumeroEscolhido);
     }
 
     [Fact]

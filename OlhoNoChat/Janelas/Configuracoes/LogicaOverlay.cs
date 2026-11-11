@@ -239,7 +239,11 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     /// <summary>Verdadeiro: as que couberem na fonte do OBS; falso: no máximo <see cref="Mensagens"/>. É o que fica gravado.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Quantidade))]
+    [NotifyPropertyChangedFor(nameof(AteUmNumeroEscolhido))]
     private bool _preencherArea;
+
+    /// <summary>"No máximo" só aparece com "Até um número" (com "As que couberem" ele não vale).</summary>
+    public bool AteUmNumeroEscolhido => !PreencherArea;
 
     /// <summary>"Quantas mensagens" na tela: "As que couberem" ou "Até um número" (o <see cref="PreencherArea"/>).</summary>
     public string Quantidade

@@ -236,19 +236,22 @@
                                           ItemsSource="{x:Static local:LogicaOverlay.Quantidades}" DisplayMemberPath="Nome"
                                           SelectedValuePath="Valor" SelectedValue="{Binding Quantidade}" />
                             </Grid>
-                            <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
-                            <Grid Margin="36,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="No máximo" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
-                                <Slider x:Name="deslizanteMensagens" Grid.Column="1" Width="200" VerticalAlignment="Center" AutomationProperties.Name="Mensagens no máximo"
-                                        Minimum="1" Maximum="50" SmallChange="1" LargeChange="5" TickFrequency="1" IsSnapToTickEnabled="True"
-                                        Value="{Binding Mensagens}" />
-                                <TextBlock Grid.Column="2" Width="96" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0" Style="{DynamicResource Rotulo}" Text="{Binding TextoDasMensagens}" />
-                            </Grid>
+                            <!-- Só com "Até um número": com "As que couberem" o número não vale -->
+                            <StackPanel x:Name="linhaNoMaximo" Visibility="{Binding AteUmNumeroEscolhido, Converter={StaticResource VisivelSe}}">
+                                <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                                <Grid Margin="36,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="No máximo" Style="{DynamicResource Rotulo}" VerticalAlignment="Center" />
+                                    <Slider x:Name="deslizanteMensagens" Grid.Column="1" Width="200" VerticalAlignment="Center" AutomationProperties.Name="Mensagens no máximo"
+                                            Minimum="1" Maximum="50" SmallChange="1" LargeChange="5" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding Mensagens}" />
+                                    <TextBlock Grid.Column="2" Width="96" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0" Style="{DynamicResource Rotulo}" Text="{Binding TextoDasMensagens}" />
+                                </Grid>
+                            </StackPanel>
                             <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
                             <Grid>
                                 <Grid.ColumnDefinitions>

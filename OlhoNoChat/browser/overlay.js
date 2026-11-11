@@ -198,13 +198,30 @@
 
     // --- On the screen ------------------------------------------------------------------------------------
 
-    // "Perspectiva" in the "Funil" shape: the lines stay in the middle of the source (overlay.css) and turn around its
-    // middle, so they close in from above and below. The depth follows the source's width, for the same look at any size,
-    // and the "Cone do funil" (1 to 10): a shorter depth closes the lines above and below more. 5 = the source's width.
+    // "Perspectiva" in the "Funil" shape: the lines stay in the middle of the source (overlay.css) and the far side closes
+    // in from above and below. A real 3D turn can't do it: there the far side gets shorter and narrower by almost the
+    // same amount, so closing more only looked like more "Inclinação" (user, 2026-11-11). So the two are apart:
+    // - "Inclinação" sets only how narrow the far side is (the width of a 30° turn seen from as far as the source is wide);
+    // - "Cone do funil" (1 to 10) sets only how short the far side is.
+    // It is one projective transform (matrix3d): x' = s·x / w, y' = y / w, w = 1 + a·x, with x from the near side. The far
+    // side's height is 1/w there; s is how much the near side's letters stretch (or squeeze), kept between -20% and +30%:
+    // the cone moves inside that range, so at a small "Inclinação" it closes only a little (more would stretch the text).
+    const FUNNEL_SQUEEZE = 0.8;
+    const FUNNEL_STRETCH = 1.3;
+
     function placeFunnel() {
+        const width = Math.max(1, box.clientWidth);
         const cone = Math.min(10, Math.max(1, Number(options && options.cone) || 5));
-        const factor = 2.5 * Math.pow(0.35 / 2.5, (cone - 1) / 9) / (2.5 * Math.pow(0.35 / 2.5, 4 / 9));
-        document.documentElement.style.setProperty('--ov-depth', Math.round(Math.max(120, box.clientWidth * factor)) + 'px');
+        const tilt = Math.min(60, Math.max(5, Number(options && options.tilt) || 30)) * Math.PI / 180;
+        const narrow = Math.cos(tilt) / (1 + Math.sin(tilt)); // far side's width, from 1 (no turn) down
+        const open = Math.min(0.97, narrow / FUNNEL_SQUEEZE);
+        const closed = narrow / FUNNEL_STRETCH;
+        const short = open + (closed - open) * (cone - 1) / 9; // far side's height
+        const stretch = narrow / short;
+        // The far side is on the left with "Para a esquerda" (overlay.css turns around the right side): x goes negative
+        const grow = (1 / short - 1) / width * (options && options.perspective === 'left' ? -1 : 1);
+        document.documentElement.style.setProperty('--ov-funnel',
+            `matrix3d(${stretch}, 0, 0, ${grow}, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)`);
     }
     window.addEventListener('resize', placeFunnel);
 

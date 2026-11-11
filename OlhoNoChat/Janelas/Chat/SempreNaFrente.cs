@@ -87,8 +87,22 @@ internal sealed class SempreNaFrente : IDisposable
             return;
 
         IntPtr janela = new WindowInteropHelper(_janela).Handle;
-        if (janela != IntPtr.Zero)
-            JanelaDoWindows.ColocarNaFrente(janela);
+        if (janela == IntPtr.Zero)
+            return;
+        JanelaDoWindows.ColocarNaFrente(janela);
+        TrazerOsBaloesAbertos();
+    }
+
+    // Os balões e painéis da barra (a novidade, o tamanho do texto, os emotes) são janelas à parte do WPF (Popup): o chat
+    // trazido para a frente passaria por cima deles, que ficariam atrás sem dar para clicar. Sobem logo depois dele.
+    private static void TrazerOsBaloesAbertos()
+    {
+        foreach (PresentationSource fonte in PresentationSource.CurrentSources)
+        {
+            if (fonte is HwndSource balao && balao.RootVisual?.GetType().Name == "PopupRoot"
+                                          && FuncoesDoWindows.IsWindowVisible(balao.Handle))
+                JanelaDoWindows.ColocarNaFrente(balao.Handle);
+        }
     }
 
     /// <summary>

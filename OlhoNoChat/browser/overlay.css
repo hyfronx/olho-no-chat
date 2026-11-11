@@ -65,8 +65,8 @@ body.ov-tilt-right #ov-lines {
 }
 
 /* "Funil": the lines sit in the middle of the source (auto margins; once they fill it, the oldest leave by the edge
-   as usual) and turn around its middle with a depth as big as the source's width (overlay.js), so they close in from
-   above and below, more with a bigger "Inclinação". Fixed: nothing moves as lines come and go. */
+   as usual) and the far side closes in from above and below: overlay.js builds the transform (--ov-funnel), with the
+   width from "Inclinação" and the height from "Cone do funil". Fixed: nothing moves as lines come and go. */
 body.ov-funnel:not(.ov-ticker) #ov-lines > .ov-line:first-child {
     margin-top: auto;
 }
@@ -75,12 +75,9 @@ body.ov-funnel:not(.ov-ticker) #ov-lines > .ov-line:last-child {
     margin-bottom: auto;
 }
 
-body.ov-funnel.ov-tilt-left #ov-lines {
-    transform: perspective(var(--ov-depth, 600px)) rotateY(calc(-1 * var(--ov-tilt, 30deg)));
-}
-
+body.ov-funnel.ov-tilt-left #ov-lines,
 body.ov-funnel.ov-tilt-right #ov-lines {
-    transform: perspective(var(--ov-depth, 600px)) rotateY(var(--ov-tilt, 30deg));
+    transform: var(--ov-funnel, none);
 }
 
 .ov-line {
