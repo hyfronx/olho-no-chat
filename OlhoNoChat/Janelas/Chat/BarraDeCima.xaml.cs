@@ -188,13 +188,13 @@ public partial class BarraDeCima : UserControl
     /// O balão da novidade do AutoMod, apontando para a engrenagem (a conta fica na aba Twitch). Curto: como aprovar o
     /// próprio aviso do chat mostra quando acontecer (escolha do usuário). O fim diz o que falta para usar.
     /// </summary>
-    public void MostrarNovidadeDoAutoMod(FaltaParaOAutoMod falta) =>
+    public void MostrarNovidadeDoAutoMod(FaltaNaConta falta) =>
         MostrarNovidade(botaoConfiguracoes, "Novo: aprovar mensagens do AutoMod",
             "Se você é dono ou moderador do canal, as mensagens que o AutoMod segurar aparecem no chat para você aprovar ou recusar." +
             falta switch
             {
-                FaltaParaOAutoMod.Conectar => " Precisa conectar a sua conta da Twitch em Configurações > Twitch.",
-                FaltaParaOAutoMod.ConectarDeNovo => " Para usar, clique em \"Conectar de novo\" em Configurações > Twitch.",
+                FaltaNaConta.Conectar => " Precisa conectar a sua conta da Twitch em Configurações > Twitch.",
+                FaltaNaConta.ConectarDeNovo => " Para usar, clique em \"Conectar de novo\" em Configurações > Twitch.",
                 _ => string.Empty,
             },
             []);
@@ -217,12 +217,39 @@ public partial class BarraDeCima : UserControl
                 : "Outro programa está usando o endereço do overlay. O app acha outro endereço para você em um clique.",
             [], principal: "Resolver", secundario: "Agora não");
 
-    /// <summary>O que falta para o AutoMod funcionar, para o fim do balão.</summary>
-    public enum FaltaParaOAutoMod
+    /// <summary>
+    /// O balão da novidade dos anúncios, apontando para a engrenagem (a opção fica na aba Twitch). Curto, como o do
+    /// AutoMod; o fim diz o que falta para usar.
+    /// </summary>
+    public void MostrarNovidadeDosAnuncios(FaltaNaConta falta) =>
+        MostrarNovidade(botaoConfiguracoes, "Novo: aviso de anúncios",
+            "Se o seu canal tem anúncios, o chat avisa 5 minutos antes de cada um, com um botão para adiar, e mostra quando ele está rodando." +
+            falta switch
+            {
+                FaltaNaConta.Conectar => " Precisa conectar a sua conta da Twitch em Configurações > Twitch.",
+                FaltaNaConta.ConectarDeNovo => " Para usar, clique em \"Conectar de novo\" em Configurações > Twitch.",
+                _ => string.Empty,
+            },
+            []);
+
+    /// <summary>O balão da novidade de moderar no chat, apontando para a engrenagem (a opção fica na aba Twitch).</summary>
+    public void MostrarNovidadeDaModeracao(FaltaNaConta falta) =>
+        MostrarNovidade(botaoConfiguracoes, "Novo: moderar no chat",
+            "Se você é dono ou moderador do canal, passe o mouse numa mensagem (com as bordas visíveis) para apagar, suspender ou banir." +
+            falta switch
+            {
+                FaltaNaConta.Conectar => " Precisa conectar a sua conta da Twitch em Configurações > Twitch.",
+                FaltaNaConta.ConectarDeNovo => " Para usar, clique em \"Conectar de novo\" em Configurações > Twitch.",
+                _ => string.Empty,
+            },
+            []);
+
+    /// <summary>O que falta na conta para o AutoMod, os anúncios ou moderar funcionarem, para o fim do balão.</summary>
+    public enum FaltaNaConta
     {
         Nada,
         Conectar,
-        /// <summary>A conta foi conectada antes da permissão nova (2.7.0).</summary>
+        /// <summary>A conta foi conectada antes da permissão nova (2.7.0 no AutoMod, 2.11.0 nos anúncios).</summary>
         ConectarDeNovo,
     }
 

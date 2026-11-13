@@ -78,6 +78,9 @@ public sealed class NavegadorDoChat
     /// <summary>Padrão: um botão do cartão do AutoMod (o id da mensagem e se é para aprovar).</summary>
     public event Action<string, bool>? PedidoDoAutoMod;
 
+    /// <summary>Padrão: apagar uma mensagem, suspender ou banir (os botões em cima da mensagem).</summary>
+    public event Action<Twitch.ModeracaoNoCanal.Pedido>? PedidoDeModeracao;
+
     /// <summary>Padrão: uma linha mostrada (ou tirada) que vai também para o overlay da live.</summary>
     public event Action<ContratoDoOverlay.Pedido>? ParaOOverlay;
 
@@ -141,6 +144,13 @@ public sealed class NavegadorDoChat
             string? texto = TextoDaMensagem(e);
             if (ContratoComAPagina.LerPedidoDoAutoMod(texto) is { } pedido)
                 PedidoDoAutoMod?.Invoke(pedido.Id, pedido.Aprovar);
+            else if (texto != null && texto.StartsWith("onc:mod:", StringComparison.Ordinal))
+            {
+                // Só da nossa página, a aberta agora: outra página nunca pede para apagar ou banir alguém
+                if (PaginaDoApp(e.Source) && MesmoEndereco(e.Source, Pagina?.Endereco)
+                    && Twitch.ModeracaoNoCanal.LerPedido(texto) is { } moderacao)
+                    PedidoDeModeracao?.Invoke(moderacao);
+            }
             else if (texto != null && texto.StartsWith(ContratoDoOverlay.Prefixo, StringComparison.Ordinal))
             {
                 // Só a página do Padrão (a nossa) fala com o overlay: o chat oficial e um endereço personalizado são

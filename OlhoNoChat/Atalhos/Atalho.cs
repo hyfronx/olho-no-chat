@@ -30,7 +30,8 @@ public sealed record Atalho
 
     /// <summary>
     /// Como o atalho aparece para a pessoa: os modificadores na ordem Ctrl, Shift, Alt, Win e depois a tecla, com o
-    /// nome que o WPF dá a ela ("F9", "A", "D1"...).
+    /// nome que o WPF dá a ela ("F9", "A", "D1"...). Page Up e Page Down têm no WPF o mesmo número de Prior e Next, e o
+    /// nome sairia "Next": ficam com o nome do teclado.
     /// </summary>
     public override string ToString()
     {
@@ -39,7 +40,12 @@ public sealed record Atalho
         if (Modificadores.HasFlag(ModifierKeys.Shift)) partes.Add("Shift");
         if (Modificadores.HasFlag(ModifierKeys.Alt)) partes.Add("Alt");
         if (Modificadores.HasFlag(ModifierKeys.Windows)) partes.Add("Win");
-        partes.Add(Tecla.ToString());
+        partes.Add(Tecla switch
+        {
+            Key.PageDown => "Page Down",
+            Key.PageUp => "Page Up",
+            _ => Tecla.ToString(),
+        });
         return string.Join(" + ", partes);
     }
 

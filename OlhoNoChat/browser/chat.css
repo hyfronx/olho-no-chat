@@ -41,6 +41,13 @@ body {
     display: inline;
 }
 
+/* A message a moderator deleted (chat.js deleteLines): the name stays, the text becomes "<mensagem excluída>" in gray */
+.chat_line.onc-deleted .message {
+    color: #9E9E9E !important;
+    font-style: italic;
+    font-weight: normal;
+}
+
 .tag {
     vertical-align: bottom;
     height: 18px;
@@ -663,4 +670,263 @@ body.onc-links-on .onc-automod-hint {
 
 .onc-automod-notice:empty {
     display: none;
+}
+
+/* Moderation (chat.js "Moderation"): the small bar at the right of the message under the mouse (only with the borders
+   shown), the timeout menu next to it and the "Banir?" confirmation; the message gets a thin outline */
+#onc-mod {
+    position: fixed;
+    right: 8px;
+    z-index: 30;
+    display: none;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    background: rgba(20, 20, 20, .94);
+    border: 1px solid #4A4A4A;
+    border-radius: 8px;
+    font: 600 12px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+}
+
+body.onc-links-on #onc-mod.shown {
+    display: flex;
+}
+
+#onc-mod button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 28px;
+    height: 26px;
+    padding: 0 5px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #E0E0E0;
+    font: inherit;
+    cursor: pointer;
+}
+
+#onc-mod button:hover {
+    background: #3A3A3A;
+}
+
+#onc-mod .onc-mod-delete:hover,
+#onc-mod .onc-mod-timeout:hover,
+#onc-mod.times .onc-mod-timeout {
+    color: #FF8A65;
+}
+
+#onc-mod .onc-mod-ban:hover,
+#onc-mod.confirm .onc-mod-ban {
+    color: #F04A4A;
+}
+
+#onc-mod.confirm .onc-mod-ban {
+    background: rgba(240, 74, 74, .18);
+}
+
+.onc-mod-confirm,
+.onc-mod-times {
+    display: none;
+}
+
+#onc-mod.confirm .onc-mod-confirm {
+    display: inline;
+}
+
+#onc-mod.times .onc-mod-times {
+    display: flex;
+    gap: 2px;
+    padding-right: 4px;
+    border-right: 1px solid #4A4A4A;
+}
+
+#onc-mod .onc-mod-times button:hover {
+    background: #FF8A65;
+    color: #141414;
+}
+
+.chat_line.onc-mod-target {
+    outline: 1px solid rgba(255, 138, 101, .55);
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+/* Ads (chat.js "Ads"): the card above the AutoMod one (chat.js sets its bottom), orange while an ad is coming, red while
+   it runs; a thin bar runs out with the time. The button only with the borders shown, like the AutoMod ones. */
+#onc-ads {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 6px;
+    z-index: 20;
+    display: none;
+    box-sizing: border-box;
+    background: rgba(14, 14, 14, .92);
+    border: 2px solid #FF8A65;
+    border-radius: 10px;
+    padding: 6px 10px 7px;
+    color: #fff;
+    font: 600 15px "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0;
+    text-shadow: none;
+}
+
+#onc-ads.shown {
+    display: block;
+}
+
+#onc-ads.running {
+    border-color: #F04A4A;
+}
+
+/* The last 30 seconds before the ad: the border blinks */
+#onc-ads.soon {
+    animation: onc-ads-soon 1s ease-in-out infinite;
+}
+
+@keyframes onc-ads-soon {
+    50% { border-color: #FFD2C2; }
+}
+
+/* Only the notice (snoozed, ended) */
+#onc-ads:not(.coming):not(.running) .onc-ads-row,
+#onc-ads:not(.coming):not(.running) .onc-ads-bar,
+#onc-ads:not(.coming) .onc-ads-hint {
+    display: none;
+}
+
+.onc-ads-row {
+    display: flex;
+    align-items: center;
+    min-height: 26px;
+}
+
+/* A screen with a play triangle */
+.onc-ads-icon {
+    flex: none;
+    width: 14px;
+    height: 11px;
+    margin: 0 8px 0 0;
+    border: 2px solid #FF8A65;
+    border-radius: 3px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.onc-ads-icon::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1.5px;
+    border-left: 4px solid #FF8A65;
+    border-top: 2.5px solid transparent;
+    border-bottom: 2.5px solid transparent;
+}
+
+#onc-ads.running .onc-ads-icon {
+    border-color: #F04A4A;
+}
+
+#onc-ads.running .onc-ads-icon::after {
+    border-left-color: #F04A4A;
+}
+
+.onc-ads-text {
+    font-variant-numeric: tabular-nums;
+}
+
+.onc-ads-sub {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 5px;
+    color: #C8C8C8;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.onc-ads-snooze {
+    display: none;
+    flex: none;
+    margin-left: 8px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 2px solid #FF8A65;
+    background: #141414;
+    color: #FF8A65;
+    font: 600 13px "Segoe UI", Arial, sans-serif;
+    cursor: pointer;
+}
+
+body.onc-links-on #onc-ads.coming .onc-ads-snooze {
+    display: inline-block;
+}
+
+.onc-ads-snooze:hover:not(:disabled) {
+    background: #FF8A65;
+    color: #141414;
+}
+
+.onc-ads-snooze:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+.onc-ads-bar {
+    height: 3px;
+    margin-top: 5px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, .12);
+    overflow: hidden;
+}
+
+.onc-ads-bar > div {
+    height: 100%;
+    background: #FF8A65;
+}
+
+#onc-ads.running .onc-ads-bar > div {
+    background: #F04A4A;
+}
+
+.onc-ads-hint {
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #C8C8C8;
+}
+
+.onc-ads-hint:empty {
+    display: none;
+}
+
+/* With the borders the button says it; the hotkey part goes (the snoozes left stay) */
+body.onc-links-on .onc-ads-hotkey {
+    display: none;
+}
+
+.onc-ads-hotkey {
+    color: #FF8A65;
+}
+
+.onc-ads-notice {
+    font-size: 13px;
+    color: #FFD2C2;
+}
+
+.onc-ads-notice:empty {
+    display: none;
+}
+
+#onc-ads.coming .onc-ads-notice:not(:empty),
+#onc-ads.running .onc-ads-notice:not(:empty) {
+    margin-top: 3px;
 }

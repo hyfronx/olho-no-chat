@@ -65,7 +65,7 @@ public sealed class ContaSalvaNaMemoria : IContaSalva
 public static class Montar
 {
     public const string ValidacaoOk = """
-        {"client_id":"zrqsilh31pbdlfjb81onhulkvzytgh","login":"hyfronx","scopes":["user:write:chat","channel:read:redemptions","user:read:emotes","moderator:manage:automod"],"user_id":"121292674","expires_in":5000000}
+        {"client_id":"zrqsilh31pbdlfjb81onhulkvzytgh","login":"hyfronx","scopes":["user:write:chat","channel:read:redemptions","user:read:emotes","moderator:manage:automod","channel:read:ads","channel:manage:ads","moderator:manage:chat_messages","moderator:manage:banned_users","user:read:moderated_channels"],"user_id":"121292674","expires_in":5000000}
         """;
 
     public const string PerfilOk = """

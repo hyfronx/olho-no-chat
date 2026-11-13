@@ -31,10 +31,15 @@ public class PainelDosCanais : Panel
             filho.Measure(new Size(double.PositiveInfinity, disponivel.Height));
 
         double espacos = Espaco * Math.Max(0, filhos.Count - 1);
-        double[] larguras = Larguras(filhos.Select(f => f.DesiredSize.Width).ToArray(), disponivel.Width - espacos);
+        double[] desejadas = filhos.Select(f => f.DesiredSize.Width).ToArray();
+        double[] larguras = Larguras(desejadas, disponivel.Width - espacos);
         for (int i = 0; i < filhos.Count; i++)
         {
-            filhos[i].Measure(new Size(larguras[i], disponivel.Height));
+            // Só quem vai ser cortado é medido de novo com a sua parte (o nome ganha o "…"). Quem cabe fica medido sem
+            // limite: o WPF mede de novo um filho que mudou (o número dos viewers no lugar do nome) com a última largura
+            // dada a ele, e com a do nome o número saía cortado no meio ("7,8 n" no lugar de "7,8 mil")
+            if (larguras[i] < desejadas[i])
+                filhos[i].Measure(new Size(larguras[i], disponivel.Height));
             altura = Math.Max(altura, filhos[i].DesiredSize.Height);
         }
         return new Size(larguras.Sum() + espacos, altura);

@@ -150,6 +150,47 @@ public static class ContratoComAPagina
         return $"window.oncChat && window.oncChat.automod && window.oncChat.automod({json});";
     }
 
+    /// <summary>
+    /// O aviso de anúncio no Padrão (Twitch/AnunciosDoCanal.cs): os horários em milissegundos Unix, e a página conta os
+    /// segundos e decide quando aparecer (<c>warnMs</c> antes do próximo) e sumir. O botão "Adiar" responde com
+    /// <c>onc:ads:snooze</c>. null tira o aviso.
+    /// </summary>
+    public static string MostrarAnuncios(AnunciosDoCanal? anuncios, Atalho? adiar, string? aviso)
+    {
+        AnunciosDoCanal.Agenda? agenda = anuncios?.Atual;
+        var rodando = anuncios?.Rodando;
+        string json = JsonSerializer.Serialize(new
+        {
+            nextAt = agenda?.Proximo?.ToUnixTimeMilliseconds(),
+            duration = agenda?.Segundos ?? 0,
+            snoozes = agenda?.Adiamentos ?? 0,
+            snoozeRefreshAt = agenda?.NovoAdiamento?.ToUnixTimeMilliseconds(),
+            runningFrom = rodando?.Inicio.ToUnixTimeMilliseconds(),
+            runningUntil = rodando?.Fim.ToUnixTimeMilliseconds(),
+            snoozing = anuncios?.Adiando ?? false,
+            warnMs = (long)AnunciosDoCanal.Antecedencia.TotalMilliseconds,
+            graceMs = (long)AnunciosDoCanal.Folga.TotalMilliseconds,
+            hotkey = Atalho.Existe(adiar) ? adiar.ToString() : string.Empty,
+            notice = aviso ?? string.Empty,
+            noticeMs = AnunciosDoCanal.SegundosDoAviso * 1000,
+        });
+        return $"window.oncChat && window.oncChat.ads && window.oncChat.ads({json});";
+    }
+
+    /// <summary>
+    /// Moderar no Padrão (Twitch/ModeracaoNoCanal.cs): se a conta modera o canal aberto, se é a dona (só o dono mexe com
+    /// as mensagens dos moderadores) e o login dela (as próprias mensagens não ganham botões). A página mostra os botões
+    /// em cima da mensagem com as bordas visíveis e responde com <c>onc:mod:{...}</c>.
+    /// </summary>
+    public static string Moderacao(bool pode, bool dono, string loginDaConta) =>
+        $"window.oncChat && window.oncChat.moderation && window.oncChat.moderation(" +
+        $"{JsonSerializer.Serialize(new { can = pode, owner = dono, self = loginDaConta.ToLowerInvariant() })});";
+
+    /// <summary>Como foi um pedido de moderação: no balão de estado do chat, verde se deu certo, vermelho se não.</summary>
+    public static string AvisoDaModeracao(string texto, bool deu) =>
+        $"window.oncChat && window.oncChat.moderationNotice && window.oncChat.moderationNotice({JsonSerializer.Serialize(texto)}, " +
+        $"{(deu ? "true" : "false")});";
+
     /// <summary>Um botão do cartão do AutoMod: o id da mensagem e se é para aprovar; null se a mensagem for outra.</summary>
     public static (string Id, bool Aprovar)? LerPedidoDoAutoMod(string? mensagem)
     {
@@ -446,6 +487,7 @@ public static class ContratoComAPagina
             "onc:pause-state:paused" => MensagemDaPagina.ChatPausado,
             "onc:pause-state:reading" => MensagemDaPagina.ChatContinuando,
             "onc:pause-state:live" => MensagemDaPagina.ChatAoVivo,
+            "onc:ads:snooze" => MensagemDaPagina.AdiarAnuncio,
             // "unavailable" chega como "disconnected"; qualquer outro estado conta como conectando
             _ when mensagem != null && mensagem.StartsWith(estado, StringComparison.Ordinal) => mensagem[estado.Length..] switch
             {

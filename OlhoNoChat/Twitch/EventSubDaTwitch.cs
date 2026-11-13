@@ -57,6 +57,12 @@ public sealed class EventSubDaTwitch
     /// </summary>
     public sealed record Decisao(string Id, string Status);
 
+    /// <summary>
+    /// Um anúncio começou no canal da conta (pela Ads Manager, sozinho, ou pedido por alguém): quando e por quantos
+    /// segundos.
+    /// </summary>
+    public sealed record AnuncioComecou(DateTimeOffset Inicio, int Segundos, bool Automatico);
+
     /// <summary>Como está o AutoMod do canal pedido, para a aba Twitch.</summary>
     public enum SituacaoDoAutoMod
     {
@@ -70,21 +76,26 @@ public sealed class EventSubDaTwitch
         Falhou,
     }
 
-    /// <summary>O que receber: os resgates do canal da conta e/ou o AutoMod do canal com esse id (null = nenhum).</summary>
-    public sealed record Pedido(bool Resgates, string? CanalDoAutoMod)
+    /// <summary>
+    /// O que receber: os resgates do canal da conta, o AutoMod do canal com esse id (null = nenhum) e o começo dos
+    /// anúncios do canal da conta.
+    /// </summary>
+    public sealed record Pedido(bool Resgates, string? CanalDoAutoMod, bool Anuncios = false)
     {
-        public bool Vazio => !Resgates && CanalDoAutoMod == null;
+        public bool Vazio => !Resgates && CanalDoAutoMod == null && !Anuncios;
     }
 
     /// <summary>Uma mensagem do websocket, só com o que o app usa.</summary>
     public sealed record Mensagem(string Tipo, string Id, string? IdDaSessao = null, int? SegundosDeSilencio = null,
         string? EnderecoDeReconexao = null, string? TipoDaAssinatura = null, Resgate? Resgate = null,
-        MensagemRetida? Retida = null, Decisao? Decidida = null, string? MotivoDaRevogacao = null);
+        MensagemRetida? Retida = null, Decisao? Decidida = null, string? MotivoDaRevogacao = null,
+        AnuncioComecou? Anuncio = null);
 
     public const string EnderecoDaTwitch = "wss://eventsub.wss.twitch.tv/ws";
     public const string TipoDosResgates = "channel.channel_points_custom_reward_redemption.add";
     public const string TipoDaRetida = "automod.message.hold";
     public const string TipoDaDecisao = "automod.message.update";
+    public const string TipoDoAnuncio = "channel.ad_break.begin";
     private const int TentativasDepoisDeCair = 7;
     private static readonly TimeSpan LimiteDasBoasVindas = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan FolgaDoSilencio = TimeSpan.FromSeconds(5);
@@ -124,6 +135,9 @@ public sealed class EventSubDaTwitch
 
     /// <summary>Uma mensagem do AutoMod foi aprovada, recusada ou expirou (aqui, no site da Twitch ou por outro moderador).</summary>
     public event Action<Decisao>? MensagemDecidida;
+
+    /// <summary>Um anúncio começou no canal da conta.</summary>
+    public event Action<AnuncioComecou>? AnuncioComecouNoCanal;
 
     /// <summary><see cref="Problema"/> ou <see cref="AutoMod"/> mudou (em qualquer thread).</summary>
     public event Action? ProblemaMudou;
@@ -261,6 +275,16 @@ public sealed class EventSubDaTwitch
             }
             DefinirAutoMod(situacao);
         }
+
+        // Só o dono do canal: a falta (canal sem anúncios, conta sem a permissão) só faz o aviso de "começou" não vir; a
+        // consulta do próximo anúncio continua (Twitch/AnunciosDoCanal.cs)
+        if (pedido.Anuncios)
+        {
+            ApiDaTwitch.Resposta? resposta = await AssinarUmAsync(TipoDoAnuncio, "1",
+                new Dictionary<string, string> { ["broadcaster_user_id"] = _conta.Id }, idDaSessao);
+            if (resposta?.Codigo == HttpStatusCode.Accepted)
+                assinadas.Add(TipoDoAnuncio);
+        }
         return assinadas;
     }
 
@@ -370,6 +394,9 @@ public sealed class EventSubDaTwitch
                         case "notification" when mensagem.Decidida != null:
                             MensagemDecidida?.Invoke(mensagem.Decidida);
                             break;
+                        case "notification" when mensagem.Anuncio != null:
+                            AnuncioComecouNoCanal?.Invoke(mensagem.Anuncio);
+                            break;
                         case "session_reconnect" when nova == null && mensagem.EnderecoDeReconexao != null:
                             nova = TentarAbrirAsync(new Uri(mensagem.EnderecoDeReconexao), cancelar);
                             break;
@@ -457,6 +484,7 @@ public sealed class EventSubDaTwitch
                             (int?)evento?["reward"]?["cost"] ?? 0,
                             (string?)evento?["user_input"] ?? string.Empty)),
                         TipoDaRetida => new Mensagem(tipo, id, TipoDaAssinatura: assinatura, Retida: LerRetida(evento)),
+                        TipoDoAnuncio => new Mensagem(tipo, id, TipoDaAssinatura: assinatura, Anuncio: LerAnuncio(evento)),
                         TipoDaDecisao when (string?)evento?["message_id"] is { Length: > 0 } idDaMensagem =>
                             new Mensagem(tipo, id, TipoDaAssinatura: assinatura,
                                 Decidida: new Decisao(idDaMensagem, ((string?)evento?["status"] ?? string.Empty).ToLowerInvariant())),
@@ -475,6 +503,32 @@ public sealed class EventSubDaTwitch
             return null;
         }
     }
+
+    // channel.ad_break.begin: o exemplo da Twitch traz a duração e o "automático" entre aspas, a tabela como número e
+    // booleano; aceita os dois. Sem o horário, conta de agora
+    private static AnuncioComecou? LerAnuncio(JsonNode? evento)
+    {
+        if (evento == null)
+            return null;
+        int segundos = NumeroOuTexto(evento["duration_seconds"]);
+        if (segundos <= 0)
+            return null;
+        DateTimeOffset inicio = DateTimeOffset.TryParse((string?)evento["started_at"], CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal, out DateTimeOffset lido) ? lido : DateTimeOffset.UtcNow;
+        JsonNode? automatico = evento["is_automatic"];
+        bool ehAutomatico = automatico?.GetValueKind() == JsonValueKind.True
+                            || (automatico?.GetValueKind() == JsonValueKind.String && (string?)automatico == "true");
+        return new AnuncioComecou(inicio, segundos, ehAutomatico);
+    }
+
+    /// <summary>Um número que pode vir como número ou como texto (0 se não for nenhum dos dois).</summary>
+    public static int NumeroOuTexto(JsonNode? valor) => valor?.GetValueKind() switch
+    {
+        JsonValueKind.Number => (int)Math.Clamp(valor.GetValue<double>(), int.MinValue, int.MaxValue),
+        JsonValueKind.String when long.TryParse((string?)valor, NumberStyles.Integer, CultureInfo.InvariantCulture, out long n) =>
+            (int)Math.Clamp(n, int.MinValue, int.MaxValue),
+        _ => 0,
+    };
 
     // automod.message.hold versão 2; null sem o id da mensagem (não daria para decidir)
     private static MensagemRetida? LerRetida(JsonNode? evento)

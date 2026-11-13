@@ -165,7 +165,7 @@
                     break;
                 }
                 // A timeout or ban takes that user's messages out; without a user, /clear empties the chat
-                if (message.params[1]) removeLines(`.chat_line[data-nick="${CSS.escape(message.params[1].toLowerCase())}"]`);
+                if (message.params[1]) deleteLines(`.chat_line[data-nick="${CSS.escape(message.params[1].toLowerCase())}"]`);
                 else {
                     // Paused, the marker stays: the pause goes on with the messages that come after the /clear
                     const kept = pause === 'paused' && marker ? [marker] : [];
@@ -182,7 +182,7 @@
                     heldMessages.push(message);
                     break;
                 }
-                if (message.tags['target-msg-id']) removeLines(`.chat_line[data-id="${CSS.escape(message.tags['target-msg-id'])}"]`);
+                if (message.tags['target-msg-id']) deleteLines(`.chat_line[data-id="${CSS.escape(message.tags['target-msg-id'])}"]`);
                 break;
             case 'NOTICE':
                 if (message.tags['msg-id'] === 'msg_channel_suspended') setState('unavailable');
@@ -355,6 +355,8 @@
             command,
             // Twitch marks the first message someone ever sends in the channel ("first-msg")
             firstMessage: tags['first-msg'] === '1',
+            // For "Moderation": who sent it (the bans need the user's id) and their badges
+            twitchUser: tags['user-id'] ? { id: tags['user-id'], badges: tags.badges || '' } : null,
             parts: addOtherEmotes(parts)
         }, tags.badges || '');
     }
@@ -944,6 +946,7 @@
             if (line.reward.paired) div.dataset.paired = '';
         }
         if (line.id) div.dataset.id = line.id;
+        if (line.twitchUser && line.id) modTargets.set(div, line.twitchUser);
         div.dataset.nick = line.login;
         div.dataset.ov = ++overlayLines;
         // For the overlay's "Esconder bots" and "Esconder comandos" (this chat's own switch already left them out when
@@ -1217,6 +1220,165 @@
         refreshMarker(); // the count of a pause
         refreshReadingPill();
     }
+
+    // A moderator deleted messages (one, or all of someone timed out or banned), on any platform: like on Twitch, the
+    // line stays with the name and the text becomes "<mensagem excluída>" (user's choice, 2026-11-13; before, the line
+    // went away). The live overlay still takes them out. Notices (a sub, a gift) go away as before.
+    const DELETED_TEXT = '<mensagem excluída>';
+
+    function deleteLines(selector) {
+        let removed = false;
+        [box, newLines].forEach(parent => parent.querySelectorAll(selector).forEach(line => {
+            const message = line.querySelector(':scope > .message');
+            if (!message || line.classList.contains('onc-notice-line')) {
+                line.remove();
+                removed = true;
+                return;
+            }
+            if (line.classList.contains('onc-deleted')) return;
+            line.classList.add('onc-deleted');
+            modTargets.delete(line); // nothing more to delete there (a timeout of who sent it: on another message)
+            if (line === modLine) hideModBar();
+            message.style.color = '';
+            message.textContent = DELETED_TEXT;
+        }));
+        toOverlay({ t: 'remove', selector });
+        if (removed) {
+            refreshMarker(); // the count of a pause
+            refreshReadingPill();
+        }
+    }
+
+    // --- Moderation ---------------------------------------------------------------------------------
+    // With the connected account owning or moderating the open channel (the app tells: oncChat.moderation) and the
+    // borders shown (the window takes clicks), the mouse over a Twitch message shows a small bar at its right: delete
+    // the message, time out who sent it (a menu: 1 min to 1 day) or ban them (a second click confirms). The request goes
+    // to the app (onc:mod:{...}, Twitch/ModeracaoNoCanal.cs); the line goes away when Twitch says so in the chat
+    // (CLEARMSG / CLEARCHAT) and the app tells how it went (oncChat.moderationNotice). The bar is not part of the lines
+    // (they also go to the overlay as they are). No buttons on the account's own messages, on the broadcaster's, and on
+    // the moderators' unless the account owns the channel (Twitch refuses them).
+
+    const modTargets = new WeakMap(); // chat line → { id, badges } of who sent it
+    let moderation = { can: false, owner: false, self: '' };
+    const TIMEOUTS = [[60, '1 min'], [600, '10 min'], [3600, '1 hora'], [86400, '1 dia']];
+    const ICONS = {
+        delete: '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M7 7v4M9 7v4"/>',
+        timeout: '<circle cx="8" cy="8.5" r="5.5"/><path d="M8 5.5v3l2 1.5M6.5 1.5h3"/>',
+        ban: '<circle cx="8" cy="8" r="5.5"/><path d="M4.1 11.9l7.8-7.8"/>'
+    };
+    const icon = name => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" ` +
+        `stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+
+    const modBar = document.createElement('div');
+    modBar.id = 'onc-mod';
+    // The menu and "Banir?" open to the left (the bar is pinned at the right): the icons never move under the mouse, so
+    // a quick second click can't land on a timeout by accident
+    modBar.innerHTML = '<div class="onc-mod-times">' + TIMEOUTS.map(([s, text]) => `<button data-s="${s}">${text}</button>`).join('') + '</div>' +
+        `<button class="onc-mod-delete" title="Apagar a mensagem">${icon('delete')}</button>` +
+        `<button class="onc-mod-timeout" title="Suspender (timeout)">${icon('timeout')}</button>` +
+        `<button class="onc-mod-ban" title="Banir do chat"><span class="onc-mod-confirm">Banir?</span>${icon('ban')}</button>`;
+    document.body.append(modBar);
+    let modLine = null;     // the line the bar is on
+    let modLocked = false;  // the timeout menu or the ban confirmation is open: the bar stays on that line
+    let modFrame = 0;
+    let banTimer = 0;
+    let banAskedAt = 0;
+
+    function canModerate(line) {
+        const user = line && modTargets.get(line);
+        if (!user || !moderation.can || !document.body.classList.contains('onc-links-on') || !line.isConnected) return false;
+        if (line.dataset.nick === moderation.self) return false;
+        if (/(?:^|,)broadcaster\//.test(user.badges)) return false;
+        return moderation.owner || !/(?:^|,)moderator\//.test(user.badges);
+    }
+
+    function showModBar(line) {
+        if (modLine === line) return;
+        if (modLine) modLine.classList.remove('onc-mod-target');
+        modLine = line;
+        line.classList.add('onc-mod-target');
+        modBar.classList.add('shown');
+        followLine();
+    }
+
+    function hideModBar() {
+        if (modLine) modLine.classList.remove('onc-mod-target');
+        modLine = null;
+        modLocked = false;
+        modBar.classList.remove('shown', 'times', 'confirm');
+        clearTimeout(banTimer);
+        cancelAnimationFrame(modFrame);
+    }
+
+    // The bar goes with its line while new messages push it up; out of the chat, it goes away
+    function followLine() {
+        cancelAnimationFrame(modFrame);
+        if (!modLine) return;
+        const rect = modLine.getBoundingClientRect();
+        const chat = box.getBoundingClientRect();
+        if (!modLine.isConnected || rect.bottom < chat.top + 4 || rect.top > chat.bottom - 4 || !canModerate(modLine)) {
+            hideModBar();
+            return;
+        }
+        modBar.style.top = Math.max(chat.top + 2, rect.top) + 'px';
+        modFrame = requestAnimationFrame(followLine);
+    }
+
+    document.addEventListener('mousemove', e => {
+        if (modLocked || modBar.contains(e.target)) return;
+        const line = e.target.closest && e.target.closest('#chat_box .chat_line');
+        if (line && canModerate(line)) showModBar(line);
+        else hideModBar();
+    });
+    document.documentElement.addEventListener('mouseleave', () => {
+        if (!modLocked) hideModBar();
+    });
+    document.addEventListener('mousedown', e => {
+        if (modLocked && !modBar.contains(e.target)) hideModBar();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && modLine) hideModBar();
+    });
+
+    function sendModeration(action, seconds) {
+        const line = modLine;
+        const user = line && modTargets.get(line);
+        if (!user) return;
+        const nick = line.querySelector('.nick');
+        postToApp('onc:mod:' + JSON.stringify({
+            a: action,
+            msg: line.dataset.id || '',
+            uid: user.id,
+            name: nick ? nick.textContent : line.dataset.nick,
+            s: seconds
+        }));
+        hideModBar();
+    }
+
+    modBar.querySelector('.onc-mod-delete').addEventListener('click', () => sendModeration('delete'));
+    modBar.querySelector('.onc-mod-timeout').addEventListener('click', () => {
+        modBar.classList.remove('confirm');
+        modLocked = modBar.classList.toggle('times');
+    });
+    modBar.querySelectorAll('.onc-mod-times button').forEach(button =>
+        button.addEventListener('click', () => sendModeration('timeout', Number(button.dataset.s))));
+    modBar.querySelector('.onc-mod-ban').addEventListener('click', () => {
+        if (modBar.classList.contains('confirm')) {
+            // A double click isn't a confirmation: the second click has to come after reading "Banir?"
+            if (Date.now() - banAskedAt > 400) sendModeration('ban');
+            return;
+        }
+        // A ban doesn't end by itself: the second click confirms (the button says "Banir?" for a few seconds)
+        banAskedAt = Date.now();
+        modBar.classList.remove('times');
+        modBar.classList.add('confirm');
+        modLocked = true;
+        clearTimeout(banTimer);
+        banTimer = setTimeout(() => {
+            modBar.classList.remove('confirm');
+            modLocked = modBar.classList.contains('times');
+        }, 4000);
+    });
 
     // --- Viewers ------------------------------------------------------------------------------------
     // "Mostrar viewers" without the borders (with them, the app's channel strip shows them): at the top right, each
@@ -1746,13 +1908,132 @@
         fitAutomod();
     }
 
-    // The chat ends where the card begins
+    // The chat ends where the cards begin: the AutoMod card at the bottom, the ads card (see "Ads") on top of it
     function fitAutomod() {
-        const shown = automodCard.classList.contains('shown');
-        box.style.height = shown ? `calc(100% - ${10 + automodCard.offsetHeight + 6}px)` : '';
+        const automodShown = automodCard.classList.contains('shown');
+        const adsShown = adsCard.classList.contains('shown');
+        const automodHeight = automodShown ? automodCard.offsetHeight + 6 : 0;
+        adsCard.style.bottom = (6 + automodHeight) + 'px';
+        const cards = automodHeight + (adsShown ? adsCard.offsetHeight + 6 : 0);
+        box.style.height = cards ? `calc(100% - ${10 + cards}px)` : '';
         if (pinned && pause === 'live') scrollToBottom();
     }
+
+    // --- Ads ------------------------------------------------------------------------------------------
+    // The ads of the connected account's channel, with the Padrão open on it (Twitch/AnunciosDoCanal.cs): the app sends
+    // the schedule (times in Unix ms) and this page counts the seconds. A card over the chat, above the AutoMod one,
+    // shows up warnMs before the next ad ("Anúncio em 4:32", how long it lasts) and while one runs ("Anúncio rodando",
+    // a bar running out), then says it ended for a moment. With the borders shown "Adiar" pushes the ad 5 minutes
+    // (onc:ads:snooze) while Twitch gives snoozes; without, the hint names the app's hotkey.
+
+    const adsCard = document.createElement('div');
+    adsCard.id = 'onc-ads';
+    adsCard.innerHTML = '<div class="onc-ads-row"><span class="onc-ads-icon"></span><span class="onc-ads-text"></span>' +
+        '<span class="onc-ads-sub"></span><button class="onc-ads-snooze" title="Adiar o anúncio 5 minutos">Adiar 5 min</button></div>' +
+        '<div class="onc-ads-bar"><div></div></div><div class="onc-ads-hint"></div><div class="onc-ads-notice"></div>';
+    document.body.append(adsCard);
+    let adsState = null;
+    let adsNotice = { text: '', until: 0 };
+    let adsLastRun = null; // the run the "ended" notice was shown for
+    let adsTimer = 0;
+
+    adsCard.querySelector('.onc-ads-snooze').addEventListener('click', () => {
+        if (adsState && !adsState.snoozing) postToApp('onc:ads:snooze');
+    });
+
+    // 272 s → "4:32"
+    function clock(ms) {
+        const seconds = Math.max(0, Math.ceil(ms / 1000));
+        return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+    }
+
+    // 90 → "1 min 30 s"
+    function lasting(seconds) {
+        const m = Math.floor(seconds / 60), s = seconds % 60;
+        return (m ? m + ' min' : '') + (m && s ? ' ' : '') + (s || !m ? s + ' s' : '');
+    }
+
+    function hourOf(ms) {
+        const d = new Date(ms);
+        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function showAds() {
+        const state = adsState;
+        const now = Date.now();
+        let phase = '';
+        if (state && state.runningFrom && now >= state.runningFrom && now < state.runningUntil) phase = 'running';
+        // An ad that started in the warning time already was that next one (the schedule only changes later)
+        else if (state && state.nextAt && state.nextAt - now <= state.warnMs && now - state.nextAt < state.graceMs
+            && !(state.runningFrom && now >= state.runningFrom && state.runningFrom >= state.nextAt - state.warnMs)) phase = 'coming';
+
+        // An ad that ran while the card was on screen: "terminou" for a moment
+        if (state && state.runningUntil && now >= state.runningUntil && now - state.runningUntil < state.noticeMs
+            && adsLastRun !== state.runningUntil && adsCard.classList.contains('running')) {
+            adsLastRun = state.runningUntil;
+            adsNotice = { text: 'Anúncio terminou.', until: now + state.noticeMs };
+        }
+        const notice = now < adsNotice.until ? adsNotice.text : '';
+
+        const text = adsCard.querySelector('.onc-ads-text');
+        const sub = adsCard.querySelector('.onc-ads-sub');
+        const bar = adsCard.querySelector('.onc-ads-bar > div');
+        const hint = adsCard.querySelector('.onc-ads-hint');
+        const snooze = adsCard.querySelector('.onc-ads-snooze');
+        adsCard.querySelector('.onc-ads-notice').textContent = notice;
+
+        const wasShown = adsCard.classList.contains('shown');
+        const wasPhase = adsCard.dataset.phase || '';
+        adsCard.classList.toggle('shown', !!(phase || notice));
+        adsCard.classList.toggle('coming', phase === 'coming');
+        adsCard.classList.toggle('running', phase === 'running');
+        adsCard.classList.toggle('soon', phase === 'coming' && state.nextAt - now <= 30000);
+        adsCard.dataset.phase = phase;
+
+        if (phase === 'running') {
+            text.textContent = 'Anúncio rodando';
+            sub.textContent = '· faltam ' + clock(state.runningUntil - now);
+            bar.style.width = (100 * (state.runningUntil - now) / (state.runningUntil - state.runningFrom)) + '%';
+            hint.textContent = '';
+        } else if (phase === 'coming') {
+            const left = state.nextAt - now;
+            text.textContent = left > 0 ? 'Anúncio em ' + clock(left) : 'Anúncio começando…';
+            sub.textContent = state.duration ? '· dura ' + lasting(state.duration) : '';
+            bar.style.width = (100 * Math.max(0, left) / state.warnMs) + '%';
+            snooze.disabled = !!state.snoozing || !state.snoozes;
+            snooze.style.display = state.snoozes ? '' : 'none';
+            snooze.textContent = state.snoozing ? 'Adiando…' : 'Adiar 5 min';
+            // How many snoozes are left; with none, when Twitch gives another
+            const snoozesText = state.snoozes === 1 ? '1 adiamento sobrando'
+                : state.snoozes > 1 ? state.snoozes + ' adiamentos sobrando'
+                : 'Sem adiamentos' + (state.snoozeRefreshAt ? ' até ' + hourOf(state.snoozeRefreshAt) : '');
+            hint.textContent = '';
+            if (state.snoozes && state.hotkey) {
+                const keys = document.createElement('span');
+                keys.className = 'onc-automod-key';
+                keys.textContent = state.hotkey;
+                const part = document.createElement('span');
+                part.className = 'onc-ads-hotkey';
+                part.append(keys, ' adia 5 min · ');
+                hint.append(part);
+            }
+            hint.append(snoozesText);
+        }
+        if (wasShown !== adsCard.classList.contains('shown') || wasPhase !== phase) fitAutomod();
+
+        // On screen, count the seconds; off it, wake up when it has to appear (at most a minute away, so a changed
+        // clock never leaves it asleep)
+        clearTimeout(adsTimer);
+        if (phase || notice) {
+            adsTimer = setTimeout(showAds, 250);
+        } else if (state) {
+            const next = [state.nextAt && state.nextAt - state.warnMs, state.runningFrom].filter(t => t && t > now);
+            if (next.length) adsTimer = setTimeout(showAds, Math.max(250, Math.min(60000, Math.min(...next) - now)));
+        }
+    }
+
     new ResizeObserver(fitAutomod).observe(automodCard);
+    new ResizeObserver(fitAutomod).observe(adsCard);
 
     // --- YouTube (Chat Multiplataforma) -------------------------------------------------------------
     // The app reads the chat of a YouTube live (YouTube/LeitorDoYouTube.cs) and sends each message here
@@ -1996,8 +2277,8 @@
         removeKick(what) {
             if (!what) return;
             if (what.all) removeLines('.chat_line[data-id^="kick-"]');
-            else if (what.id) removeLines(`.chat_line[data-id="${CSS.escape('kick-' + what.id)}"]`);
-            else if (what.login) removeLines(`.chat_line[data-id^="kick-"][data-nick="${CSS.escape(String(what.login).toLowerCase())}"]`);
+            else if (what.id) deleteLines(`.chat_line[data-id="${CSS.escape('kick-' + what.id)}"]`);
+            else if (what.login) deleteLines(`.chat_line[data-id^="kick-"][data-nick="${CSS.escape(String(what.login).toLowerCase())}"]`);
         },
 
         // A message of the TikTok chat (Chat Multiplataforma)
@@ -2008,8 +2289,8 @@
 
         // A TikTok moderator deleted messages: by their ids and by the @ of who sent them
         removeTikTok(ids, logins) {
-            (ids || []).forEach(id => removeLines(`.chat_line[data-id="${CSS.escape('tt-' + id)}"]`));
-            (logins || []).forEach(login => removeLines(`.chat_line[data-id^="tt-"][data-nick="${CSS.escape(String(login).toLowerCase())}"]`));
+            (ids || []).forEach(id => deleteLines(`.chat_line[data-id="${CSS.escape('tt-' + id)}"]`));
+            (logins || []).forEach(login => deleteLines(`.chat_line[data-id^="tt-"][data-nick="${CSS.escape(String(login).toLowerCase())}"]`));
         },
 
         // A line from the app in the user's color, like a /me message (channel point redemptions). The same text
@@ -2042,6 +2323,28 @@
                 }, AUTOMOD_NOTICE_MS);
             }
             showAutomod();
+        },
+
+        // Moderation (see "Moderation"): { can, owner, self }. Without it, the bar goes away
+        moderation(state) {
+            moderation = Object.assign({ can: false, owner: false, self: '' }, state || {});
+            if (!moderation.can) hideModBar();
+        },
+
+        // How a moderation request went: in the status pill, green when it worked
+        moderationNotice(text, ok) {
+            multiPillText = '';
+            showPill((ok ? 'connected' : 'disconnected') + ' multi', String(text || ''), ok ? 4000 : 10000);
+        },
+
+        // The ads of the account's channel (see "Ads"): { nextAt, duration, snoozes, snoozeRefreshAt, runningFrom,
+        // runningUntil (Unix ms or null), snoozing, warnMs, graceMs, hotkey, notice, noticeMs }, or null (the card goes).
+        // The notice (how a snooze went) shows for a moment.
+        ads(state) {
+            adsState = state;
+            if (state && state.notice) adsNotice = { text: state.notice, until: Date.now() + state.noticeMs };
+            else if (!state) adsNotice = { text: '', until: 0 };
+            showAds();
         },
 
         // For the app's watchdog: "open:<ms since Twitch last sent something>" or the state

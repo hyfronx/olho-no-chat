@@ -35,4 +35,7 @@ public enum MensagemDaPagina
 
     /// <summary>Padrão: o chat acompanha as mensagens novas (chegou na última depois de uma pausa).</summary>
     ChatAoVivo,
+
+    /// <summary>Padrão: clicaram em "Adiar" no aviso de anúncio chegando.</summary>
+    AdiarAnuncio,
 }

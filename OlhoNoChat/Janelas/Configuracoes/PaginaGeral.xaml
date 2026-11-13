@@ -200,6 +200,22 @@
                                     Tag="{Binding ElementName=atalhoRecusarAutoMod}" Click="MudarAtalho_Click" />
                         </Grid>
 
+                        <TextBlock Text="Anúncios" Style="{StaticResource GrupoDeAtalhos}" />
+                        <Grid Style="{StaticResource LinhaDoAtalho}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Adiar o anúncio 5 minutos" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Funciona enquanto o aviso de anúncio chegando está no chat (aba Twitch)." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <atalhos:EditorDeAtalho x:Name="atalhoAdiarAnuncio" Grid.Column="1" Width="200" VerticalAlignment="Center" Atalho="{Binding AtalhoAdiarAnuncio}" />
+                            <Button x:Name="botaoMudarAtalhoAdiarAnuncio" Grid.Column="2" Style="{DynamicResource BotaoMudarAtalho}"
+                                    Tag="{Binding ElementName=atalhoAdiarAnuncio}" Click="MudarAtalho_Click" />
+                        </Grid>
+
                         <!-- O atalho de limpar o overlay só muda na aba Overlay (aqui não tem caixa, para não haver dois lugares) -->
                         <TextBlock Style="{DynamicResource Dica}" Margin="0,18,0,0"
                                    Text="O atalho para limpar o overlay da live fica na aba Overlay." />

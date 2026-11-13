@@ -91,6 +91,45 @@ public sealed class ApiDaTwitch
         MandarAsync(Pedido(HttpMethod.Post, "moderation/automod/message", token,
             new { user_id = idDaConta, msg_id = idDaMensagem, action = aprovar ? "ALLOW" : "DENY" }));
 
+    /// <summary>
+    /// Os anúncios do canal da conta: quando é o próximo, quanto dura e quantas vezes ainda dá para adiar (só o dono do
+    /// canal; os horários vêm em segundos Unix, 0 = nenhum).
+    /// </summary>
+    public Task<Resposta> AnunciosAsync(string token, string idDaConta) =>
+        MandarAsync(Pedido(HttpMethod.Get, "channels/ads?broadcaster_id=" + Uri.EscapeDataString(idDaConta), token));
+
+    /// <summary>
+    /// Adia o próximo anúncio em 5 minutos (200 = feito, com o horário novo; 429 = sem adiamentos ou outro pedido em
+    /// andamento; 400 = canal offline ou sem anúncio marcado).
+    /// </summary>
+    public Task<Resposta> AdiarAnuncioAsync(string token, string idDaConta) =>
+        MandarAsync(Pedido(HttpMethod.Post, "channels/ads/schedule/snooze?broadcaster_id=" + Uri.EscapeDataString(idDaConta), token));
+
+    /// <summary>
+    /// Uma página dos canais que a conta modera (até 100; <paramref name="cursor"/> para a seguinte). O canal da própria
+    /// conta não vem: o dono não é moderador.
+    /// </summary>
+    public Task<Resposta> CanaisModeradosAsync(string token, string idDaConta, string? cursor) =>
+        MandarAsync(Pedido(HttpMethod.Get, "moderation/channels?first=100&user_id=" + Uri.EscapeDataString(idDaConta)
+            + (cursor != null ? "&after=" + Uri.EscapeDataString(cursor) : string.Empty), token));
+
+    /// <summary>
+    /// Apaga uma mensagem do chat (204 = feito; 400 = de moderador ou do dono, ou com mais de 6 horas; 403 = a conta
+    /// não modera o canal; 404 = a mensagem não existe mais).
+    /// </summary>
+    public Task<Resposta> ApagarMensagemAsync(string token, string idDoCanal, string idDaConta, string idDaMensagem) =>
+        MandarAsync(Pedido(HttpMethod.Delete, "moderation/chat?broadcaster_id=" + Uri.EscapeDataString(idDoCanal)
+            + "&moderator_id=" + Uri.EscapeDataString(idDaConta) + "&message_id=" + Uri.EscapeDataString(idDaMensagem), token));
+
+    /// <summary>
+    /// Suspende (com <paramref name="segundos"/>) ou bane (sem) alguém do chat (200 = feito; 400 = não pode, como um
+    /// moderador, ou já banido; 403 = a conta não modera o canal; 409 = outro pedido para a mesma pessoa agora).
+    /// </summary>
+    public Task<Resposta> BanirAsync(string token, string idDoCanal, string idDaConta, string idDoUsuario, int? segundos) =>
+        MandarAsync(Pedido(HttpMethod.Post, "moderation/bans?broadcaster_id=" + Uri.EscapeDataString(idDoCanal)
+            + "&moderator_id=" + Uri.EscapeDataString(idDaConta), token,
+            new { data = segundos is int s ? (object)new { user_id = idDoUsuario, duration = s } : new { user_id = idDoUsuario } }));
+
     /// <summary>Cancela um acesso na Twitch.</summary>
     public Task<Resposta> RevogarAsync(string token) =>
         MandarAsync(new HttpRequestMessage(HttpMethod.Post, Identidade + "revoke")

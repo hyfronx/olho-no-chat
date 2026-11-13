@@ -32,8 +32,11 @@ public static class InfoDoApp
     public const string TwitchClientId = "zrqsilh31pbdlfjb81onhulkvzytgh";
 
     // O que "Conectar" pede: escrever no chat, ler os resgates de pontos do canal, listar os emotes da conta e aprovar ou
-    // recusar as mensagens que o AutoMod segurou (só vale nos canais em que a conta é moderadora)
-    public const string PermissoesDaTwitch = "user:write:chat channel:read:redemptions user:read:emotes moderator:manage:automod";
+    // recusar as mensagens que o AutoMod segurou (só vale nos canais em que a conta é moderadora), ver e adiar os
+    // anúncios do canal da conta, e moderar o chat (apagar mensagem, suspender, banir; saber quais canais a conta modera)
+    public const string PermissoesDaTwitch =
+        "user:write:chat channel:read:redemptions user:read:emotes moderator:manage:automod channel:read:ads channel:manage:ads " +
+        "moderator:manage:chat_messages moderator:manage:banned_users user:read:moderated_channels";
 
     /// <summary>Configurações e dados do navegador interno (%AppData%\OlhoNoChat).</summary>
     public static string PastaDeDados =>

@@ -54,7 +54,7 @@ public sealed class LogicaTwitchTestes
 
         aba.MultiplataformaNaTela = true;
 
-        Assert.Equal("Você pode aprovar as mensagens barradas pelo AutoMod.", aba.DicaDaConta);
+        Assert.Equal("Você pode moderar e aprovar as mensagens barradas pelo AutoMod, e ver os anúncios do seu canal.", aba.DicaDaConta);
         Assert.Equal("Conectado como Hyfronx", aba.TituloDaConta);
 
         aba.MultiplataformaNaTela = false;
@@ -70,7 +70,7 @@ public sealed class LogicaTwitchTestes
 
         aba.MultiplataformaNaTela = true;
 
-        Assert.Equal("Para só ler o chat, não precisa conectar. Conecte para aprovar as mensagens barradas pelo AutoMod.",
+        Assert.Equal("Para só ler o chat, não precisa conectar. Conecte para moderar, aprovar as mensagens barradas pelo AutoMod e ver os anúncios do seu canal.",
             aba.DicaDaConta);
     }
 

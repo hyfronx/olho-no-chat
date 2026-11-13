@@ -195,6 +195,9 @@ public sealed class Opcoes
     // captura de tela de jogo) nem F4 (soltar o Ctrl antes vira Alt + F4, que fecha o jogo); Home e End ficam juntos
     public Atalho? AtalhoAprovarAutoMod { get; set; } = new(Key.Home, ModifierKeys.Control | ModifierKeys.Alt);
     public Atalho? AtalhoRecusarAutoMod { get; set; } = new(Key.End, ModifierKeys.Control | ModifierKeys.Alt);
+    // Anúncios: registrado só enquanto o aviso de anúncio chegando está no chat e ainda dá para adiar (Page Down fica
+    // junto de Home e End)
+    public Atalho? AtalhoAdiarAnuncio { get; set; } = new(Key.PageDown, ModifierKeys.Control | ModifierKeys.Alt);
     // Overlay da live: registrado só com o overlay ligado
     public Atalho? AtalhoLimparOverlay { get; set; } = new(Key.F5, ModifierKeys.Control | ModifierKeys.Alt);
 
@@ -286,6 +289,16 @@ public sealed class Opcoes
     public bool MostrarResgates { get; set; } = false;
     /// <summary>As mensagens que o AutoMod segurou aparecem no Padrão para aprovar ou recusar (só nos canais que a conta modera).</summary>
     public bool AprovarAutoMod { get; set; } = true;
+    /// <summary>
+    /// O aviso do próximo anúncio do canal da conta (5 minutos antes, com "Adiar") e do anúncio rodando, no Padrão aberto
+    /// no canal da conta.
+    /// </summary>
+    public bool AvisarAnuncios { get; set; } = true;
+    /// <summary>
+    /// "Moderar no chat": com as bordas visíveis, apagar a mensagem, suspender ou banir quem mandou, no Padrão aberto num
+    /// canal que a conta é dona ou moderadora.
+    /// </summary>
+    public bool ModerarNoChat { get; set; } = true;
     /// <summary>false = a caixa "Escrever no chat…" do app; true = a caixa da própria Twitch (só no chat oficial).</summary>
     public bool CaixaDaTwitch { get; set; } = false;
     public bool FecharCaixaDepoisDeEnviar { get; set; } = false;
@@ -343,6 +356,10 @@ public sealed class Opcoes
         if (Atalho.Existe(AtalhoLimparOverlay)
             && anteriores.Append(AtalhoAprovarAutoMod).Append(AtalhoRecusarAutoMod).Contains(AtalhoLimparOverlay))
             AtalhoLimparOverlay = null;
+        // O de adiar o anúncio chegou na 2.11.0 do mesmo jeito
+        if (Atalho.Existe(AtalhoAdiarAnuncio)
+            && anteriores.Append(AtalhoAprovarAutoMod).Append(AtalhoRecusarAutoMod).Append(AtalhoLimparOverlay).Contains(AtalhoAdiarAnuncio))
+            AtalhoAdiarAnuncio = null;
         LinhasPorSegundoAoContinuar = double.IsNaN(LinhasPorSegundoAoContinuar)
             ? LinhasPorSegundoPadrao
             : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);

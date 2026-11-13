@@ -38,6 +38,11 @@ public partial class JanelaChat : Window
     private readonly ApiDaTwitch _api;
     private readonly EventSubDaTwitch _eventSub;
     private readonly AutoModDoCanal _autoMod;
+    private readonly AnunciosDoCanal _anuncios;
+    private readonly ModeracaoNoCanal _moderacao;
+    private int _versaoDaModeracao;
+    // Acorda quando o aviso de anúncio aparece ou some (o atalho de adiar só vale com ele na tela)
+    private readonly DispatcherTimer _relogioDosAnuncios = new();
     // Cada atualização do EventSub ganha um número: uma que terminou depois de outra mais nova não vale
     private int _versaoDoEventSub;
     private readonly LeitorDoYouTube _youTube;
@@ -88,6 +93,8 @@ public partial class JanelaChat : Window
         _api = api;
         _eventSub = eventSub;
         _autoMod = new AutoModDoCanal(api, conta, log);
+        _anuncios = new AnunciosDoCanal(api, conta, log);
+        _moderacao = new ModeracaoNoCanal(api, conta, log);
         _youTube = youTube;
         _kick = kick;
         _tikTok = tikTok;
@@ -125,6 +132,8 @@ public partial class JanelaChat : Window
         LigarNavegador();
         _eventSub.Resgatado += resgate => Dispatcher.InvokeAsync(() => MostrarResgate(resgate));
         LigarAutoMod();
+        LigarAnuncios();
+        LigarModeracao();
         LigarYouTube();
         LigarKick();
         LigarTikTok();
@@ -182,6 +191,8 @@ public partial class JanelaChat : Window
         {
             _atalhos.Dispose();
             _eventSub.Desligar();
+            _anuncios.Desligar();
+            _relogioDosAnuncios.Stop();
             _youTube.Desligar();
             _kick.Desligar();
             _tikTok.Desligar();
@@ -549,6 +560,7 @@ public partial class JanelaChat : Window
         // Só com o overlay ligado: sem ele, a combinação fica livre para outros programas
         _atalhos.Definir("LimparOverlay", Opcoes.OverlayLigado ? Opcoes.AtalhoLimparOverlay : null, LimparOverlayPeloAtalho);
         DefinirAtalhosDoAutoMod();
+        DefinirAtalhoDosAnuncios();
         barraDeCima.MostrarAtalhoDasBordas(Opcoes.AtalhoBordas);
         MostrarPausa();
     }
@@ -623,11 +635,19 @@ public partial class JanelaChat : Window
             else if (_novidadeNaTela == Novidades.Pausa)
                 barraDeCima.MostrarNovidadeDaPausa(Opcoes.AtalhoPausar);
             else if (_novidadeNaTela == Novidades.AutoMod)
-                barraDeCima.MostrarNovidadeDoAutoMod(!_conta.EstaConectada ? BarraDeCima.FaltaParaOAutoMod.Conectar
-                    : !_conta.PodeModerarAutoMod ? BarraDeCima.FaltaParaOAutoMod.ConectarDeNovo
-                    : BarraDeCima.FaltaParaOAutoMod.Nada);
+                barraDeCima.MostrarNovidadeDoAutoMod(!_conta.EstaConectada ? BarraDeCima.FaltaNaConta.Conectar
+                    : !_conta.PodeModerarAutoMod ? BarraDeCima.FaltaNaConta.ConectarDeNovo
+                    : BarraDeCima.FaltaNaConta.Nada);
             else if (_novidadeNaTela == Novidades.Overlay)
                 barraDeCima.MostrarNovidadeDoOverlay();
+            else if (_novidadeNaTela == Novidades.Anuncios)
+                barraDeCima.MostrarNovidadeDosAnuncios(!_conta.EstaConectada ? BarraDeCima.FaltaNaConta.Conectar
+                    : !_conta.PodeVerAnuncios ? BarraDeCima.FaltaNaConta.ConectarDeNovo
+                    : BarraDeCima.FaltaNaConta.Nada);
+            else if (_novidadeNaTela == Novidades.Moderacao)
+                barraDeCima.MostrarNovidadeDaModeracao(!_conta.EstaConectada ? BarraDeCima.FaltaNaConta.Conectar
+                    : !_conta.PodeModerarOChat ? BarraDeCima.FaltaNaConta.ConectarDeNovo
+                    : BarraDeCima.FaltaNaConta.Nada);
         };
         _esperaDaNovidade.Start();
     }
@@ -647,7 +667,9 @@ public partial class JanelaChat : Window
                 autoModPronto: Opcoes.AprovarAutoMod && (!_conta.EstaConectada || _conta.PermissoesConferidas),
                 overlayLigado: Opcoes.OverlayLigado,
                 _navegador.Pagina is ChatPadrao && _navegador.PaginaPronta, _logica.BordasVisiveis, _faixa.EditorAberto,
-                _janelaDeConfiguracoes != null);
+                _janelaDeConfiguracoes != null,
+                anunciosPronto: Opcoes.AvisarAnuncios && (!_conta.EstaConectada || _conta.PermissoesConferidas),
+                moderacaoPronta: Opcoes.ModerarNoChat && (!_conta.EstaConectada || _conta.PermissoesConferidas));
 
     // O app tira o balão da tela (bordas ocultas, Configurações, outra página, faixa aberta): ele volta quando der
     private void EsconderNovidade()
@@ -793,6 +815,7 @@ public partial class JanelaChat : Window
             caixaDeEscrever.DescartarEmotes();
         }
         _ = AtualizarEventSubAsync(); // sem conta desliga; com um acesso novo, assina de novo
+        _ = AtualizarModeracaoAsync();
         MostrarNovidadeSeFaltar(); // conferida, a conta pode ter a novidade do AutoMod
 
         _caixa.Atualizar();
@@ -1150,7 +1173,10 @@ public partial class JanelaChat : Window
             ContarAPaginaOsEstados();
             MostrarAvisosQueEsperam();
             MostrarAutoMod(aviso: null); // a página nova mostra a fila (o mesmo canal: as mensagens continuam esperando)
+            MostrarAnuncios(aviso: null);
+            MostrarModeracao(); // a página nova começa sem os botões
             _ = AtualizarEventSubAsync();
+            _ = AtualizarModeracaoAsync();
             MostrarAvisoDoOverlayNaPagina();
             MostrarNovidadeSeFaltar();
         };
@@ -1181,6 +1207,9 @@ public partial class JanelaChat : Window
                     // Pausou (o botão ou o atalho) com o balão da novidade da pausa aberto: já aprendeu
                     if (mensagem == MensagemDaPagina.ChatPausado && barraDeCima.NovidadeAberta && _novidadeNaTela == Novidades.Pausa)
                         NovidadeVista();
+                    break;
+                case MensagemDaPagina.AdiarAnuncio when _navegador.Pagina is ChatPadrao:
+                    _ = _anuncios.AdiarAsync();
                     break;
                 case MensagemDaPagina.EscritaEnviada or MensagemDaPagina.EscritaCancelada:
                     // A caixa da Twitch: Esc fecha; enviar fecha só se aberta pelo atalho com "Fechar a caixa depois de enviar"
@@ -1214,22 +1243,32 @@ public partial class JanelaChat : Window
             _navegador.Executar(ContratoComAPagina.AdicionarAcao(resgate.Nome ?? string.Empty, cor, resgate.TextoDigitado));
     }
 
-    // O que o EventSub recebe: os resgates (do canal da conta) e o AutoMod do canal aberto no Padrão. Depois de a página
-    // carregar, de salvar e de a conta mudar; o acesso salvo é conferido antes (uma vez por execução)
+    // O que o EventSub recebe: os resgates (do canal da conta), o AutoMod do canal aberto no Padrão e o começo dos
+    // anúncios (com o Padrão aberto no canal da conta). Depois de a página carregar, de salvar e de a conta mudar; o
+    // acesso salvo é conferido antes (uma vez por execução)
     private async Task AtualizarEventSubAsync()
     {
         int versao = ++_versaoDoEventSub;
         bool querResgates = ChatMultiplataforma.ResgatesLigados(Opcoes);
         string? canalDoAutoMod = Opcoes.AprovarAutoMod && _navegador.Pagina is ChatPadrao ? _navegador.Pagina.Canal : null;
-        if (!querResgates && canalDoAutoMod == null)
+        bool querAnuncios = QuerAnuncios();
+        if (!querResgates && canalDoAutoMod == null && !querAnuncios)
         {
             _autoMod.TrocarDeCanal(null);
+            _anuncios.Desligar();
             _eventSub.Desligar();
             return;
         }
 
         if (!await _conta.VerificarUmaVezAsync() || versao != _versaoDoEventSub)
             return;
+
+        // Depois da conferência: sem a permissão (conta conectada antes da 2.11.0), a aba Twitch pede para conectar de novo
+        querAnuncios = QuerAnuncios() && _conta.PodeVerAnuncios;
+        if (querAnuncios)
+            _anuncios.Ligar();
+        else
+            _anuncios.Desligar();
 
         string? idDoAutoMod = null;
         if (canalDoAutoMod != null && _conta.PodeModerarAutoMod)
@@ -1249,8 +1288,13 @@ public partial class JanelaChat : Window
         }
 
         _autoMod.TrocarDeCanal(idDoAutoMod);
-        await _eventSub.LigarAsync(new EventSubDaTwitch.Pedido(querResgates, idDoAutoMod));
+        await _eventSub.LigarAsync(new EventSubDaTwitch.Pedido(querResgates, idDoAutoMod, querAnuncios));
     }
+
+    // Os anúncios são do canal da conta: só com o Padrão aberto nele
+    private bool QuerAnuncios() =>
+        Opcoes.AvisarAnuncios && _navegador.Pagina is ChatPadrao && _conta.EstaConectada
+        && string.Equals(_navegador.Pagina.Canal, _conta.Login, StringComparison.OrdinalIgnoreCase);
 
     // --- AutoMod ---------------------------------------------------------------------------------------------
 
@@ -1276,6 +1320,87 @@ public partial class JanelaChat : Window
         bool esperando = _autoMod.Primeira != null;
         _atalhos.Definir("AprovarAutoMod", esperando ? Opcoes.AtalhoAprovarAutoMod : null, () => _ = _autoMod.DecidirAsync(null, aprovar: true));
         _atalhos.Definir("RecusarAutoMod", esperando ? Opcoes.AtalhoRecusarAutoMod : null, () => _ = _autoMod.DecidirAsync(null, aprovar: false));
+    }
+
+    // --- Anúncios ---------------------------------------------------------------------------------------------
+
+    // Os anúncios do canal da conta: um aviso no Padrão (browser/chat.js, "Ads") 5 minutos antes do próximo, com "Adiar"
+    // (o botão com as bordas, o atalho sem), e enquanto um roda. A página conta os segundos; aqui o relógio só acorda
+    // quando o aviso aparece ou some, para ligar ou soltar o atalho
+    private void LigarAnuncios()
+    {
+        _eventSub.AnuncioComecouNoCanal += anuncio => Dispatcher.InvokeAsync(() => _anuncios.Comecou(anuncio));
+        _anuncios.Mudou += MostrarAnuncios;
+        _relogioDosAnuncios.Tick += (_, _) =>
+        {
+            _relogioDosAnuncios.Stop();
+            DefinirAtalhoDosAnuncios();
+            AgendarRelogioDosAnuncios();
+        };
+    }
+
+    private void MostrarAnuncios(string? aviso)
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.MostrarAnuncios(_anuncios.Ligado ? _anuncios : null, Opcoes.AtalhoAdiarAnuncio, aviso));
+        DefinirAtalhoDosAnuncios();
+        AgendarRelogioDosAnuncios();
+    }
+
+    private void AgendarRelogioDosAnuncios()
+    {
+        _relogioDosAnuncios.Stop();
+        if (_anuncios.ProximaMudanca(DateTimeOffset.UtcNow) is { } espera)
+        {
+            // Um pouco depois da mudança, para a fase já ser a nova
+            _relogioDosAnuncios.Interval = espera + TimeSpan.FromMilliseconds(300);
+            _relogioDosAnuncios.Start();
+        }
+    }
+
+    // Só com o aviso de anúncio chegando na tela e adiamentos sobrando: fora disso, a combinação fica livre
+    private void DefinirAtalhoDosAnuncios()
+    {
+        bool podeAdiar = _anuncios.Ligado && _anuncios.PodeAdiar(DateTimeOffset.UtcNow) && _navegador.Pagina is ChatPadrao;
+        _atalhos.Definir("AdiarAnuncio", podeAdiar ? Opcoes.AtalhoAdiarAnuncio : null, () => _ = _anuncios.AdiarAsync());
+    }
+
+    // --- Moderar no chat ---------------------------------------------------------------------------------------
+
+    // Com a conta dona ou moderadora do canal aberto no Padrão: botões em cima da mensagem (browser/chat.js, "Moderation")
+    // apagam, suspendem ou banem; a resposta vira um aviso no chat
+    private void LigarModeracao()
+    {
+        _moderacao.Mudou += MostrarModeracao;
+        _navegador.PedidoDeModeracao += pedido => _ = ModerarAsync(pedido);
+    }
+
+    private void MostrarModeracao()
+    {
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.Moderacao(_moderacao.PodeModerar,
+                _moderacao.PapelNoCanal == ModeracaoNoCanal.Papel.Dono, _conta.Login));
+    }
+
+    // Depois de a página carregar, de salvar e de a conta mudar (o acesso salvo é conferido antes, uma vez por execução)
+    private async Task AtualizarModeracaoAsync()
+    {
+        int versao = ++_versaoDaModeracao;
+        string? canal = Opcoes.ModerarNoChat && _navegador.Pagina is ChatPadrao ? _navegador.Pagina.Canal : null;
+        if (canal != null && _conta.EstaConectada)
+            await _conta.VerificarUmaVezAsync();
+        if (versao != _versaoDaModeracao)
+            return;
+        await _moderacao.TrocarDeCanalAsync(canal);
+    }
+
+    private async Task ModerarAsync(ModeracaoNoCanal.Pedido pedido)
+    {
+        if (_navegador.Pagina is not ChatPadrao)
+            return;
+        (string aviso, bool deu) = await _moderacao.ExecutarAsync(pedido);
+        if (_navegador.Pagina is ChatPadrao && _navegador.PaginaPronta)
+            _navegador.Executar(ContratoComAPagina.AvisoDaModeracao(aviso, deu));
     }
 
     // O som de mensagem nova do Padrão (o único tipo com som). Também a cada salvamento: o som, o volume ou a saída podem
@@ -1330,7 +1455,7 @@ public partial class JanelaChat : Window
         // de atalho sem disparar a ação
         _atalhos.Ligados = false;
 
-        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub), new LogicaTikTok(_contaDoTikTok),
+        var logica = new LogicaConfiguracoes(_arquivo, new LogicaTwitch(_autorizacao, _conta, _eventSub, _anuncios, _moderacao), new LogicaTikTok(_contaDoTikTok),
             overlay: new AcoesDoOverlay(() => _overlay.Estado, () => _overlay.Conectados, _overlay.Limpar,
                 MandarTesteDoOverlay, EncontrarOutraPortaDoOverlay));
         var janela = new JanelaConfiguracoes(logica, this);
@@ -1379,7 +1504,9 @@ public partial class JanelaChat : Window
         ContarAPaginaOsEstados(); // o Chat Multiplataforma pode ter sido ligado agora
 
         _ = AtualizarEventSubAsync();
+        _ = AtualizarModeracaoAsync();
         MostrarAutoMod(aviso: null); // os atalhos podem ser outros
+        MostrarAnuncios(aviso: null);
 
         // Tamanho do texto, fundo e "Sempre no topo" mudam aqui só com "Restaurar tudo para o padrão"
         Opcoes.TamanhoDoTexto = _navegador.AplicarZoom(Opcoes.TamanhoDoTexto);

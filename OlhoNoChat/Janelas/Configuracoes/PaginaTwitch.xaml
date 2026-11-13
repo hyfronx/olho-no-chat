@@ -11,7 +11,7 @@
     <ScrollViewer Style="{DynamicResource PaginaComRolagem}">
         <StackPanel Style="{DynamicResource PainelDaPagina}">
             <TextBlock Text="Twitch" Style="{DynamicResource TituloDaPagina}" />
-            <TextBlock Text="Sua conta da Twitch, escrever no chat, resgates de pontos e AutoMod." Style="{DynamicResource SubtituloDaPagina}" />
+            <TextBlock Text="Sua conta da Twitch, escrever no chat, resgates de pontos, moderação, AutoMod e anúncios." Style="{DynamicResource SubtituloDaPagina}" />
 
             <!-- Conta: conectar e desconectar acontecem na hora -->
             <TextBlock Text="Conta" Style="{DynamicResource TituloDaSecao}" />
@@ -82,7 +82,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="&#xE774;" Style="{DynamicResource IconeDoCartao}" />
                     <TextBlock Grid.Column="1" Style="{DynamicResource TextoDoAviso}"
-                               Text="Escrever no chat e mostrar os resgates de pontos não funcionam enquanto o Chat Multiplataforma estiver ligado (aba Chat), mas dá para deixar as opções prontas. A conta continua conectada e o AutoMod continua funcionando." />
+                               Text="Escrever no chat e mostrar os resgates de pontos não funcionam enquanto o Chat Multiplataforma estiver ligado (aba Chat), mas dá para deixar as opções prontas. A conta continua conectada, e moderar, o AutoMod e o aviso de anúncios continuam funcionando." />
                 </Grid>
             </Border>
 
@@ -152,7 +152,29 @@
                 </Border>
             </StackPanel>
 
-            <!-- Fora de recursosDaTwitch: o AutoMod também vale no Chat Multiplataforma (só a Twitch tem AutoMod) -->
+            <!-- Fora de recursosDaTwitch: vale no Chat Multiplataforma (só nas mensagens da Twitch) -->
+            <TextBlock Text="Moderação" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE74D;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Moderar no chat" Style="{DynamicResource Rotulo}" />
+                        <TextBlock x:Name="dicaModeracao" Text="{Binding DicaDaModeracao, Mode=OneWay}" Style="{DynamicResource Dica}" />
+                        <TextBlock x:Name="problemaDaModeracao" Text="{Binding ProblemaDaModeracao}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
+                                   Visibility="{Binding ProblemaDaModeracao, Converter={StaticResource VisivelSe}}" />
+                        <TextBlock x:Name="situacaoDaModeracao" Text="{Binding SituacaoDaModeracao}" Style="{DynamicResource Dica}" Margin="0,6,0,0"
+                                   Visibility="{Binding SituacaoDaModeracao, Converter={StaticResource VisivelSe}}" />
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorModeracao" Grid.Column="2" IsChecked="{Binding ModerarNoChat}"
+                                     AutomationProperties.Name="Moderar no chat" />
+                </Grid>
+            </Border>
+
             <TextBlock Text="Mensagens barradas pelo AutoMod" Style="{DynamicResource TituloDaSecao}" />
             <Border Style="{DynamicResource Cartao}">
                 <Grid>
@@ -183,6 +205,40 @@
                     </StackPanel>
                     <ctl:Interruptor x:Name="interruptorAutoMod" Grid.Column="2" IsChecked="{Binding AprovarAutoMod}"
                                      AutomationProperties.Name="Aprovar ou recusar no chat" />
+                </Grid>
+            </Border>
+
+            <!-- Também fora de recursosDaTwitch: vale no Chat Multiplataforma (os anúncios são da Twitch) -->
+            <TextBlock Text="Anúncios do seu canal" Style="{DynamicResource TituloDaSecao}" />
+            <Border Style="{DynamicResource Cartao}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE7F4;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Avisar dos anúncios no chat" Style="{DynamicResource Rotulo}" />
+                        <TextBlock x:Name="dicaAnuncios" Text="{Binding DicaDosAnuncios}" Style="{DynamicResource Dica}" />
+                        <TextBlock x:Name="problemaDosAnuncios" Text="{Binding ProblemaDosAnuncios}" Style="{DynamicResource Erro}" Margin="0,6,0,0"
+                                   Visibility="{Binding ProblemaDosAnuncios, Converter={StaticResource VisivelSe}}" />
+                        <!-- Se a Twitch está mostrando os anúncios agora (ou por que não): laranja só quando é um problema -->
+                        <TextBlock x:Name="situacaoDosAnuncios" Text="{Binding SituacaoDosAnuncios}" Margin="0,6,0,0"
+                                   Visibility="{Binding SituacaoDosAnuncios, Converter={StaticResource VisivelSe}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Dica}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AnunciosComProblema}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource LaranjaClaro}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    <ctl:Interruptor x:Name="interruptorAnuncios" Grid.Column="2" IsChecked="{Binding AvisarAnuncios}"
+                                     AutomationProperties.Name="Avisar dos anúncios no chat" />
                 </Grid>
             </Border>
         </StackPanel>

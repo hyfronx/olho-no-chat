@@ -65,6 +65,9 @@ public sealed partial class LogicaGeral : LogicaDaPagina
     [ObservableProperty]
     private Atalho? _atalhoRecusarAutoMod;
 
+    [ObservableProperty]
+    private Atalho? _atalhoAdiarAnuncio;
+
     /// <summary>A versão instalada, ou "de desenvolvimento".</summary>
     public string Versao => InfoDoApp.Versao;
 
@@ -109,6 +112,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         AtalhoPausar = opcoes.AtalhoPausar;
         AtalhoAprovarAutoMod = opcoes.AtalhoAprovarAutoMod;
         AtalhoRecusarAutoMod = opcoes.AtalhoRecusarAutoMod;
+        AtalhoAdiarAnuncio = opcoes.AtalhoAdiarAnuncio;
     }
 
     public override void Gravar(Opcoes opcoes)
@@ -130,6 +134,7 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         opcoes.AtalhoPausar = SoSeExiste(AtalhoPausar);
         opcoes.AtalhoAprovarAutoMod = SoSeExiste(AtalhoAprovarAutoMod);
         opcoes.AtalhoRecusarAutoMod = SoSeExiste(AtalhoRecusarAutoMod);
+        opcoes.AtalhoAdiarAnuncio = SoSeExiste(AtalhoAdiarAnuncio);
     }
 
     private static Atalho? SoSeExiste(Atalho? atalho) => Atalho.Existe(atalho) ? atalho : null;
@@ -149,5 +154,6 @@ public sealed partial class LogicaGeral : LogicaDaPagina
         estado["Geral.AtalhoPausar"] = Atalho.TextoOuNenhum(AtalhoPausar);
         estado["Geral.AtalhoAprovarAutoMod"] = Atalho.TextoOuNenhum(AtalhoAprovarAutoMod);
         estado["Geral.AtalhoRecusarAutoMod"] = Atalho.TextoOuNenhum(AtalhoRecusarAutoMod);
+        estado["Geral.AtalhoAdiarAnuncio"] = Atalho.TextoOuNenhum(AtalhoAdiarAnuncio);
     }
 }

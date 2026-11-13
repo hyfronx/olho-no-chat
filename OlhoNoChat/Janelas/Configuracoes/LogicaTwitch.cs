@@ -9,7 +9,7 @@ namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
 /// A aba Twitch: a conta (conectar e desconectar acontecem na hora, sem "Salvar"), a caixa de escrever, os resgates de
-/// pontos e o AutoMod. As dicas citam os atalhos salvos (não os que estão sendo editados na aba Geral).
+/// pontos, o AutoMod, moderar no chat e o aviso de anúncios. As dicas citam os atalhos salvos (não os que estão sendo editados na aba Geral).
 /// </summary>
 public sealed partial class LogicaTwitch : LogicaDaPagina
 {
@@ -20,19 +20,25 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
     private readonly AutorizacaoNoNavegador _autorizacao;
     private readonly ContaDaTwitch _conta;
     private readonly EventSubDaTwitch _resgates;
+    private readonly AnunciosDoCanal? _anuncios;
+    private readonly ModeracaoNoCanal? _moderacao;
     // Os avisos da conta e dos resgates chegam de outras threads: a tela é atualizada na da janela
     private readonly SynchronizationContext? _tela = SynchronizationContext.Current;
     private Atalho? _atalhoEscreverSalvo;
     private Atalho? _atalhoAprovarSalvo;
     private Atalho? _atalhoRecusarSalvo;
+    private Atalho? _atalhoAdiarSalvo;
     private bool _conferindo;
     private bool _ligada;
 
-    public LogicaTwitch(AutorizacaoNoNavegador autorizacao, ContaDaTwitch conta, EventSubDaTwitch resgates)
+    public LogicaTwitch(AutorizacaoNoNavegador autorizacao, ContaDaTwitch conta, EventSubDaTwitch resgates,
+        AnunciosDoCanal? anuncios = null, ModeracaoNoCanal? moderacao = null)
     {
+        _moderacao = moderacao;
         _autorizacao = autorizacao;
         _conta = conta;
         _resgates = resgates;
+        _anuncios = anuncios;
         // O Chat Multiplataforma (aba Chat, ainda sem salvar) muda o que a dica da conta diz que dá para fazer
         PropertyChanged += (_, e) =>
         {
@@ -103,6 +109,63 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         return comum + atalhos;
     }
 
+    // ----- Moderar no chat -----
+
+    [ObservableProperty]
+    private bool _moderarNoChat;
+
+    public string DicaDaModeracao =>
+        "Com as bordas visíveis, passe o mouse numa mensagem para apagar, suspender (1 min a 1 dia) ou banir quem mandou. " +
+        "Só no tipo de chat Padrão, nos canais que são seus ou que você modera.";
+
+    /// <summary>Por que moderar não funciona com a conta ("" = funciona, ou sem conta: a dica da conta já diz).</summary>
+    public string ProblemaDaModeracao => _conta.EstaConectada && _conta.PermissoesConferidas && !_conta.PodeModerarOChat
+        ? "Falta uma permissão: clique em \"Conectar de novo\", acima."
+        : string.Empty;
+
+    /// <summary>Se dá para moderar o canal aberto ("" = sem conta, sem a permissão, opção desligada ou sem chat Padrão).</summary>
+    public string SituacaoDaModeracao => _moderacao?.PapelNoCanal switch
+    {
+        ModeracaoNoCanal.Papel.Dono => "Funcionando no canal aberto (o seu).",
+        ModeracaoNoCanal.Papel.Moderador => "Funcionando no canal aberto (você é moderador dele).",
+        _ => string.Empty,
+    };
+
+    // ----- Anúncios -----
+
+    [ObservableProperty]
+    private bool _avisarAnuncios;
+
+    public string DicaDosAnuncios => TextoDaDicaDosAnuncios(_atalhoAdiarSalvo);
+
+    /// <summary>Por que os anúncios não funcionam com a conta ("" = funcionam, ou sem conta: a dica da conta já diz).</summary>
+    public string ProblemaDosAnuncios => _conta.EstaConectada && _conta.PermissoesConferidas && !_conta.PodeVerAnuncios
+        ? "Falta uma permissão: clique em \"Conectar de novo\", acima."
+        : string.Empty;
+
+    /// <summary>Se a Twitch está mostrando os anúncios do canal ("" = não pedido: opção desligada, sem conta ou outro canal aberto).</summary>
+    public string SituacaoDosAnuncios => _anuncios == null ? string.Empty : TextoDaSituacao(_anuncios.SituacaoAtual, _anuncios.Problema);
+
+    public bool AnunciosComProblema => _anuncios?.SituacaoAtual is AnunciosDoCanal.Situacao.Recusado or AnunciosDoCanal.Situacao.SemConexao;
+
+    public static string TextoDaSituacao(AnunciosDoCanal.Situacao situacao, string problema) => situacao switch
+    {
+        AnunciosDoCanal.Situacao.Funcionando => "Funcionando: o aviso aparece quando houver anúncio marcado.",
+        AnunciosDoCanal.Situacao.Recusado => problema,
+        AnunciosDoCanal.Situacao.SemConexao => "Não deu para falar com a Twitch. O app tenta de novo sozinho.",
+        _ => string.Empty,
+    };
+
+    /// <summary>A dica do aviso de anúncios. A frase do atalho só aparece quando existe o atalho.</summary>
+    public static string TextoDaDicaDosAnuncios(Atalho? adiar)
+    {
+        const string comum = "Um aviso no chat 5 minutos antes do próximo anúncio e enquanto ele roda. Só no seu canal (o da conta " +
+                             "conectada), aberto no tipo de chat Padrão; anúncios só existem em canais de afiliados e parceiros.";
+        return Atalho.Existe(adiar)
+            ? $"{comum} Para adiar 5 minutos, clique em \"Adiar\" ou, no jogo, use {adiar}."
+            : comum + " Para adiar 5 minutos, clique em \"Adiar\".";
+    }
+
     public string DicaDaCaixa => TextoDaDicaDaCaixa(CaixaDeDigitar == 1, _atalhoEscreverSalvo);
 
     public string DicaDeFecharDepoisDeEnviar => TextoDaDicaDeFechar(_atalhoEscreverSalvo);
@@ -143,7 +206,11 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         AprovarAutoMod = opcoes.AprovarAutoMod;
         _atalhoAprovarSalvo = opcoes.AtalhoAprovarAutoMod;
         _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
+        AvisarAnuncios = opcoes.AvisarAnuncios;
+        ModerarNoChat = opcoes.ModerarNoChat;
+        _atalhoAdiarSalvo = opcoes.AtalhoAdiarAnuncio;
         OnPropertyChanged(nameof(DicaDoAutoMod));
+        OnPropertyChanged(nameof(DicaDosAnuncios));
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
 
@@ -159,6 +226,8 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         opcoes.FecharCaixaDepoisDeEnviar = FecharCaixaDepoisDeEnviar;
         opcoes.MostrarResgates = MostrarResgates;
         opcoes.AprovarAutoMod = AprovarAutoMod;
+        opcoes.AvisarAnuncios = AvisarAnuncios;
+        opcoes.ModerarNoChat = ModerarNoChat;
     }
 
     /// <summary>Depois de "Salvar": as dicas passam a citar o atalho que acabou de ser salvo.</summary>
@@ -167,9 +236,11 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _atalhoEscreverSalvo = opcoes.AtalhoEscrever;
         _atalhoAprovarSalvo = opcoes.AtalhoAprovarAutoMod;
         _atalhoRecusarSalvo = opcoes.AtalhoRecusarAutoMod;
+        _atalhoAdiarSalvo = opcoes.AtalhoAdiarAnuncio;
         OnPropertyChanged(nameof(DicaDaCaixa));
         OnPropertyChanged(nameof(DicaDeFecharDepoisDeEnviar));
         OnPropertyChanged(nameof(DicaDoAutoMod));
+        OnPropertyChanged(nameof(DicaDosAnuncios));
     }
 
     public override void Estado(IDictionary<string, string> estado)
@@ -178,6 +249,8 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         estado["Twitch.FecharCaixaDepoisDeEnviar"] = FecharCaixaDepoisDeEnviar.ToString();
         estado["Twitch.MostrarResgates"] = MostrarResgates.ToString();
         estado["Twitch.AprovarAutoMod"] = AprovarAutoMod.ToString();
+        estado["Twitch.AvisarAnuncios"] = AvisarAnuncios.ToString();
+        estado["Twitch.ModerarNoChat"] = ModerarNoChat.ToString();
     }
 
     // ----- Conta -----
@@ -217,10 +290,12 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _ligada = true;
         _conta.Mudou += ContaMudou;
         _resgates.ProblemaMudou += ProblemaMudou;
+        if (_anuncios != null)
+            _anuncios.SituacaoMudou += ProblemaMudou;
+        if (_moderacao != null)
+            _moderacao.Mudou += ProblemaMudou;
         MostrarConta();
-        OnPropertyChanged(nameof(ProblemaDosResgates));
-        OnPropertyChanged(nameof(SituacaoDoAutoMod));
-        OnPropertyChanged(nameof(AutoModComProblema));
+        ProblemaMudou();
     }
 
     public void Desligar()
@@ -230,6 +305,10 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         _ligada = false;
         _conta.Mudou -= ContaMudou;
         _resgates.ProblemaMudou -= ProblemaMudou;
+        if (_anuncios != null)
+            _anuncios.SituacaoMudou -= ProblemaMudou;
+        if (_moderacao != null)
+            _moderacao.Mudou -= ProblemaMudou;
     }
 
     private void ContaMudou() => NaTela(MostrarConta);
@@ -239,6 +318,9 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         OnPropertyChanged(nameof(ProblemaDosResgates));
         OnPropertyChanged(nameof(SituacaoDoAutoMod));
         OnPropertyChanged(nameof(AutoModComProblema));
+        OnPropertyChanged(nameof(SituacaoDosAnuncios));
+        OnPropertyChanged(nameof(AnunciosComProblema));
+        OnPropertyChanged(nameof(SituacaoDaModeracao));
     });
 
     private void NaTela(Action acao)
@@ -256,8 +338,12 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
         // Conectada antes da 1.0.18 (emotes) ou da 2.7.0 (AutoMod): falta uma permissão, dada ao conectar de novo
         bool semPermissaoDeEmotes = conectada && _conta.PermissoesConferidas && !_conta.PodeLerEmotes;
         bool semPermissaoDoAutoMod = conectada && _conta.PermissoesConferidas && !_conta.PodeModerarAutoMod;
+        // Ou da 2.11.0 (anúncios)
+        bool semPermissaoDosAnuncios = conectada && _conta.PermissoesConferidas && !_conta.PodeVerAnuncios;
+        bool semPermissaoDeModerar = conectada && _conta.PermissoesConferidas && !_conta.PodeModerarOChat;
 
-        bool precisaConectar = !conectada || semPermissaoDeEmotes || semPermissaoDoAutoMod;
+        bool precisaConectar = !conectada || semPermissaoDeEmotes || semPermissaoDoAutoMod || semPermissaoDosAnuncios
+                               || semPermissaoDeModerar;
 
         MostrarConectar = precisaConectar && !esperando;
         TextoConectar = conectada ? "Conectar de novo" : "Conectar";
@@ -279,20 +365,24 @@ public sealed partial class LogicaTwitch : LogicaDaPagina
                 ? "Falta uma permissão para usar os seus emotes na caixa de digitar: clique em \"Conectar de novo\"."
                 : semPermissaoDoAutoMod
                     ? "Falta uma permissão para aprovar as mensagens barradas pelo AutoMod: clique em \"Conectar de novo\"."
-                    : MultiplataformaNaTela
-                        ? "Você pode aprovar as mensagens barradas pelo AutoMod."
-                        : "Você pode escrever no chat, usar os seus emotes, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
+                    : semPermissaoDosAnuncios || semPermissaoDeModerar
+                        ? "Faltam permissões para moderar no chat e avisar dos anúncios do seu canal: clique em \"Conectar de novo\"."
+                        : MultiplataformaNaTela
+                            ? "Você pode moderar e aprovar as mensagens barradas pelo AutoMod, e ver os anúncios do seu canal."
+                            : "Você pode escrever no chat, usar os seus emotes, mostrar os resgates de pontos, moderar, aprovar as mensagens barradas pelo AutoMod e ver os anúncios do seu canal.";
         }
         else
         {
             TituloDaConta = "Não conectado";
             DicaDaConta = MultiplataformaNaTela
-                ? "Para só ler o chat, não precisa conectar. Conecte para aprovar as mensagens barradas pelo AutoMod."
-                : "Para só ler o chat, não precisa conectar. Conecte para escrever no chat, mostrar os resgates de pontos e aprovar as mensagens barradas pelo AutoMod.";
+                ? "Para só ler o chat, não precisa conectar. Conecte para moderar, aprovar as mensagens barradas pelo AutoMod e ver os anúncios do seu canal."
+                : "Para só ler o chat, não precisa conectar. Conecte para escrever no chat, mostrar os resgates de pontos, moderar, aprovar as mensagens barradas pelo AutoMod e ver os anúncios do seu canal.";
         }
 
         Foto = conectada && _conta.Foto.Length > 0 ? _conta.Foto : null;
         OnPropertyChanged(nameof(ProblemaDoAutoMod));
+        OnPropertyChanged(nameof(ProblemaDosAnuncios));
+        OnPropertyChanged(nameof(ProblemaDaModeracao));
     }
 
     [RelayCommand]

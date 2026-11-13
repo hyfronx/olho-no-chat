@@ -46,6 +46,18 @@ public sealed class ContaDaTwitch
     /// <summary>Aprovar e recusar no AutoMod precisa de "moderator:manage:automod", que acessos de antes da 2.7.0 não têm.</summary>
     public bool PodeModerarAutoMod { get; private set; }
 
+    /// <summary>
+    /// Ver e adiar os anúncios do canal precisa de "channel:read:ads" e "channel:manage:ads", que acessos de antes da
+    /// 2.11.0 não têm.
+    /// </summary>
+    public bool PodeVerAnuncios { get; private set; }
+
+    /// <summary>
+    /// Apagar mensagens, suspender e banir no chat precisa de "moderator:manage:chat_messages",
+    /// "moderator:manage:banned_users" e "user:read:moderated_channels", que acessos de antes da 2.11.0 não têm.
+    /// </summary>
+    public bool PodeModerarOChat { get; private set; }
+
     /// <summary>As permissões acima foram lidas da Twitch nesta execução.</summary>
     public bool PermissoesConferidas { get; private set; }
 
@@ -140,7 +152,7 @@ public sealed class ContaDaTwitch
         }
 
         var salvoAntes = (_salva.Id, _salva.Login, _salva.NomeDeExibicao);
-        var estadoAntes = (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PermissoesConferidas);
+        var estadoAntes = (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PodeVerAnuncios, PodeModerarOChat, PermissoesConferidas);
 
         _salva.Id = (string?)info["user_id"] ?? string.Empty;
         _salva.Login = (string?)info["login"] ?? string.Empty;
@@ -148,6 +160,9 @@ public sealed class ContaDaTwitch
         PodeEnviar = permissoes.Contains("user:write:chat");
         PodeLerEmotes = permissoes.Contains("user:read:emotes");
         PodeModerarAutoMod = permissoes.Contains("moderator:manage:automod");
+        PodeVerAnuncios = permissoes.Contains("channel:read:ads") && permissoes.Contains("channel:manage:ads");
+        PodeModerarOChat = permissoes.Contains("moderator:manage:chat_messages") && permissoes.Contains("moderator:manage:banned_users")
+                           && permissoes.Contains("user:read:moderated_channels");
         PermissoesConferidas = true;
 
         await BuscarPerfilAsync(token);
@@ -155,7 +170,7 @@ public sealed class ContaDaTwitch
         bool salvoMudou = tokenNovo || salvoAntes != (_salva.Id, _salva.Login, _salva.NomeDeExibicao);
         if (salvoMudou)
             _salva.Gravar();
-        if (salvoMudou || estadoAntes != (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PermissoesConferidas))
+        if (salvoMudou || estadoAntes != (Foto, PodeEnviar, PodeLerEmotes, PodeModerarAutoMod, PodeVerAnuncios, PodeModerarOChat, PermissoesConferidas))
             Mudou?.Invoke();
         return true;
     }
@@ -187,6 +202,8 @@ public sealed class ContaDaTwitch
         Foto = string.Empty;
         PodeLerEmotes = false;
         PodeModerarAutoMod = false;
+        PodeVerAnuncios = false;
+        PodeModerarOChat = false;
         PermissoesConferidas = false;
         _salva.Gravar();
         Mudou?.Invoke();
