@@ -60,6 +60,8 @@
         body.toggle('ov-bubble', options.background === 'bubble');
         body.toggle('ov-ticker', options.layout === 'ticker');
         body.toggle('onc-first-on', options.firstTime !== false); // the "Primeira vez" badge (chat.css)
+        // The chat's "Tamanho da resposta": the lines of the message answered above a reply (0 = all of it)
+        document.body.style.setProperty('--reply-lines', options.replyLines > 0 ? options.replyLines : 'none');
         body.toggle('ov-time', !!options.time);
         body.toggle('ov-badges', !!options.badges);
         body.toggle('onc-multi', !!options.platform); // chat.css shows the platform icons with it
@@ -113,6 +115,8 @@
             if (options.maxEmotes > 0) limitEmotes(message, options.maxEmotes);
             if (options.maxChars > 0) limitText(message, options.maxChars);
         }
+        // The message a reply answers (chat.js buildReply): its links never hide the line, they only become "[link]"
+        if (options.links !== 'show') line.querySelectorAll('.onc-reply a.onc-link').forEach(link => link.replaceWith('[link]'));
 
         const wrapper = document.createElement('div');
         wrapper.className = 'ov-line';

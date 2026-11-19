@@ -51,7 +51,7 @@ public sealed class OpcoesDoOverlayTestes
     {
         Opcoes o = Corrigidas("""
             {"SegundosParaSumirNoOverlay":1,"SegundosDeAtrasoNoOverlay":-3,"MensagensNoOverlay":999,"TamanhoDoTextoNoOverlay":2,
-             "OpacidadeDoFundoNoOverlay":150,"CaracteresNoOverlay":5,"EmotesNoOverlay":0,"InclinacaoNoOverlay":90,"ConeDoFunilNoOverlay":0}
+             "OpacidadeDoFundoNoOverlay":150,"CaracteresNoOverlay":5,"EmotesNoOverlay":0,"LinhasDaRespostaNoOverlay":9,"InclinacaoNoOverlay":90,"ConeDoFunilNoOverlay":0}
             """);
 
         Assert.Equal(Opcoes.SegundosParaSumirNoOverlayMinimo, o.SegundosParaSumirNoOverlay);
@@ -61,6 +61,7 @@ public sealed class OpcoesDoOverlayTestes
         Assert.Equal(100, o.OpacidadeDoFundoNoOverlay);
         Assert.Equal(Opcoes.CaracteresNoOverlayMinimo, o.CaracteresNoOverlay);
         Assert.Equal(Opcoes.EmotesNoOverlayMinimo, o.EmotesNoOverlay);
+        Assert.Equal(1, o.LinhasDaRespostaNoOverlay);
         Assert.Equal(Opcoes.InclinacaoNoOverlayMaxima, o.InclinacaoNoOverlay);
         Assert.Equal(Opcoes.ConeDoFunilMinimo, o.ConeDoFunilNoOverlay);
     }
@@ -202,6 +203,7 @@ public sealed class OpcoesDoOverlayTestes
             VelocidadeDaFaixaNoOverlay = 250,
             PreencherAreaNoOverlay = false,
             PrimeiraVezNoOverlay = false,
+            LinhasDaRespostaNoOverlay = 4,
             PalavrasProibidasNoOverlay = ["feio", "chato*"],
             LinksNoOverlay = "show",
             OutrosAvisosDoTikTokNoOverlay = false,
@@ -216,6 +218,26 @@ public sealed class OpcoesDoOverlayTestes
         Assert.True(gravadas.OverlayLigado);
         Assert.Equal(18987, gravadas.PortaDoOverlay);
         Assert.Equal(salvas.AtalhoLimparOverlay, gravadas.AtalhoLimparOverlay); // o atalho de limpar fica na aba Overlay
+    }
+
+    [Theory]
+    [InlineData(1, "1 linha", 1)]
+    [InlineData(6, "6 linhas", 6)]
+    [InlineData(7, "Toda", 0)]
+    public void Aba_TamanhoDaResposta_UmaLinhaPorPadraoEGravaASua(int posicao, string texto, int gravadas)
+    {
+        var aba = new LogicaOverlay();
+        aba.Carregar(new Opcoes { LinhasDaResposta = 5 });
+        Assert.Equal(1, aba.PosicaoDaResposta);
+        Assert.Equal("1 linha", aba.TextoDaResposta);
+
+        aba.PosicaoDaResposta = posicao;
+        Assert.Equal(texto, aba.TextoDaResposta);
+        var opcoes = new Opcoes();
+        aba.Gravar(opcoes);
+
+        Assert.Equal(gravadas, opcoes.LinhasDaRespostaNoOverlay);
+        Assert.Equal(Opcoes.LinhasDaRespostaPadrao, opcoes.LinhasDaResposta); // a da aba Chat fica como estava
     }
 
     [Fact]

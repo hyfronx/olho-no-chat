@@ -196,6 +196,28 @@
                     </Grid>
                 </Border>
 
+                <!-- Respostas da Twitch: quanto aparece da mensagem respondida acima da resposta (a live tem a sua, aba Overlay) -->
+                <Border Style="{DynamicResource Cartao}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xE97A;" Style="{DynamicResource IconeDoCartao}" />
+                        <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                            <TextBlock Text="Tamanho da resposta" Style="{DynamicResource Rotulo}" />
+                            <TextBlock Text="Quando alguém responde uma mensagem, ela aparece acima da resposta. Escolha quantas linhas dela mostrar, ou ela toda. Só na Twitch; a live tem a sua, na aba Overlay." Style="{DynamicResource Dica}" />
+                        </StackPanel>
+                        <Slider x:Name="deslizanteResposta" Grid.Column="2" Width="140" VerticalAlignment="Center" AutomationProperties.Name="Tamanho da resposta"
+                                Minimum="1" Maximum="{Binding UltimaPosicaoDaResposta, Mode=OneTime}" SmallChange="1" LargeChange="1" TickFrequency="1"
+                                IsSnapToTickEnabled="True" Value="{Binding PosicaoDaResposta}" />
+                        <TextBlock x:Name="textoResposta" Grid.Column="3" Width="64" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"
+                                   Style="{DynamicResource Rotulo}" Text="{Binding TextoDaResposta}" />
+                    </Grid>
+                </Border>
+
                 <TextBlock Text="Filtros" Style="{DynamicResource TituloDaSecao}" />
                 <!-- Abre a janela Filtros do chat (que salva sozinha) -->
                 <Button x:Name="cartaoFiltros" Style="{DynamicResource CartaoClicavel}" AutomationProperties.Name="Filtrar ou destacar usuários"

@@ -24,7 +24,7 @@
 
     // From the app (PadraoChat.GetMessageSettingsJson)
     let settings = {
-        fade: 0, hideBots: true, commandPrefixes: ['!'], hideGifs: false, firstTime: true, hideOtherChannels: false, playSound: false,
+        fade: 0, hideBots: true, commandPrefixes: ['!'], hideGifs: false, firstTime: true, replyLines: 3, hideOtherChannels: false, playSound: false,
         twitchNotices: true, youTubeNotices: true, tiktokGifts: true, tiktokFollows: true, tiktokShares: false, tiktokSuperFans: true,
         highlightUsers: false, allowedUsersOnly: false, filterAllowAllVIPs: false, filterAllowAllMods: false,
         vips: [], blockList: [], multiplatform: false,
@@ -341,6 +341,8 @@
         }
 
         let parts = splitAtPlaces(text, [...twitchEmotePlaces(tags.emotes), ...gifPlaces(tags.gifs)]);
+        const reply = replyOf(tags);
+        if (reply) parts = withoutReplyMention(parts, reply);
         if (tags.bits) parts = addCheers(parts);
 
         showLine({
@@ -357,8 +359,60 @@
             firstMessage: tags['first-msg'] === '1',
             // For "Moderation": who sent it (the bans need the user's id) and their badges
             twitchUser: tags['user-id'] ? { id: tags['user-id'], badges: tags.badges || '' } : null,
+            reply,
             parts: addOtherEmotes(parts)
         }, tags.badges || '');
+    }
+
+    // --- Replies -------------------------------------------------------------------------------------
+    // A reply comes with the message it answers ("reply-parent-*" tags): who wrote it and its whole text. The line
+    // shows it above the message (buildReply), as much as fits in a few lines (chat.css, .onc-reply).
+
+    function replyOf(tags) {
+        if (!tags['reply-parent-msg-id']) return null;
+        const login = tags['reply-parent-user-login'] || '';
+        return {
+            id: tags['reply-parent-msg-id'],
+            login,
+            name: tags['reply-parent-display-name'] || login,
+            body: tags['reply-parent-msg-body'] || ''
+        };
+    }
+
+    // Twitch's site writes "@name " at the start of a reply: the line above already says who, so it goes (a reply that
+    // is only "@name" keeps it)
+    function withoutReplyMention(parts, reply) {
+        if (typeof parts[0] !== 'string') return parts;
+        const names = [reply.name, reply.login].filter(Boolean).map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        if (!names.length) return parts;
+        const mention = new RegExp('^@(?:' + names.join('|') + ')\\s+', 'iu').exec(parts[0]);
+        if (!mention) return parts;
+        const rest = parts[0].slice(mention[0].length);
+        const result = rest ? [rest, ...parts.slice(1)] : parts.slice(1);
+        return result.length ? result : parts;
+    }
+
+    // "@name: text" (chat.css draws the line down to the name). The message answered still in the chat gives its text exactly as shown (Twitch emotes too);
+    // otherwise its text from the tag, with the emotes of 7TV, BTTV and FFZ.
+    function buildReply(reply) {
+        const div = document.createElement('div');
+        div.className = 'onc-reply';
+        const name = document.createElement('span');
+        name.className = 'onc-reply-name';
+        name.textContent = '@' + reply.name;
+        const text = document.createElement('span');
+        text.className = 'onc-reply-text';
+
+        const selector = `.chat_line[data-id="${CSS.escape(reply.id)}"]:not(.onc-deleted) > .message`;
+        const shown = box.querySelector(selector) || newLines.querySelector(selector);
+        if (shown) text.append(...[...shown.childNodes].map(node => node.cloneNode(true)));
+        else {
+            appendParts(text, addOtherEmotes([reply.body]));
+            linkify(text);
+        }
+
+        div.append(name, ': ', text);
+        return div;
     }
 
     // Shared chat: the channel a message or notice came from, when it is another channel of the session
@@ -655,6 +709,8 @@
         document.body.classList.toggle('onc-hide-gifs', !!settings.hideGifs);
         // "Selo de primeira vez" (Configurações > Chat): the badge is always built, the setting shows it (chat.css)
         document.body.classList.toggle('onc-first-on', !!settings.firstTime);
+        // "Tamanho da resposta" (Configurações > Chat): the lines of the message answered above a reply (0 = all of it)
+        document.body.style.setProperty('--reply-lines', settings.replyLines > 0 ? settings.replyLines : 'none');
     }
 
     // The message split at the places of its emotes and GIFs; the text around them stays text
@@ -968,41 +1024,11 @@
         const message = document.createElement('span');
         message.className = 'message';
         if (line.action) message.style.color = line.color;
-        line.parts.forEach(part => {
-            if (typeof part === 'string') {
-                message.append(part);
-                return;
-            }
-            if (part.gif) {
-                // Both are there, the setting shows one (see showOrHideGifs); a hidden GIF isn't even downloaded
-                const title = document.createElement('span');
-                title.className = 'onc-gif-title';
-                title.textContent = part.name;
-                const gif = document.createElement('img');
-                gif.className = 'onc-gif';
-                gif.loading = 'lazy';
-                gif.src = part.gif;
-                gif.alt = gif.title = part.name;
-                message.append(title, gif);
-                return;
-            }
-            const img = document.createElement('img');
-            img.className = 'emoticon';
-            img.src = part.emote.src;
-            if (part.emote.srcset) img.srcset = part.emote.srcset;
-            img.alt = img.title = part.name;
-            if (!(part.emote.zeroWidth && stackOnPreviousEmote(message, img)))
-                message.append(img);
-            if (part.cheer) {
-                const bits = document.createElement('span');
-                bits.className = 'onc-cheer-bits';
-                bits.textContent = part.cheer.bits;
-                if (part.cheer.color) bits.style.color = part.cheer.color;
-                message.append(bits);
-            }
-        });
+        appendParts(message, line.parts);
         linkify(message);
 
+        // A reply: the message it answers above the line
+        if (line.reply) div.append(buildReply(line.reply));
         div.append(time);
         // Chat Multiplataforma: where the message came from (hidden by CSS while it is off, see showPlatforms)
         const platform = document.createElement('span');
@@ -1080,6 +1106,43 @@
         return div;
     }
 
+    // The parts of a message (text, emotes, GIFs, cheers) into an element
+    function appendParts(target, parts) {
+        parts.forEach(part => {
+            if (typeof part === 'string') {
+                target.append(part);
+                return;
+            }
+            if (part.gif) {
+                // Both are there, the setting shows one (see showOrHideGifs); a hidden GIF isn't even downloaded
+                const title = document.createElement('span');
+                title.className = 'onc-gif-title';
+                title.textContent = part.name;
+                const gif = document.createElement('img');
+                gif.className = 'onc-gif';
+                gif.loading = 'lazy';
+                gif.src = part.gif;
+                gif.alt = gif.title = part.name;
+                target.append(title, gif);
+                return;
+            }
+            const img = document.createElement('img');
+            img.className = 'emoticon';
+            img.src = part.emote.src;
+            if (part.emote.srcset) img.srcset = part.emote.srcset;
+            img.alt = img.title = part.name;
+            if (!(part.emote.zeroWidth && stackOnPreviousEmote(target, img)))
+                target.append(img);
+            if (part.cheer) {
+                const bits = document.createElement('span');
+                bits.className = 'onc-cheer-bits';
+                bits.textContent = part.cheer.bits;
+                if (part.cheer.color) bits.style.color = part.cheer.color;
+                target.append(bits);
+            }
+        });
+    }
+
     // --- Oversized characters ----------------------------------------------------------------------
     // Some characters are drawn much taller than a line (cuneiform signs like 𒐫, "zalgo" text with piles of accents...):
     // with the fixed line height they would cover the name and the messages around. A character keeps at most a few
@@ -1122,7 +1185,8 @@
         while (walker.nextNode()) texts.push(walker.currentNode);
         texts.forEach(node => {
             const text = node.nodeValue;
-            if (COMMON_TEXT.test(text)) return;
+            // Already fitted: a reply copies the message it answers as shown (buildReply)
+            if (COMMON_TEXT.test(text) || node.parentElement.closest('.onc-fit')) return;
             const style = getComputedStyle(node.parentElement);
             const font = `${style.fontStyle} ${style.fontWeight} 100px ${style.fontFamily}`;
             const parts = document.createDocumentFragment();
@@ -2219,7 +2283,8 @@
                 srcset: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0 2x, https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0 4x' }, name: 'Kappa' };
             const samples = [
                 { login: 'viewer1', color: '#FF7F50', badges: 'subscriber/0', firstMessage: true, parts: ['boa noite, chat! cheguei agora'] },
-                { login: 'viewer2', color: '#1E90FF', badges: 'moderator/1,subscriber/0', parts: ['que jogada absurda ', kappa] },
+                { login: 'viewer2', color: '#1E90FF', badges: 'moderator/1,subscriber/0', parts: ['que jogada absurda ', kappa],
+                    reply: { id: '', name: 'viewer1', body: 'boa noite, chat! cheguei agora' } },
                 { login: 'viewer3', color: '#9ACD32', badges: 'subscriber/0', kind: 'resub',
                     notice: ['se inscreveu! A inscrição completou ', { value: '6' }, ' meses!'], parts: ['bora que hoje tem vitória'] }
             ];

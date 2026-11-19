@@ -38,6 +38,10 @@ public sealed class Opcoes
     public const double LinhasPorSegundoMinimo = 0.5;
     public const double LinhasPorSegundoMaximo = 6;
     public const double LinhasPorSegundoPadrao = 1.5;
+    // Quanto aparece da mensagem respondida acima de uma resposta, em linhas (abas Chat e Overlay); 0 = toda
+    public const int LinhasDaRespostaMaximo = 6;
+    public const int LinhasDaRespostaPadrao = 3;
+    public const int LinhasDaRespostaNoOverlayPadrao = 1; // escolha do usuário (2026-11-19)
     // Os limites das opções do overlay (aba Overlay)
     public const int SegundosParaSumirNoOverlayMinimo = 5;
     public const int SegundosParaSumirNoOverlayMaximo = 300;
@@ -109,6 +113,11 @@ public sealed class Opcoes
     public bool EsconderGifs { get; set; } = false;
     /// <summary>O selo "Primeira vez" na primeira mensagem de alguém no canal (a Twitch avisa; só no Padrão).</summary>
     public bool MostrarPrimeiraVez { get; set; } = true;
+    /// <summary>
+    /// Numa resposta da Twitch, quantas linhas da mensagem respondida aparecem acima dela no chat Padrão (1 a
+    /// <see cref="LinhasDaRespostaMaximo"/>; 0 = a mensagem toda). A live tem a sua: <see cref="LinhasDaRespostaNoOverlay"/>.
+    /// </summary>
+    public int LinhasDaResposta { get; set; } = LinhasDaRespostaPadrao;
     public bool EsconderOutrosCanais { get; set; } = false;
     // Os avisos no chat Padrão, cada plataforma e cada tipo com o seu interruptor (pedido do usuário em 2026-10-23)
     /// <summary>Inscrições, presentes, raids, comunicados, sequências de visualizações... da Twitch.</summary>
@@ -260,6 +269,8 @@ public sealed class Opcoes
     public bool PlataformaNoOverlay { get; set; } = true;
     /// <summary>O selo "Primeira vez" também na live.</summary>
     public bool PrimeiraVezNoOverlay { get; set; } = true;
+    /// <summary>As linhas da mensagem respondida acima de uma resposta na live (como <see cref="LinhasDaResposta"/>).</summary>
+    public int LinhasDaRespostaNoOverlay { get; set; } = LinhasDaRespostaNoOverlayPadrao;
     /// <summary>"list" (uma embaixo da outra) ou "ticker" (uma faixa horizontal, passando da direita para a esquerda).</summary>
     public string DisposicaoDoOverlay { get; set; } = "list";
     /// <summary>A velocidade da faixa horizontal, em pixels por segundo.</summary>
@@ -363,6 +374,8 @@ public sealed class Opcoes
         LinhasPorSegundoAoContinuar = double.IsNaN(LinhasPorSegundoAoContinuar)
             ? LinhasPorSegundoPadrao
             : Math.Clamp(LinhasPorSegundoAoContinuar, LinhasPorSegundoMinimo, LinhasPorSegundoMaximo);
+        if (LinhasDaResposta is < 0 or > LinhasDaRespostaMaximo)
+            LinhasDaResposta = LinhasDaRespostaPadrao;
         CorrigirOverlay(padrao);
         // Uma lista vazia não esconderia comando nenhum, e a caixa da aba Chat nunca grava uma vazia
         PrefixosDosComandos = LerPrefixos(string.Join(' ', PrefixosDosComandos?.Where(p => p != null) ?? []));
@@ -420,6 +433,8 @@ public sealed class Opcoes
         OpacidadeDoFundoNoOverlay = Math.Clamp(OpacidadeDoFundoNoOverlay, 0, 100);
         CaracteresNoOverlay = Math.Clamp(CaracteresNoOverlay, CaracteresNoOverlayMinimo, CaracteresNoOverlayMaximo);
         EmotesNoOverlay = Math.Clamp(EmotesNoOverlay, EmotesNoOverlayMinimo, EmotesNoOverlayMaximo);
+        if (LinhasDaRespostaNoOverlay is < 0 or > LinhasDaRespostaMaximo)
+            LinhasDaRespostaNoOverlay = LinhasDaRespostaNoOverlayPadrao;
 
         FonteDoOverlay = UmDe(FonteDoOverlay, Overlay.ContratoDoOverlay.Fontes, padrao.FonteDoOverlay);
         ContornoNoOverlay = UmDe(ContornoNoOverlay, ["theme", "soft", "none"], padrao.ContornoNoOverlay);

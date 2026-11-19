@@ -166,6 +166,34 @@ public sealed partial class LogicaChat : LogicaDaPagina
     [ObservableProperty]
     private bool _mostrarPrimeiraVez;
 
+    /// <summary>
+    /// O deslizante do tamanho da resposta: 1 a <see cref="Opcoes.LinhasDaRespostaMaximo"/> linhas, e a última posição
+    /// é "Toda" (gravada como 0).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaResposta))]
+    private int _posicaoDaResposta;
+
+    // Não estática: o XAML liga o máximo do deslizante a ela
+    public int UltimaPosicaoDaResposta => Opcoes.LinhasDaRespostaMaximo + 1;
+
+    public string TextoDaResposta => TextoDoTamanhoDaResposta(PosicaoDaResposta);
+
+    // O deslizante do tamanho da resposta (aqui e na aba Overlay): a posição de 1 a 6 é o número de linhas, e a última
+    // ("Toda") é gravada como 0
+    public static int PosicaoDoTamanhoDaResposta(int linhas) => linhas == 0 ? Opcoes.LinhasDaRespostaMaximo + 1 : linhas;
+
+    public static int LinhasDoTamanhoDaResposta(int posicao) =>
+        posicao > Opcoes.LinhasDaRespostaMaximo ? 0 : Math.Max(1, posicao);
+
+    /// <summary>"1 linha", "3 linhas", "Toda".</summary>
+    public static string TextoDoTamanhoDaResposta(int posicao) => LinhasDoTamanhoDaResposta(posicao) switch
+    {
+        0 => "Toda",
+        1 => "1 linha",
+        int linhas => linhas + " linhas",
+    };
+
     [ObservableProperty]
     private bool _esconderOutrosCanais;
 
@@ -236,6 +264,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
         MostrarPrefixosSalvos(opcoes);
         EsconderGifs = opcoes.EsconderGifs;
         MostrarPrimeiraVez = opcoes.MostrarPrimeiraVez;
+        PosicaoDaResposta = PosicaoDoTamanhoDaResposta(opcoes.LinhasDaResposta);
         EsconderOutrosCanais = opcoes.EsconderOutrosCanais;
         MostrarAvisosDaTwitch = opcoes.MostrarAvisosDaTwitch;
         MostrarAvisosDoYouTube = opcoes.MostrarAvisosDoYouTube;
@@ -274,6 +303,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
                 MostrarPrefixosSalvos(opcoes);
                 opcoes.EsconderGifs = EsconderGifs;
                 opcoes.MostrarPrimeiraVez = MostrarPrimeiraVez;
+                opcoes.LinhasDaResposta = LinhasDoTamanhoDaResposta(PosicaoDaResposta);
                 opcoes.EsconderOutrosCanais = EsconderOutrosCanais;
                 opcoes.MostrarAvisosDaTwitch = MostrarAvisosDaTwitch;
                 opcoes.MostrarAvisosDoYouTube = MostrarAvisosDoYouTube;
@@ -312,6 +342,7 @@ public sealed partial class LogicaChat : LogicaDaPagina
         estado["Chat.PrefixosDosComandos"] = Opcoes.TextoDosPrefixos(PrefixosQueValem);
         estado["Chat.EsconderGifs"] = EsconderGifs.ToString();
         estado["Chat.MostrarPrimeiraVez"] = MostrarPrimeiraVez.ToString();
+        estado["Chat.LinhasDaResposta"] = TextoDaResposta;
         estado["Chat.EsconderOutrosCanais"] = EsconderOutrosCanais.ToString();
         estado["Chat.MostrarAvisosDaTwitch"] = MostrarAvisosDaTwitch.ToString();
         estado["Chat.MostrarAvisosDoYouTube"] = MostrarAvisosDoYouTube.ToString();

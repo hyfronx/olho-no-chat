@@ -39,6 +39,8 @@ public static class ContratoComAPagina
             hideGifs = opcoes.EsconderGifs,
             // O selo "Primeira vez" na primeira mensagem de alguém no canal
             firstTime = opcoes.MostrarPrimeiraVez,
+            // Quantas linhas da mensagem respondida aparecem acima de uma resposta (0 = toda)
+            replyLines = opcoes.LinhasDaResposta,
             hideOtherChannels = opcoes.EsconderOutrosCanais,
             // Os avisos de cada plataforma, cada um com o seu interruptor
             twitchNotices = opcoes.MostrarAvisosDaTwitch,

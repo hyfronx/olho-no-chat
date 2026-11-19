@@ -67,6 +67,8 @@ public static class ContratoDoOverlay
         // O ícone só faz sentido com mais de uma plataforma
         platform = opcoes.PlataformaNoOverlay && opcoes.ChatMultiplataforma,
         firstTime = opcoes.PrimeiraVezNoOverlay,
+        // Quantas linhas da mensagem respondida aparecem acima de uma resposta (0 = toda)
+        replyLines = opcoes.LinhasDaRespostaNoOverlay,
         layout = opcoes.DisposicaoDoOverlay,
         tickerSpeed = opcoes.VelocidadeDaFaixaNoOverlay,
         // O chat marca as linhas de comando (data-command) pelos "Prefixos dos comandos" da aba Chat

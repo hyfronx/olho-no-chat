@@ -309,6 +309,16 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
     [ObservableProperty]
     private bool _primeiraVez;
 
+    /// <summary>O deslizante do tamanho da resposta na live, como o da aba Chat (a última posição é "Toda").</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaResposta))]
+    private int _posicaoDaResposta = Opcoes.LinhasDaRespostaNoOverlayPadrao;
+
+    // Não estática: o XAML liga o máximo do deslizante a ela
+    public int UltimaPosicaoDaResposta => Opcoes.LinhasDaRespostaMaximo + 1;
+
+    public string TextoDaResposta => LogicaChat.TextoDoTamanhoDaResposta(PosicaoDaResposta);
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TextoDaOpacidade))]
     private double _opacidadeDoFundo = 55;
@@ -466,6 +476,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         Disposicao = opcoes.DisposicaoDoOverlay;
         VelocidadeDaFaixa = opcoes.VelocidadeDaFaixaNoOverlay;
         PrimeiraVez = opcoes.PrimeiraVezNoOverlay;
+        PosicaoDaResposta = LogicaChat.PosicaoDoTamanhoDaResposta(opcoes.LinhasDaRespostaNoOverlay);
         OpacidadeDoFundo = opcoes.OpacidadeDoFundoNoOverlay;
         Direcao = opcoes.DirecaoDoOverlay;
         Alinhamento = opcoes.AlinhamentoDoOverlay;
@@ -517,6 +528,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         opcoes.DisposicaoDoOverlay = Disposicao;
         opcoes.VelocidadeDaFaixaNoOverlay = Inteiro(VelocidadeDaFaixa, Opcoes.VelocidadeDaFaixaMinima, Opcoes.VelocidadeDaFaixaMaxima);
         opcoes.PrimeiraVezNoOverlay = PrimeiraVez;
+        opcoes.LinhasDaRespostaNoOverlay = LogicaChat.LinhasDoTamanhoDaResposta(PosicaoDaResposta);
         opcoes.OpacidadeDoFundoNoOverlay = Inteiro(OpacidadeDoFundo, 0, 100);
         opcoes.DirecaoDoOverlay = Direcao;
         opcoes.AlinhamentoDoOverlay = Alinhamento;
@@ -578,6 +590,7 @@ public sealed partial class LogicaOverlay : LogicaDaPagina
         estado["Overlay.Disposicao"] = Disposicao;
         estado["Overlay.VelocidadeDaFaixa"] = TextoDaVelocidadeDaFaixa;
         estado["Overlay.PrimeiraVez"] = PrimeiraVez.ToString();
+        estado["Overlay.LinhasDaResposta"] = TextoDaResposta;
         estado["Overlay.OpacidadeDoFundo"] = TextoDaOpacidade;
         estado["Overlay.Direcao"] = Direcao;
         estado["Overlay.Alinhamento"] = Alinhamento;

@@ -251,6 +251,67 @@ body.onc-multi .onc-platform {
     display: inline;
 }
 
+/* A reply (chat.js buildReply): the message it answers above the line, smaller and faded, the whole text up to the lines
+   of "Tamanho da resposta" (--reply-lines, chat.js showOrHideGifs; then "…"). A curved line comes down from it to the
+   name of who answered (the user's pick among three looks, 2026-11-19), and a little room above keeps the pair apart
+   from the message before. !important on the margin: the app's CSS sets the padding of every line; on the emotes: it
+   sets their margins. */
+.chat_line:has(> .onc-reply) {
+    margin-top: 4px !important;
+}
+
+.onc-reply {
+    position: relative;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--reply-lines, 3);
+    overflow: hidden;
+    margin-bottom: 1px;
+    padding-left: 22px;
+    font-size: .78em;
+    font-weight: normal;
+    font-style: normal;
+    letter-spacing: normal;
+    line-height: 1.3;
+    opacity: .72;
+}
+
+.onc-reply::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: .65em;
+    bottom: 0;
+    width: 11px;
+    box-sizing: border-box;
+    border-left: 2px solid currentColor;
+    border-top: 2px solid currentColor;
+    border-top-left-radius: 7px;
+    opacity: .8;
+    /* The letters have an outline (theme, overlay): the line gets a dark edge too, to be seen over a bright game */
+    filter: drop-shadow(0 0 1px rgb(0 0 0 / .9));
+}
+
+.onc-reply-name {
+    font-weight: bold;
+}
+
+.onc-reply .emoticon {
+    width: auto;
+    height: 1.5em;
+    margin: -.2em 0 !important;
+    vertical-align: middle !important;
+}
+
+/* A GIF there is its title only */
+.onc-reply .onc-gif {
+    display: none;
+}
+
+.onc-reply .onc-gif-title {
+    display: inline;
+}
+
 /* An overlay emote (7TV "zero width", BTTV hats and snow) centered over the emote before it */
 .onc-stack {
     position: relative;

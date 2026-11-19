@@ -66,6 +66,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         c.Chat.PrefixosDosComandos = "?, $";
         c.Chat.EsconderGifs = true;
         c.Chat.MostrarPrimeiraVez = false;
+        c.Chat.PosicaoDaResposta = 7; // "Toda"
         c.Chat.EsconderOutrosCanais = true;
         c.Chat.MostrarAvisosDaTwitch = false;
         c.Chat.MostrarAvisosDoYouTube = false;
@@ -97,6 +98,32 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
     }
 
     // ----- Mudanças -----
+
+    [Theory]
+    [InlineData(1, "1 linha", 1)]
+    [InlineData(3, "3 linhas", 3)]
+    [InlineData(6, "6 linhas", 6)]
+    [InlineData(7, "Toda", 0)]
+    public void TamanhoDaResposta_DeslizanteETextoGravamAsLinhas(int posicao, string texto, int gravadas)
+    {
+        var c = Abrir();
+        Assert.Equal(3, c.Chat.PosicaoDaResposta);
+        Assert.Equal(7, c.Chat.UltimaPosicaoDaResposta);
+
+        c.Chat.PosicaoDaResposta = posicao;
+        Assert.Equal(texto, c.Chat.TextoDaResposta);
+        c.Salvar();
+
+        Assert.Equal(gravadas, Gravadas().LinhasDaResposta);
+    }
+
+    [Fact]
+    public void TamanhoDaResposta_TodaSalvaAbreNoFimDoDeslizante()
+    {
+        var c = Abrir(o => o.LinhasDaResposta = 0);
+        Assert.Equal(7, c.Chat.PosicaoDaResposta);
+        Assert.Equal("Toda", c.Chat.TextoDaResposta);
+    }
 
     [Fact]
     public void Abrir_NadaMudou()
@@ -228,6 +255,7 @@ public sealed class LogicaConfiguracoesTestes : IDisposable
         Assert.Equal("45", o.SegundosParaApagar);
         Assert.False(o.VelocidadeAutomaticaAoContinuar);
         Assert.Equal(3.5, o.LinhasPorSegundoAoContinuar);
+        Assert.Equal(0, o.LinhasDaResposta);
         Assert.False(o.EsconderBots);
         Assert.Equal(["?", "$"], o.PrefixosDosComandos);
         Assert.True(o.EsconderGifs);

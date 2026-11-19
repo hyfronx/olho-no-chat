@@ -592,6 +592,26 @@
                             <ctl:Interruptor x:Name="interruptorPrimeiraVez" Grid.Column="2" IsChecked="{Binding PrimeiraVez}" AutomationProperties.Name="Selo de primeira vez na live" />
                         </Grid>
                         <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
+                        <!-- Respostas da Twitch: quanto aparece da mensagem respondida (a aba Chat tem a sua) -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE97A;" Style="{DynamicResource IconeDoCartao}" />
+                            <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                                <TextBlock Text="Tamanho da resposta" Style="{DynamicResource Rotulo}" />
+                                <TextBlock Text="Quantas linhas da mensagem respondida aparecem na live, acima da resposta, ou ela toda. Só na Twitch; não aparece na faixa horizontal." Style="{DynamicResource Dica}" />
+                            </StackPanel>
+                            <Slider x:Name="deslizanteResposta" Grid.Column="2" Width="140" VerticalAlignment="Center" AutomationProperties.Name="Tamanho da resposta na live"
+                                    Minimum="1" Maximum="{Binding UltimaPosicaoDaResposta, Mode=OneTime}" SmallChange="1" LargeChange="1" TickFrequency="1"
+                                    IsSnapToTickEnabled="True" Value="{Binding PosicaoDaResposta}" />
+                            <TextBlock x:Name="textoResposta" Grid.Column="3" Width="64" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"
+                                       Style="{DynamicResource Rotulo}" Text="{Binding TextoDaResposta}" />
+                        </Grid>
+                        <Rectangle Style="{DynamicResource DivisoriaDoCartao}" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />

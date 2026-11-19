@@ -203,6 +203,11 @@ body.ov-ticker .ov-line {
     will-change: transform;
 }
 
+/* A reply's line above the message (chat.css) has no room in the strip */
+body.ov-ticker .ov-line .onc-reply {
+    display: none;
+}
+
 body.ov-ticker .ov-line .message,
 body.ov-ticker .ov-line .onc-notice-line .message {
     display: inline !important;

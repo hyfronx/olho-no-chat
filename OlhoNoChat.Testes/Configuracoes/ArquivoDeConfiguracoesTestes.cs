@@ -413,6 +413,18 @@ public sealed class ArquivoDeConfiguracoesTestes : IDisposable
         Assert.Equal(esperada, ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.LinhasPorSegundoAoContinuar);
     }
 
+    [Theory]
+    [InlineData("0", 0)]
+    [InlineData("6", 6)]
+    [InlineData("7", 3)]
+    [InlineData("-1", 3)]
+    public void TamanhoDaRespostaForaDosLimites_VoltaAoPadrao(string gravado, int esperado)
+    {
+        File.WriteAllText(Novo, $$"""{ "LinhasDaResposta": {{gravado}} }""");
+
+        Assert.Equal(esperado, ArquivoDeConfiguracoes.Abrir(_pasta).Opcoes.LinhasDaResposta);
+    }
+
     [Fact]
     public void RestaurarPadrao_MantemCanalContaListasEJanelaEGuardaUmaCopia()
     {
