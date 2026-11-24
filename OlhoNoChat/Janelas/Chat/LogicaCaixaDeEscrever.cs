@@ -190,13 +190,17 @@ public sealed partial class LogicaCaixaDeEscrever : ObservableObject
         if (!BotaoEscreverNaTela || Canal.Length == 0)
             return null;
 
-        string noJogo = Atalho.Existe(AtalhoEscrever)
-            ? $"No jogo, aperte {AtalhoEscrever} para abrir ou fechar a caixa de escrever."
-            : "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.";
-        string botao = bordasVisiveis ? "Clique no balão de conversa, na barra laranja, para abrir a caixa. " : string.Empty;
-        return _contaConectada() || UsaCaixaDaTwitch
-            ? "Neste chat você pode escrever. " + botao + noJogo
-            : "Neste chat você pode escrever depois de conectar sua conta em Configurações > Twitch. " + noJogo;
+        // Curto: só o jeito de abrir a caixa agora (o balão da barra, com as bordas) e no jogo (o atalho)
+        if (!_contaConectada() && !UsaCaixaDaTwitch)
+            return "Para escrever no chat, conecte sua conta em Configurações > Twitch.";
+
+        return (bordasVisiveis, Atalho.Existe(AtalhoEscrever)) switch
+        {
+            (true, true) => $"Para escrever no chat: o balão da barra laranja, ou {AtalhoEscrever} no jogo.",
+            (true, false) => "Para escrever no chat: o balão da barra laranja.",
+            (false, true) => $"Para escrever no chat: {AtalhoEscrever}.",
+            (false, false) => "Para escrever no chat no jogo, escolha um atalho em Configurações > Geral.",
+        };
     }
 
     private void AvisarDicas()

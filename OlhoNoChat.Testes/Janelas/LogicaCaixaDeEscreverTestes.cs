@@ -181,15 +181,15 @@ public class LogicaCaixaDeEscreverTestes
     public void TextoQueDa_ComContaBordasEAtalho()
     {
         var logica = Nova();
-        Assert.Equal("Neste chat você pode escrever. Clique no balão de conversa, na barra laranja, para abrir a caixa. " +
-                     "No jogo, aperte Ctrl + Alt + F11 para abrir ou fechar a caixa de escrever.", logica.TextoQueDa(bordasVisiveis: true));
-        Assert.Equal("Neste chat você pode escrever. No jogo, aperte Ctrl + Alt + F11 para abrir ou fechar a caixa de escrever.",
-            logica.TextoQueDa(bordasVisiveis: false));
+        Assert.Equal("Para escrever no chat: o balão da barra laranja, ou Ctrl + Alt + F11 no jogo.", logica.TextoQueDa(bordasVisiveis: true));
+        Assert.Equal("Para escrever no chat: Ctrl + Alt + F11.", logica.TextoQueDa(bordasVisiveis: false));
+
+        _opcoes.AtalhoEscrever = null;
+        Assert.Equal("Para escrever no chat: o balão da barra laranja.", Nova().TextoQueDa(true));
+        Assert.Equal("Para escrever no chat no jogo, escolha um atalho em Configurações > Geral.", Nova().TextoQueDa(false));
 
         _conectada = false;
-        _opcoes.AtalhoEscrever = null;
-        Assert.Equal("Neste chat você pode escrever depois de conectar sua conta em Configurações > Twitch. " +
-                     "Para abrir a caixa no jogo, escolha um atalho em Configurações > Geral.", Nova().TextoQueDa(true));
+        Assert.Equal("Para escrever no chat, conecte sua conta em Configurações > Twitch.", Nova().TextoQueDa(true));
 
         _opcoes.Canal = string.Empty;
         Assert.Null(Nova().TextoQueDa(true));

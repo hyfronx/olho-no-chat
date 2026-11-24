@@ -21,10 +21,26 @@ public class AvisosNoChatTestes
     [Fact]
     public void TextoDasBordasOcultas_ComESemAtalho()
     {
-        Assert.Equal("Bordas ocultas: agora só o chat fica por cima do jogo.\nPara mostrar de novo: aperte Ctrl + Alt + F9, ou clique " +
-                     "com o botão direito no ícone do Olho no Chat perto do relógio.", AvisosNoChat.TextoBordasOcultas(CtrlAltF9));
-        Assert.Equal("Bordas ocultas: agora só o chat fica por cima do jogo.\nPara mostrar de novo: clique com o botão direito no " +
-                     "ícone do Olho no Chat perto do relógio.", AvisosNoChat.TextoBordasOcultas(null));
+        Assert.Equal("Bordas ocultas. Para mostrar: Ctrl + Alt + F9.", AvisosNoChat.TextoBordasOcultas(CtrlAltF9));
+        Assert.Equal("Bordas ocultas. Para mostrar: o ícone do Olho no Chat, perto do relógio.", AvisosNoChat.TextoBordasOcultas(null));
+    }
+
+    // O tempo na tela é o de ler: curto para uma dica curta, nunca menos de 3 s nem mais de 8 s
+    [Theory]
+    [InlineData("Overlay da live limpo.", 3.0)]
+    [InlineData("Bordas ocultas. Para mostrar: Ctrl + Alt + F9.", 3.84)]
+    [InlineData("Para escrever no chat: o balão da barra laranja, ou Ctrl + Alt + F11 no jogo.", 5.08)]
+    public void TempoNaTela_PeloTamanhoDoTexto(string texto, double segundos) =>
+        Assert.Equal(segundos, AvisosNoChat.SegundosNaTela(texto), 2);
+
+    [Fact]
+    public void TempoNaTela_NoMaximo8Segundos()
+    {
+        string longo = new('a', 400);
+        Assert.Equal(8, AvisosNoChat.SegundosNaTela(longo));
+        Assert.Contains("}, 8000);", AvisosNoChat.ScriptParaMostrar(longo));
+        Assert.Contains("}, 8700);", AvisosNoChat.ScriptParaMostrar(longo));
+        Assert.Contains("}, 3000);", AvisosNoChat.ScriptParaMostrar("Overlay da live limpo."));
     }
 
     [Fact]

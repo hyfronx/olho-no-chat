@@ -5,7 +5,7 @@ namespace OlhoNoChat.Janelas.Chat;
 
 /// <summary>
 /// Os avisos que aparecem por cima da página do chat (qualquer página, também a de boas-vindas): uma caixa no topo que
-/// não recebe cliques, some depois de 10 s e é trocada por um aviso novo. Os que precisam esperar a página carregar
+/// não recebe cliques, some depois do tempo de ler o texto (3 a 8 s) e é trocada por um aviso novo. Os que precisam esperar a página carregar
 /// ficam guardados: o de bordas ocultas, o de que dá para escrever (também espera as Configurações fecharem) e o do
 /// arquivo de configurações ilegível (decisão 20). Os dois primeiros são dicas de ajuda: com "Mostrar dicas de ajuda"
 /// desligado (aba Geral), não aparecem.
@@ -31,8 +31,16 @@ public sealed class AvisosNoChat
         _avisoDasConfiguracoes = avisoDasConfiguracoes;
     }
 
-    /// <summary>A caixa do aviso: 8 px do topo e das laterais, 17 px em negrito, 10 s na tela e 0,6 s para sumir.</summary>
-    public static string ScriptParaMostrar(string texto) => $$"""
+    /// <summary>
+    /// Quanto tempo um aviso fica na tela: o de ler o texto, 2 s mais 1 s a cada 25 letras, entre 3 e 8 s (até
+    /// 2026-11-24 eram sempre 10 s, tempo demais para uma dica curta por cima do jogo).
+    /// </summary>
+    public static double SegundosNaTela(string texto) => Math.Clamp(2 + texto.Length / 25.0, 3, 8);
+
+    /// <summary>A caixa do aviso: 8 px do topo e das laterais, 17 px em negrito, o tempo de ler na tela e 0,6 s para sumir.</summary>
+    public static string ScriptParaMostrar(string texto) => ScriptParaMostrar(texto, (int)Math.Round(SegundosNaTela(texto) * 1000));
+
+    private static string ScriptParaMostrar(string texto, int milissegundos) => $$"""
         (function (texto) {
             var antigo = document.getElementById('onc-toast');
             if (antigo) antigo.remove();
@@ -44,18 +52,17 @@ public sealed class AvisosNoChat
                 'font:700 17px "Segoe UI",Arial,sans-serif;line-height:1.35;white-space:pre-line;' +
                 'text-shadow:none;letter-spacing:0;pointer-events:none;transition:opacity .6s;';
             document.body.appendChild(aviso);
-            setTimeout(function () { aviso.style.opacity = '0'; }, 10000);
-            setTimeout(function () { aviso.remove(); }, 10700);
+            setTimeout(function () { aviso.style.opacity = '0'; }, {{milissegundos}});
+            setTimeout(function () { aviso.remove(); }, {{milissegundos + 700}});
         })({{JsonSerializer.Serialize(texto)}});
         """;
 
     public const string ScriptParaEsconder = "(function () { var aviso = document.getElementById('onc-toast'); if (aviso) aviso.remove(); })();";
 
-    /// <summary>Como mostrar as bordas de novo.</summary>
-    public static string TextoBordasOcultas(Atalho? atalhoDasBordas) =>
-        "Bordas ocultas: agora só o chat fica por cima do jogo.\n" + (Atalho.Existe(atalhoDasBordas)
-            ? $"Para mostrar de novo: aperte {atalhoDasBordas}, ou clique com o botão direito no ícone do Olho no Chat perto do relógio."
-            : "Para mostrar de novo: clique com o botão direito no ícone do Olho no Chat perto do relógio.");
+    /// <summary>Como mostrar as bordas de novo: curto, só o jeito mais rápido (o atalho; sem atalho, o ícone perto do relógio).</summary>
+    public static string TextoBordasOcultas(Atalho? atalhoDasBordas) => Atalho.Existe(atalhoDasBordas)
+        ? $"Bordas ocultas. Para mostrar: {atalhoDasBordas}."
+        : "Bordas ocultas. Para mostrar: o ícone do Olho no Chat, perto do relógio.";
 
     /// <summary>Mostra agora (se a página estiver pronta; senão o aviso se perde, como antes).</summary>
     public void Mostrar(string texto)
