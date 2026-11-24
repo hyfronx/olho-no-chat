@@ -12,7 +12,8 @@ namespace OlhoNoChat.Janelas.Chat;
 
 /// <summary>
 /// A barra laranja da janela do chat: ocultar bordas, pausar, tamanho do texto e fundo (com os painéis e a rodinha), sempre no
-/// topo, Chat Multiplataforma, escrever, Configurações e fechar. Arrastar a barra (fora dos botões) move a janela; clique duplo não maximiza.
+/// topo, Chat Multiplataforma, escrever, Configurações e fechar. Numa janela estreita demais para os botões, eles viram o
+/// menu ☰, com os mesmos comandos. Arrastar a barra (fora dos botões) move a janela; clique duplo não maximiza.
 /// Quem decide e aplica é a janela: a barra só avisa o que foi pedido e mostra o estado que a janela passa.
 /// </summary>
 public partial class BarraDeCima : UserControl
@@ -25,16 +26,21 @@ public partial class BarraDeCima : UserControl
     private Popup? _painelFechado;
     private DateTime _fechouEm = DateTime.MinValue;
 
-    // Os botões vão até uns 255 px, o selo ocupa uns 45 e o "×" os últimos 40
-    private const double LarguraComSeloBeta = 345;
+    // O "×" ocupa os últimos 40 px da barra; o selo BETA, uns 45 mais a folga
+    private const double LarguraDoFechar = 40;
+    private const double LarguraDoSeloBeta = 53;
+
+    // A barra estreita demais para os botões: só o menu ☰ (com tudo dentro) e o "×"
+    private bool _noMenu;
+
+    // O botão para onde a novidade na tela aponta com a barra inteira (no menu ☰, ela aponta para ele)
+    private FrameworkElement? _botaoDaNovidade;
 
     public BarraDeCima()
     {
         InitializeComponent();
 
-        // O selo BETA fica só quando sobra espaço entre a engrenagem e o "×" (nunca por cima de um botão)
-        if (InfoDoApp.EhBeta)
-            barra.SizeChanged += (_, _) => seloBeta.Visibility = barra.ActualWidth >= LarguraComSeloBeta ? Visibility.Visible : Visibility.Collapsed;
+        barra.SizeChanged += (_, _) => AjustarAoEspaco();
 
         ajusteTamanhoDoTexto.ValorEscolhido += valor => TamanhoDoTextoEscolhido?.Invoke(valor);
         ajusteTamanhoDoTexto.VoltarAoPadraoPedido += () => TamanhoDoTextoEscolhido?.Invoke(Opcoes.TamanhoDoTextoPadrao);
@@ -62,7 +68,7 @@ public partial class BarraDeCima : UserControl
 
         // O Closed do painel só vem depois da animação de sumir: o clique que o fechou já teria aberto de novo
         var aberto = DependencyPropertyDescriptor.FromProperty(Popup.IsOpenProperty, typeof(Popup));
-        foreach (Popup painel in new[] { painelTamanhoDoTexto, painelFundo })
+        foreach (Popup painel in new[] { painelTamanhoDoTexto, painelFundo, menuDaBarra })
         {
             aberto.AddValueChanged(painel, (_, _) =>
             {
@@ -124,6 +130,8 @@ public partial class BarraDeCima : UserControl
         ajusteFundo.Mostrar(porcentagem, escuro);
         AutomationProperties.SetHelpText(botaoTamanhoDoTexto, texto);
         AutomationProperties.SetHelpText(botaoFundo, escuro);
+        valorDoItemTamanhoDoTexto.Text = texto;
+        valorDoItemFundo.Text = escuro;
         dicaTamanhoDoTexto.Content = $"Tamanho do texto: {texto}\nA rodinha do mouse aqui também ajusta.";
         dicaFundo.Content = $"Fundo do chat: {escuro}\nA rodinha do mouse aqui também ajusta.";
     }
@@ -155,6 +163,7 @@ public partial class BarraDeCima : UserControl
         botaoEscrever.IsChecked = aceso;
         _mostrando = false;
         botaoEscrever.ToolTip = dica;
+        AjustarAoEspaco(); // com um botão a menos, a barra cabe numa janela mais estreita
     }
 
     /// <summary>
@@ -168,6 +177,7 @@ public partial class BarraDeCima : UserControl
         botaoPausar.IsChecked = pausado;
         _mostrando = false;
         iconePausar.Text = pausado ? "" : "";
+        nomeDoItemPausar.Text = pausado ? "Continuar o chat" : "Pausar o chat";
         AutomationProperties.SetHelpText(botaoPausar, pausado ? "pausado" : continuando ? "continuando" : "ao vivo");
         botaoPausar.ToolTip = Atalho.NaDica(pausado
                 ? "Continuar: o chat rola sozinho até a última mensagem"
@@ -175,6 +185,7 @@ public partial class BarraDeCima : UserControl
                     ? "Pausar de novo (o chat está rolando até a última mensagem)"
                     : "Pausar o chat\nAs mensagens continuam chegando; ao continuar, ele rola sozinho até a última.",
             atalho);
+        AjustarAoEspaco();
     }
 
     /// <summary>O balão da novidade da pausa, apontando para o botão, com o atalho (sem atalho, a linha dele some).</summary>
@@ -298,12 +309,22 @@ public partial class BarraDeCima : UserControl
         }
         linhas.Visibility = existem.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Na pausa (esquerda da barra) o balão sai do botão para a direita; na engrenagem (direita), para a esquerda
-        bool naDireita = botao == botaoConfiguracoes;
-        balaoNovidade.PlacementTarget = botao;
-        balaoNovidade.HorizontalOffset = naDireita ? botao.ActualWidth - 290 : 0;
-        pontaDaNovidade.HorizontalAlignment = naDireita ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        _botaoDaNovidade = botao;
+        ApontarNovidade();
         balaoNovidade.IsOpen = true;
+    }
+
+    // Na pausa (esquerda da barra) o balão sai do botão para a direita; na engrenagem (direita), para a esquerda. Com a
+    // barra no menu ☰, os dois botões estão dentro dele: o balão aponta para o ☰
+    private void ApontarNovidade()
+    {
+        if (_botaoDaNovidade is not FrameworkElement botao)
+            return;
+        FrameworkElement alvo = _noMenu ? botaoMenu : botao;
+        bool naDireita = alvo == botaoConfiguracoes;
+        balaoNovidade.PlacementTarget = alvo;
+        balaoNovidade.HorizontalOffset = naDireita ? alvo.Width - 290 : 0;
+        pontaDaNovidade.HorizontalAlignment = naDireita ? HorizontalAlignment.Right : HorizontalAlignment.Left;
     }
 
     private static TextBlock TextoDaLinha(string texto, string cor, Thickness margem) => new()
@@ -325,6 +346,120 @@ public partial class BarraDeCima : UserControl
     {
         painelTamanhoDoTexto.IsOpen = false;
         painelFundo.IsOpen = false;
+        menuDaBarra.IsOpen = false;
+    }
+
+    // --- Botões ou menu ☰ ------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Os botões aparecem enquanto cabem todos entre a borda esquerda e o "×"; numa janela mais estreita que isso, dão
+    /// lugar ao menu ☰. A conta usa a largura fixa de cada botão na tela (pausar e escrever nem sempre existem), então
+    /// não depende de a barra já ter sido desenhada.
+    /// </summary>
+    private void AjustarAoEspaco()
+    {
+        double largura = barra.ActualWidth;
+        if (largura <= 0)
+            return;
+
+        double dosBotoes = botoes.Margin.Left;
+        foreach (FrameworkElement botao in botoes.Children)
+        {
+            if (botao.Visibility == Visibility.Visible)
+                dosBotoes += botao.Width + botao.Margin.Left + botao.Margin.Right;
+        }
+
+        bool noMenu = largura < dosBotoes + LarguraDoFechar;
+        if (noMenu != _noMenu)
+        {
+            FecharPaineis();
+            _noMenu = noMenu;
+            botoes.Visibility = noMenu ? Visibility.Collapsed : Visibility.Visible;
+            botaoMenu.Visibility = noMenu ? Visibility.Visible : Visibility.Collapsed;
+            painelTamanhoDoTexto.PlacementTarget = noMenu ? botaoMenu : botaoTamanhoDoTexto;
+            painelFundo.PlacementTarget = noMenu ? botaoMenu : botaoFundo;
+            if (balaoNovidade.IsOpen)
+                ApontarNovidade();
+        }
+
+        // O selo BETA fica só quando sobra espaço antes do "×" (nunca por cima de um botão)
+        if (InfoDoApp.EhBeta)
+        {
+            double ocupado = noMenu ? botaoMenu.Margin.Left + botaoMenu.Width : dosBotoes;
+            seloBeta.Visibility = largura >= ocupado + LarguraDoSeloBeta + LarguraDoFechar ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    // Com o menu (ou um painel aberto por ele) na tela, o ☰ fecha
+    private void BotaoMenu_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (menuDaBarra.IsOpen || painelTamanhoDoTexto.IsOpen || painelFundo.IsOpen)
+        {
+            e.Handled = true;
+            FecharPaineis();
+        }
+    }
+
+    private void BotaoMenu_Click(object sender, RoutedEventArgs e)
+    {
+        // O clique fora que acabou de fechar o menu (ou o painel) foi este mesmo, no ☰
+        if (_painelFechado != null && DateTime.UtcNow - _fechouEm < ProtecaoDoClique)
+            return;
+        menuDaBarra.IsOpen = true;
+    }
+
+    private void Menu_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            menuDaBarra.IsOpen = false;
+        }
+    }
+
+    // Cada linha do menu fecha o menu e faz o mesmo que o botão dela na barra (os de ligar/desligar trocam o estado do
+    // botão, que avisa a janela como num clique)
+    private void ItemOcultarBordas_Click(object sender, RoutedEventArgs e)
+    {
+        menuDaBarra.IsOpen = false;
+        OcultarBordasPedido?.Invoke();
+    }
+
+    private void ItemPausar_Click(object sender, RoutedEventArgs e) => Trocar(botaoPausar);
+
+    private void ItemSempreNoTopo_Click(object sender, RoutedEventArgs e) => Trocar(botaoSempreNoTopo);
+
+    private void ItemMultiplataforma_Click(object sender, RoutedEventArgs e) => Trocar(botaoMultiplataforma);
+
+    private void ItemEscrever_Click(object sender, RoutedEventArgs e) => Trocar(botaoEscrever);
+
+    private void Trocar(ToggleButton botao)
+    {
+        menuDaBarra.IsOpen = false;
+        botao.IsChecked = botao.IsChecked != true;
+    }
+
+    private void ItemConfiguracoes_Click(object sender, RoutedEventArgs e)
+    {
+        menuDaBarra.IsOpen = false;
+        ConfiguracoesPedido?.Invoke();
+    }
+
+    private PainelDeAjuste AjusteDoItem(object item) => item == itemTamanhoDoTexto ? ajusteTamanhoDoTexto : ajusteFundo;
+
+    // "Tamanho do texto" e "Fundo do chat": o painel com o controle deslizante abre no lugar do menu, embaixo do ☰
+    private void ItemDePainel_Click(object sender, RoutedEventArgs e)
+    {
+        menuDaBarra.IsOpen = false;
+        (sender == itemTamanhoDoTexto ? painelTamanhoDoTexto : painelFundo).IsOpen = true;
+        AjusteDoItem(sender).FocarNoDeslizante();
+    }
+
+    // A rodinha em cima da linha muda o valor sem sair do menu (o valor novo aparece na própria linha)
+    private void ItemDePainel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        AjusteDoItem(sender).Girar(e.Delta);
     }
 
     // --- Cliques ---------------------------------------------------------------------------------------------

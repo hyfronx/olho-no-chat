@@ -20,11 +20,15 @@ public partial class JanelaConfiguracoes : JanelaComMoldura
         InitializeComponent();
 
         WindowStartupLocation = chat == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.Manual;
-        SourceInitialized += (_, _) =>
+        // Ao ser criada e de novo ao aparecer: num monitor com outra escala do Windows, a janela muda de tamanho logo
+        // depois de criada (ela nasce na escala do monitor principal), e ficaria fora do centro
+        void Centralizar()
         {
             if (chat != null)
                 JanelaDoWindows.CentralizarNoMonitorDe(new WindowInteropHelper(this).Handle, new WindowInteropHelper(chat).Handle);
-        };
+        }
+        SourceInitialized += (_, _) => Centralizar();
+        Loaded += (_, _) => Centralizar();
 
         logica.Geral.RestaurarPedido += RestaurarTudo;
         logica.Twitch.TerminouDeConectar += () => Activate();

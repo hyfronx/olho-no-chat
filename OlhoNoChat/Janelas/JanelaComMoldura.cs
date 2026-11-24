@@ -36,6 +36,7 @@ public abstract class JanelaComMoldura : Window
     protected JanelaComMoldura()
     {
         SetResourceReference(StyleProperty, "EstiloJanelaComMoldura");
+        EscalaDaInterface.Acompanhar(this);
         _tempoDoSalvo.Tick += (_, _) => MostrarSalvar();
         Loaded += (_, _) => MolduraDaJanela.Aplicar(this);
     }

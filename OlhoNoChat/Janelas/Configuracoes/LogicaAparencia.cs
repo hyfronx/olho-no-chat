@@ -6,7 +6,7 @@ using OlhoNoChat.Configuracoes;
 namespace OlhoNoChat.Janelas.Configuracoes;
 
 /// <summary>
-/// A aba Aparência: tema e CSS do tema "Nenhum" (Padrão), "Texto das mensagens" (Padrão e chat oficial), a aparência
+/// A aba Aparência: o tamanho da interface (com qualquer tipo de chat), tema e CSS do tema "Nenhum" (Padrão), "Texto das mensagens" (Padrão e chat oficial), a aparência
 /// do chat oficial e o CSS do endereço personalizado. Cada CSS é uma opção separada.
 /// </summary>
 public sealed partial class LogicaAparencia : LogicaDaPagina
@@ -47,6 +47,31 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
         new("Arial", "Arial", Fonte: "Arial"),
         new("Verdana", "Verdana", Fonte: "Verdana"),
     ];
+
+    /// <summary>
+    /// O deslizante do tamanho da interface: a primeira posição é "Automático" (gravado como 0) e as outras vão de 70% a
+    /// 130%, de 5 em 5 (ver <see cref="EscalaDaInterface"/>).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextoDaInterface))]
+    private int _posicaoDaInterface;
+
+    // Não estática: o XAML liga o máximo do deslizante a ela
+    public int UltimaPosicaoDaInterface => PosicaoDoTamanhoDaInterface(EscalaDaInterface.Maxima);
+
+    /// <summary>"Automático", "85%".</summary>
+    public string TextoDaInterface => PosicaoDaInterface <= 0
+        ? "Automático"
+        : $"{Math.Round(TamanhoDaInterfaceDaPosicao(PosicaoDaInterface) * 100)}%";
+
+    public static int PosicaoDoTamanhoDaInterface(double tamanho) => tamanho > 0
+        ? (int)Math.Round((Math.Clamp(tamanho, EscalaDaInterface.Minima, EscalaDaInterface.Maxima) - EscalaDaInterface.Minima)
+                          / EscalaDaInterface.Passo) + 1
+        : 0;
+
+    public static double TamanhoDaInterfaceDaPosicao(int posicao) => posicao > 0
+        ? Math.Round(EscalaDaInterface.Minima + (posicao - 1) * EscalaDaInterface.Passo, 2)
+        : EscalaDaInterface.Automatica;
 
     // Tema (Padrão)
     [ObservableProperty]
@@ -112,6 +137,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
 
     public override void Carregar(Opcoes opcoes)
     {
+        PosicaoDaInterface = PosicaoDoTamanhoDaInterface(opcoes.TamanhoDaInterface);
         Tema = (opcoes.Tema == Opcoes.TemaNenhum ? Opcoes.TemaNenhum : Opcoes.TemaPadrao).ToString();
         GuardarTemaSalvo();
         CssDoTemaNenhum = opcoes.CssDoTemaNenhum.Length > 0 ? opcoes.CssDoTemaNenhum : CssDoChat.ExemploDoTemaNenhum;
@@ -137,6 +163,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
 
     public override void Gravar(Opcoes opcoes)
     {
+        opcoes.TamanhoDaInterface = TamanhoDaInterfaceDaPosicao(PosicaoDaInterface); // com qualquer tipo de chat
         switch (TipoNaTela)
         {
             case TipoDeChat.Padrao:
@@ -178,6 +205,7 @@ public sealed partial class LogicaAparencia : LogicaDaPagina
 
     public override void Estado(IDictionary<string, string> estado)
     {
+        estado["Aparencia.TamanhoDaInterface"] = TextoDaInterface;
         estado["Aparencia.Tema"] = Tema;
         estado["Aparencia.CssDoTemaNenhum"] = CssDoTemaNenhum;
         estado["Aparencia.CorDoTexto"] = CorDoTexto;

@@ -13,7 +13,7 @@
         <shell:WindowChrome CaptionHeight="36" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <Grid>
+    <Grid LayoutTransform="{DynamicResource EscalaDaInterface}">
         <StackPanel Margin="20">
             <TextBlock Text="{Binding Titulo}" TextWrapping="Wrap" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
 

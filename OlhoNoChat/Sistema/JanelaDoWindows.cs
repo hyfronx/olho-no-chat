@@ -76,6 +76,18 @@ internal static class JanelaDoWindows
         return dpi > 0 ? dpi / 96.0 : 1;
     }
 
+    /// <summary>O monitor onde está a janela (para saber quando ela muda de monitor).</summary>
+    public static IntPtr MonitorDe(IntPtr janela) => MonitorFromWindow(janela, MONITOR_DEFAULTTONEAREST);
+
+    /// <summary>O tamanho da tela inteira (com a barra de tarefas) do monitor onde está a janela, em pixels.</summary>
+    public static (int Largura, int Altura)? TamanhoDoMonitorDe(IntPtr janela)
+    {
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (!GetMonitorInfo(MonitorDe(janela), ref info))
+            return null;
+        return (info.rcMonitor.Right - info.rcMonitor.Left, info.rcMonitor.Bottom - info.rcMonitor.Top);
+    }
+
     private static Retangulo? AreaDoMonitor(IntPtr monitor)
     {
         var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
@@ -91,6 +103,10 @@ internal static class JanelaDoWindows
     /// <summary>Muda o lugar e o tamanho da janela (em pixels), sem mexer na ordem nem no foco.</summary>
     public static void MoverPara(IntPtr janela, Retangulo lugar) =>
         SetWindowPos(janela, IntPtr.Zero, lugar.Esquerda, lugar.Topo, lugar.Largura, lugar.Altura, SWP_NOZORDER | SWP_NOACTIVATE);
+
+    /// <summary>Muda só o lugar da janela (em pixels); o tamanho, a ordem e o foco ficam como estão.</summary>
+    public static void MudarDeLugar(IntPtr janela, int esquerda, int topo) =>
+        SetWindowPos(janela, IntPtr.Zero, esquerda, topo, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 
     /// <summary>
     /// A janela pode ser minimizada (pelo botão da barra de tarefas) mas nunca maximizada: tira o "maximizar" do estilo

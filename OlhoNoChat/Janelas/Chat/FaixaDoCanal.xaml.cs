@@ -28,9 +28,34 @@ public partial class FaixaDoCanal : UserControl
     // A troca entre os viewers e os nomes dos canais, só com a faixa fechada na tela e algum número
     private readonly DispatcherTimer _troca = new();
 
+    private const double LarguraComTrocarCanalEscrito = 280;
+
+    // Abaixo disso, o "Aplicar" ao lado da caixa do nome deixaria pouco lugar para digitar
+    private const double LarguraDoEditorNumaLinha = 320;
+
+    // A faixa aberta numa janela estreita: as caixas ocupam a largura toda e o "Aplicar" (esticado) e a seta de fechar
+    // descem para uma linha própria, embaixo das caixas e em cima da dica. Larga: os dois ao lado da primeira caixa.
+    private void ArrumarEditor()
+    {
+        bool estreita = ActualWidth < LarguraDoEditorNumaLinha;
+        foreach (TextBox caixa in new[] { caixaCanal, caixaYouTube, caixaKick, caixaTikTok })
+            Grid.SetColumnSpan(caixa, estreita ? 3 : 1);
+        Grid.SetRow(botaoEntrar, estreita ? 4 : 0);
+        Grid.SetColumn(botaoEntrar, estreita ? 1 : 2);
+        botaoEntrar.Margin = estreita ? new Thickness(0, 6, 0, 0) : new Thickness(6, 0, 0, 0);
+        Grid.SetRow(botaoCancelarCanal, estreita ? 4 : 0);
+        botaoCancelarCanal.Margin = estreita ? new Thickness(4, 6, 0, 0) : new Thickness(4, 0, 0, 0);
+    }
+
     public FaixaDoCanal()
     {
         InitializeComponent();
+        // Numa janela estreita o "Trocar canal" escrito tomaria o lugar do nome do canal: fica só o ícone
+        SizeChanged += (_, _) =>
+        {
+            textoTrocarCanal.Visibility = ActualWidth >= LarguraComTrocarCanalEscrito ? Visibility.Visible : Visibility.Collapsed;
+            ArrumarEditor();
+        };
         _troca.Tick += (_, _) =>
         {
             if (_logica != null)

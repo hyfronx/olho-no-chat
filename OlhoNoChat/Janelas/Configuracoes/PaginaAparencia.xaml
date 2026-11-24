@@ -35,6 +35,29 @@
             <TextBlock Text="Aparência" Style="{DynamicResource TituloDaPagina}" />
             <TextBlock Text="Como as mensagens aparecem na janela do chat. O visual do overlay fica na aba Overlay." Style="{DynamicResource SubtituloDaPagina}" />
 
+            <!-- Com qualquer tipo de chat: o tamanho de tudo o que não é o texto das mensagens (EscalaDaInterface). A
+                 primeira posição do deslizante é "Automático" -->
+            <Border x:Name="painelTamanhoDaInterface" Style="{DynamicResource Cartao}" Margin="0,14,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE740;" Style="{DynamicResource IconeDoCartao}" />
+                    <StackPanel Grid.Column="1" Style="{DynamicResource TextoDaLinha}">
+                        <TextBlock Text="Tamanho da interface" Style="{DynamicResource Rotulo}" />
+                        <TextBlock Text="O tamanho dos botões, menus e janelas do app. No Automático, o app escolhe pelo tamanho da tela onde o chat está. O texto das mensagens tem o seu tamanho, na barra laranja." Style="{DynamicResource Dica}" />
+                    </StackPanel>
+                    <Slider x:Name="deslizanteInterface" Grid.Column="2" Width="140" VerticalAlignment="Center" AutomationProperties.Name="Tamanho da interface"
+                            Minimum="0" Maximum="{Binding UltimaPosicaoDaInterface, Mode=OneTime}" SmallChange="1" LargeChange="1" TickFrequency="1"
+                            IsSnapToTickEnabled="True" Value="{Binding PosicaoDaInterface}" />
+                    <TextBlock x:Name="textoInterface" Grid.Column="3" Width="82" TextAlignment="Right" VerticalAlignment="Center" Margin="4,0,0,0"
+                               Style="{DynamicResource Rotulo}" Text="{Binding TextoDaInterface}" />
+                </Grid>
+            </Border>
+
             <!-- Padrão: tema e o CSS do tema "Nenhum" (uma linha só: sem título de seção, como o tipo de chat na aba Chat) -->
             <Border x:Name="painelTema" Style="{DynamicResource Cartao}" Margin="0,14,0,4"
                     Visibility="{Binding ComPadrao, Converter={StaticResource VisivelSe}}">

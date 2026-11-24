@@ -29,6 +29,7 @@ public partial class JanelaChat : Window
 {
     private const int WM_SETCURSOR = 0x0020;
     private const int HTERROR = -2;
+    private const int WM_DISPLAYCHANGE = 0x007E;
     private const int WM_LBUTTONDOWN = 0x0201, WM_RBUTTONDOWN = 0x0204, WM_MBUTTONDOWN = 0x0207;
 
     private readonly ILogger<JanelaChat> _log;
@@ -224,10 +225,16 @@ public partial class JanelaChat : Window
         IntPtr hwnd = Hwnd;
         HwndSource.FromHwnd(hwnd)?.AddHook(Mensagens);
         JanelaDoWindows.TirarMaximizar(hwnd);
+        AjustarTamanhoMinimo();
+        // Depois de a troca de escala terminar (mexer na janela no meio dela travava o app, ver o LocationChanged abaixo)
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(AjustarTamanhoMinimo, DispatcherPriority.Background);
 
         // Primeira vez: no centro do monitor principal; uma posição fora de todos os monitores volta para lá
-        if (JanelaDoWindows.RetanguloDe(hwnd) is Retangulo agora)
+        if (JanelaDoWindows.RetanguloDe(hwnd) is Retangulo criada)
         {
+            // O WPF cria a janela com a escala do monitor principal: gravada num monitor com outra escala do Windows,
+            // ela nasce deslocada. O lugar de verdade é o gravado em pixels (posições antigas, sem a escala, não têm)
+            Retangulo agora = Opcoes.Janela?.EmPixels() ?? criada;
             Retangulo? lugar = PosicaoNaTela.AoAbrir(agora, primeiraVez: Opcoes.Janela == null, JanelaDoWindows.AreasDosMonitores(),
                 JanelaDoWindows.AreaDoMonitorPrincipal());
             if (lugar is Retangulo novo)
@@ -239,8 +246,72 @@ public partial class JanelaChat : Window
                 Left = dentro.Esquerda / escala;
                 Top = dentro.Topo / escala;
             }
+            else if (agora.Esquerda != criada.Esquerda || agora.Topo != criada.Topo)
+            {
+                // Nasceu deslocada: o Left/Top do WPF para a escala em que ela foi criada e, com a janela já na tela
+                // (quando o WPF já terminou de colocá-la), a conferência em pixels. O tamanho o WPF acerta sozinho
+                double escala = JanelaDoWindows.EscalaDe(hwnd);
+                Left = agora.Esquerda / escala;
+                Top = agora.Topo / escala;
+                Loaded += (_, _) =>
+                {
+                    if (JanelaDoWindows.RetanguloDe(Hwnd) is Retangulo naTela
+                        && (naTela.Esquerda != agora.Esquerda || naTela.Topo != agora.Topo))
+                        JanelaDoWindows.MudarDeLugar(Hwnd, agora.Esquerda, agora.Topo);
+                };
+            }
         }
         AplicarEstado(); // o clique atravessa precisa da janela do Windows
+
+        // O tamanho da interface no automático vem da tela onde o chat está: escolhido de novo ao mudar de monitor
+        AtualizarEscalaDaInterface();
+        LocationChanged += (_, _) =>
+        {
+            IntPtr monitor = JanelaDoWindows.MonitorDe(Hwnd);
+            if (monitor == _monitorDaEscala)
+                return;
+            // Só depois de a janela terminar de mudar de lugar: num monitor com outra escala do Windows, este aviso
+            // chega no meio da troca de escala da janela, e mexer no tamanho de tudo ali dentro travava o app
+            _monitorDaEscala = monitor;
+            Dispatcher.BeginInvoke(AtualizarEscalaDaInterface, DispatcherPriority.Background);
+        };
+    }
+
+    /// <summary>
+    /// O menor tamanho da janela, em pixels da tela: o mesmo em qualquer monitor, resolução e escala do Windows (pedido
+    /// do usuário em 2026-11-24). Só o bastante para a janela não sumir e a borda continuar fácil de pegar com o mouse;
+    /// o que cabe dentro dela é escolha de quem usa.
+    /// </summary>
+    public const int LarguraMinimaEmPixels = 96;
+    public const int AlturaMinimaEmPixels = 48;
+
+    // O WPF conta o mínimo na escala do Windows da janela: dividido por ela, dá sempre os mesmos pixels
+    private void AjustarTamanhoMinimo()
+    {
+        IntPtr hwnd = Hwnd;
+        if (hwnd == IntPtr.Zero)
+            return;
+        double escala = JanelaDoWindows.EscalaDe(hwnd);
+        MinWidth = LarguraMinimaEmPixels / escala;
+        MinHeight = AlturaMinimaEmPixels / escala;
+    }
+
+    private IntPtr _monitorDaEscala;
+
+    /// <summary>
+    /// Põe em uso o "Tamanho da interface": o escolhido ou, no automático, o da tela onde o chat está (o tamanho dela
+    /// em pixels dividido pela escala do Windows). Ver <see cref="EscalaDaInterface"/>.
+    /// </summary>
+    private void AtualizarEscalaDaInterface()
+    {
+        IntPtr hwnd = Hwnd;
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        _monitorDaEscala = JanelaDoWindows.MonitorDe(hwnd);
+        double doWindows = JanelaDoWindows.EscalaDe(hwnd);
+        (int largura, int altura) = JanelaDoWindows.TamanhoDoMonitorDe(hwnd) ?? (0, 0);
+        EscalaDaInterface.Definir(EscalaDaInterface.Calcular(Opcoes.TamanhoDaInterface, largura / doWindows, altura / doWindows));
     }
 
     // Gravada menor que o mínimo de agora (de uma versão antiga), a janela cresce para a direita e para baixo: o que
@@ -571,6 +642,10 @@ public partial class JanelaChat : Window
         // Pode minimizar pela barra de tarefas, mas nunca maximizar (decisão 18)
         if (JanelaDoWindows.SemMaximizar(mensagem, wParam, lParam))
             return IntPtr.Zero;
+
+        // A resolução da tela mudou: o tamanho automático da interface pode ser outro
+        if (mensagem == WM_DISPLAYCHANGE)
+            Dispatcher.BeginInvoke(AtualizarEscalaDaInterface);
 
         // Com as Configurações abertas o Windows desativa o chat: um clique nele traz a janela aberta para a frente e pisca
         // a moldura dela (sem o som de erro do Windows)
@@ -1494,6 +1569,7 @@ public partial class JanelaChat : Window
     // "Salvar" nas Configurações (ou nos Filtros do chat): aplica na hora, recarregando o chat só quando precisa
     private async Task AplicarOpcoesSalvasAsync()
     {
+        AtualizarEscalaDaInterface();
         await _navegador.AplicarOpcoesSalvasAsync();
         AtualizarSom();
         AtualizarYouTube();
@@ -1541,6 +1617,16 @@ public partial class JanelaChat : Window
     // Minimizada, a posição é a de antes de minimizar; ela volta normal na próxima abertura
     private PosicaoDaJanela PosicaoAtual()
     {
+        // Pelos pixels do Windows e a escala da janela, não pelo Left/Top do WPF: depois de a janela passar por um
+        // monitor com outra escala, o WPF pode guardar o lugar dela na escala errada (visto com 100% e 125%)
+        IntPtr hwnd = Hwnd;
+        if (WindowState == WindowState.Normal && hwnd != IntPtr.Zero && JanelaDoWindows.RetanguloDe(hwnd) is Retangulo naTela)
+        {
+            double escala = JanelaDoWindows.EscalaDe(hwnd);
+            return new PosicaoDaJanela(naTela.Esquerda / escala, naTela.Topo / escala, naTela.Largura / escala, naTela.Altura / escala,
+                WindowState.Normal, escala);
+        }
+
         Rect lugar = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
         return new PosicaoDaJanela(lugar.Left, lugar.Top, lugar.Width, lugar.Height, WindowState.Normal);
     }

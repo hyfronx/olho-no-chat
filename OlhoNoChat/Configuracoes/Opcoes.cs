@@ -164,6 +164,11 @@ public sealed class Opcoes
     /// <summary>"theme", "Segoe UI", "Arial" ou "Verdana".</summary>
     public string Fonte { get; set; } = "theme";
     public bool MostrarHorario { get; set; } = false;
+    /// <summary>
+    /// O tamanho de tudo o que não é o texto das mensagens (barra laranja, faixa, menus, janelas): 0 = automático, pelo
+    /// tamanho da tela onde o chat está; ou de 0,7 a 1,3 (ver <see cref="Janelas.EscalaDaInterface"/>).
+    /// </summary>
+    public double TamanhoDaInterface { get; set; } = Janelas.EscalaDaInterface.Automatica;
 
     // Barra laranja (gravados 0,5 s depois da última mudança) e o alfinete
     public double TamanhoDoTexto { get; set; } = TamanhoDoTextoPadrao;
@@ -350,6 +355,10 @@ public sealed class Opcoes
             TipoDeChat = (int)Tipos.Padrao;
         if (TamanhoDoTexto <= 0 || double.IsNaN(TamanhoDoTexto))
             TamanhoDoTexto = TamanhoDoTextoPadrao;
+        // Fora dos limites vai para o mais perto; sem sentido (negativo, NaN), para o automático
+        TamanhoDaInterface = TamanhoDaInterface > 0
+            ? Math.Clamp(TamanhoDaInterface, Janelas.EscalaDaInterface.Minima, Janelas.EscalaDaInterface.Maxima)
+            : Janelas.EscalaDaInterface.Automatica;
         if (float.IsNaN(Volume))
             Volume = padrao.Volume;
         // A pausa chegou na 2.6.0 com Ctrl + Alt + F6: se essa combinação já era de outro atalho, ela não funcionaria

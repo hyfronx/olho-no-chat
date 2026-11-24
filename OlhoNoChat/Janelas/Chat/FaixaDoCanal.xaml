@@ -159,10 +159,12 @@
                                        Foreground="{StaticResource Texto}" />
                         </StackPanel>
                         <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE8AB;" FontSize="12" Foreground="{StaticResource LaranjaClaro}" />
-                        <!-- Com mais de um canal, só o ícone (o texto fica na dica) -->
-                        <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource LaranjaClaro}"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding VariosCanaisNaFaixa, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
+                        <!-- Com mais de um canal, ou com a janela estreita (o espaço fica para o nome do canal), só o ícone -->
+                        <Grid x:Name="textoTrocarCanal">
+                            <TextBlock Text="Trocar canal" Margin="5,0,0,1" FontSize="12" Foreground="{StaticResource LaranjaClaro}"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding VariosCanaisNaFaixa, Converter={StaticResource VisivelSe}, ConverterParameter=Nao}" />
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Button>
@@ -181,7 +183,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <!-- Numa janela estreita (FaixaDoCanal.ArrumarEditor) as caixas vão até a borda direita e o "Aplicar" e a
+                     seta de fechar descem para a linha 4, embaixo delas; senão ficam ao lado da primeira caixa -->
                 <!-- A mesma largura para os logos: as caixas ficam alinhadas -->
                 <ContentControl Width="16" Margin="2,0,8,0" Template="{StaticResource LogoDaTwitch}" Focusable="False" />
                 <TextBox x:Name="caixaCanal" ctl:CaixaDeTexto.BotaoDeApagar="True" Grid.Column="1" MaxLength="300" MinHeight="32" FontSize="14"
@@ -190,12 +195,13 @@
                 <Button x:Name="botaoEntrar" Grid.Column="2" Margin="6,0,0,0" Height="32" MinWidth="0" Padding="12,0"
                         Style="{StaticResource BotaoPrincipal}" Content="Aplicar" IsEnabled="{Binding PodeConfirmar}"
                         Click="Entrar_Click" />
-                <Button x:Name="botaoCancelarCanal" Grid.Column="3" Margin="4,0,0,0" Width="32" Height="32" Padding="0"
-                        Style="{StaticResource BotaoPlano}" HorizontalContentAlignment="Center"
+                <!-- Um botão de verdade (fundo cinza, seta branca), do tamanho do "Aplicar": sem fundo e com a seta cinza
+                     ele quase não aparecia (usuário, 2026-11-24) -->
+                <Button x:Name="botaoCancelarCanal" Grid.Column="3" Margin="4,0,0,0" Width="36" MinWidth="0" Height="32" Padding="0"
                         ToolTip="Fechar sem trocar (Esc)" AutomationProperties.Name="Cancelar"
                         Visibility="{Binding TemCanal, Converter={StaticResource VisivelSe}}" Click="Cancelar_Click">
                     <!-- Seta para cima: a faixa fecha de novo -->
-                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE70E;" FontSize="12" Foreground="{StaticResource TextoDaDica}" />
+                    <TextBlock Style="{StaticResource IconeDaFaixa}" Text="&#xE70E;" FontSize="13" Foreground="{StaticResource Texto}" />
                 </Button>
                 <!-- Chat Multiplataforma: o canal do YouTube (pode ficar vazio) -->
                 <ContentControl Grid.Row="1" Width="16" Margin="2,6,8,0" Template="{StaticResource LogoDoYouTube}" Focusable="False"
@@ -221,7 +227,7 @@
                          AutomationProperties.Name="Canal do TikTok"
                          Visibility="{Binding Multiplataforma, Converter={StaticResource VisivelSe}}"
                          Text="{Binding TextoDoTikTok, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="CaixaCanal_PreviewKeyDown" />
-                <TextBlock x:Name="dicaCanal" Grid.Row="4" Grid.ColumnSpan="4" Margin="2,5,8,0" FontSize="12" TextWrapping="Wrap" Text="{Binding Dica}">
+                <TextBlock x:Name="dicaCanal" Grid.Row="5" Grid.ColumnSpan="4" Margin="2,5,8,0" FontSize="12" TextWrapping="Wrap" Text="{Binding Dica}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{StaticResource TextoDaDica}" />

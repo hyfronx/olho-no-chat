@@ -3,7 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:chat="clr-namespace:OlhoNoChat.Janelas.Chat"
         AllowsTransparency="True" WindowStyle="None" Background="Transparent" ResizeMode="CanResize" Topmost="True"
-        Icon="/icons/olho_no_chat.ico" Title="" Width="416" Height="530" MinWidth="412" MinHeight="200">
+        Icon="/icons/olho_no_chat.ico" Title="" Width="416" Height="530" MinWidth="32" MinHeight="24">
+    <!-- O tamanho mínimo de verdade é posto pelo código, em pixels da tela (JanelaChat.AjustarTamanhoMinimo): o mesmo em
+         qualquer monitor e escala do Windows, só para a janela não sumir e a borda continuar fácil de pegar com o
+         mouse. O daqui é só um piso antes de a janela existir. Estreita demais para os botões, a barra laranja vira o
+         menu ☰. -->
     <!-- O chat por cima do jogo. Tudo é recortado com os cantos arredondados; a linha da moldura só aparece (laranja) no
          modo rolagem com as bordas ocultas. De cima para baixo: barra laranja, faixa do canal, chat, caixa de escrever. -->
     <Border x:Name="moldura" CornerRadius="10" BorderThickness="0" BorderBrush="Transparent">
@@ -15,14 +19,14 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <chat:BarraDeCima x:Name="barraDeCima" />
+            <chat:BarraDeCima x:Name="barraDeCima" LayoutTransform="{DynamicResource EscalaDaInterface}" />
 
             <!-- O fundo escuro atrás do chat; a página do chat (o navegador) entra na linha 2 pelo NavegadorDoChat -->
             <Border x:Name="fundoEscuro" Grid.Row="2" Background="Black" Opacity="0.01" Panel.ZIndex="1" />
 
-            <chat:FaixaDoCanal x:Name="faixaDoCanal" Grid.Row="1" Visibility="Collapsed" Panel.ZIndex="2" />
+            <chat:FaixaDoCanal x:Name="faixaDoCanal" LayoutTransform="{DynamicResource EscalaDaInterface}" Grid.Row="1" Visibility="Collapsed" Panel.ZIndex="2" />
 
-            <chat:CaixaDeEscrever x:Name="caixaDeEscrever" Grid.Row="3" Visibility="Collapsed" Panel.ZIndex="2" />
+            <chat:CaixaDeEscrever x:Name="caixaDeEscrever" LayoutTransform="{DynamicResource EscalaDaInterface}" Grid.Row="3" Visibility="Collapsed" Panel.ZIndex="2" />
 
             <!-- Os pontinhos do canto de redimensionar (CantoDeRedimensionar) -->
             <Path x:Name="desenhoDoCanto" Grid.Row="1" Grid.RowSpan="3" Width="12" Height="12" Margin="0,0,2,2"

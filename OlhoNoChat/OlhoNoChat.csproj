@@ -11,6 +11,8 @@
 		<AssemblyTitle>Olho no Chat</AssemblyTitle>
 		<Description>Mostra o chat da sua live por cima do jogo.</Description>
 		<ApplicationIcon>olho_no_chat.ico</ApplicationIcon>
+		<!-- A escala por monitor do Windows (ver o arquivo) -->
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<!-- As chamadas ao Windows usam [LibraryImport], que gera código unsafe -->

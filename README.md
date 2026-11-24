@@ -40,6 +40,8 @@ Atenção: dependendo da versão do Windows, depois de desligado ele só volta r
 - Arraste a barra laranja de cima para mover a janela e as bordas ou o canto de baixo à direita (com os pontinhos) para mudar o tamanho.
 - O botão **Ocultar bordas** deixa só o chat por cima do jogo.
 - A barra laranja em cima tem botões só com ícone (o nome aparece ao parar o mouse em cima): **Ocultar bordas**, **Pausar o chat**, **Tamanho do texto** e **Fundo** (cada um abre um controle deslizante; a rodinha do mouse em cima do botão também muda o valor), **Sempre no topo**, **Escrever no chat** e **Configurações**. Com as bordas visíveis, o chat já rola com a rodinha do mouse.
+- A janela pode ficar bem pequena, do tamanho que couber na sua tela. Quando ela fica estreita demais para os botões, eles viram um botão só, o menu **☰**, com tudo dentro.
+- Em telas de resolução menor, os botões, menus e janelas do app encolhem sozinhos para não ficarem grandes demais. Para escolher o tamanho você mesmo, use **Tamanho da interface** em **Configurações > Aparência**.
 - **Sempre no topo** (alfinete) ligado deixa o chat sempre na frente do jogo; desligado, a janela do chat fica como uma janela normal. **Ctrl + Alt + F8** liga e desliga.
 - Para mostrar as bordas de novo, clique com o botão direito no ícone do Olho no Chat na barra de tarefas ou perto do relógio.
 - **Ctrl + Alt + F7** liga o modo rolagem: dá pra rolar o chat com a rodinha do mouse para ler mensagens antigas. Aperte de novo para voltar ao jogo.

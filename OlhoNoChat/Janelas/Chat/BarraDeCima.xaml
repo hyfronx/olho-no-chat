@@ -7,16 +7,153 @@
         <Style x:Key="IconeDaBarra" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
             <Setter Property="FontSize" Value="20" />
         </Style>
+
+        <!-- Os logos das quatro plataformas em bolinhas sobrepostas (opção "C", escolhida pelo usuário em 2026-10-23): no
+             botão do Chat Multiplataforma e na linha dele no menu ☰. Tag = ligado: todos coloridos; só Twitch: o do
+             YouTube, o da Kick e o do TikTok ficam apagados, em branco e laranja. O anel que separa as bolinhas tem a cor
+             de trás (Background: o laranja da barra ou o fundo do menu). -->
+        <ControlTemplate x:Key="LogosDasPlataformas" TargetType="ContentControl">
+            <ControlTemplate.Resources>
+                <!-- Apagado em só Twitch -->
+                <Style x:Key="LogoQueAcende" TargetType="Grid">
+                    <Setter Property="Opacity" Value="0.45" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+                <!-- O fundo do logo: branco em só Twitch, a cor da plataforma (Tag) ligado -->
+                <Style x:Key="FundoDoLogo" TargetType="Border">
+                    <Setter Property="Background" Value="White" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                            <Setter Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+                <!-- As sombras azul e vermelha da nota do TikTok: só ligado -->
+                <Style x:Key="SombraDoLogo" TargetType="Path">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+                <!-- O desenho do logo: laranja em só Twitch, a cor dele (Tag) ligado -->
+                <Style x:Key="DesenhoDoLogo" TargetType="Path">
+                    <Setter Property="Fill" Value="{StaticResource Laranja}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                            <Setter Property="Fill" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ControlTemplate.Resources>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="23" Height="23" CornerRadius="11.5" Background="{TemplateBinding Background}" Panel.ZIndex="4">
+                    <Grid Width="20" Height="20">
+                        <Border CornerRadius="10" Background="#9146FF" />
+                        <Viewbox Width="9.5" Height="11" Margin="0,1,0,0">
+                            <Canvas Width="2400" Height="2800">
+                                <Path Fill="White" Data="M500,0 L0,500 V2300 H600 V2800 L1100,2300 H1500 L2400,1400 V0 Z" />
+                                <Path Fill="#9146FF" Data="M1700,550 H1900 V1150 H1700 Z M1150,550 H1350 V1150 H1150 Z" />
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
+                <Border Width="23" Height="23" CornerRadius="11.5" Background="{TemplateBinding Background}" Panel.ZIndex="3" Margin="-7,0,0,0">
+                    <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
+                        <Border CornerRadius="10" Tag="#FF0000" Style="{StaticResource FundoDoLogo}" />
+                        <Path Data="M8,6 V14 L14.6,10 Z" Tag="White" Style="{StaticResource DesenhoDoLogo}" />
+                    </Grid>
+                </Border>
+                <Border Width="23" Height="23" CornerRadius="11.5" Background="{TemplateBinding Background}" Panel.ZIndex="2" Margin="-7,0,0,0">
+                    <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
+                        <Border CornerRadius="10" Tag="#0B0B0B" Style="{StaticResource FundoDoLogo}" />
+                        <Viewbox Width="10" Height="10">
+                            <Canvas Width="9" Height="9">
+                                <Path Canvas.Left="-2.5" Canvas.Top="-2.5" Tag="#53FC18" Style="{StaticResource DesenhoDoLogo}"
+                                      Data="M2.5,2.5 H5.5 V5.1 H6.8 V3.8 H8.1 V2.5 H11.5 V5.5 H10.2 V6.7 H8.9 V7.3 H10.2 V8.5 H11.5 V11.5 H8.1 V10.2 H6.8 V8.9 H5.5 V11.5 H2.5 Z" />
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
+                <Border Width="23" Height="23" CornerRadius="11.5" Background="{TemplateBinding Background}" Panel.ZIndex="1" Margin="-7,0,0,0">
+                    <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
+                        <Border CornerRadius="10" Tag="Black" Style="{StaticResource FundoDoLogo}" />
+                        <Viewbox Width="11.5" Height="11.5">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="{StaticResource NotaDoTikTok}" Fill="#25F4EE" Canvas.Left="-1.3" Canvas.Top="-1.3" Style="{StaticResource SombraDoLogo}" />
+                                <Path Data="{StaticResource NotaDoTikTok}" Fill="#FE2C55" Canvas.Left="1.3" Canvas.Top="1.3" Style="{StaticResource SombraDoLogo}" />
+                                <Path Data="{StaticResource NotaDoTikTok}" Tag="White" Style="{StaticResource DesenhoDoLogo}" />
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ControlTemplate>
+
+        <!-- ===== O menu ☰ (a barra estreita demais para os botões) ===== -->
+
+        <!-- Uma linha do menu: ícone, nome e, à direita, o estado (✓ ligado, ou o valor) -->
+        <Style x:Key="ItemDoMenu" TargetType="Button" BasedOn="{StaticResource BotaoPlano}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="10,0,12,0" />
+            <Setter Property="ToolTipService.Placement" Value="Right" />
+        </Style>
+        <Style x:Key="IconeDoMenu" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="DockPanel.Dock" Value="Left" />
+        </Style>
+        <!-- ✓ de ligado -->
+        <Style x:Key="LigadoNoMenu" TargetType="TextBlock" BasedOn="{StaticResource Icone}">
+            <Setter Property="Text" Value="&#xE73E;" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="Foreground" Value="{StaticResource LaranjaClaro}" />
+            <Setter Property="DockPanel.Dock" Value="Right" />
+        </Style>
+        <!-- O valor em uso (tamanho do texto e fundo) -->
+        <Style x:Key="ValorNoMenu" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource LaranjaClaro}" />
+            <Setter Property="DockPanel.Dock" Value="Right" />
+        </Style>
+        <Style x:Key="NomeNoMenu" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="SeparadorDoMenu" TargetType="Rectangle">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Margin" Value="10,4" />
+            <Setter Property="Fill" Value="#26FFFFFF" />
+        </Style>
     </UserControl.Resources>
 
-    <!-- A barra laranja (só com as bordas visíveis): arrastar move a janela; os botões só têm ícone, o nome fica na dica -->
+    <!-- A barra laranja (só com as bordas visíveis): arrastar move a janela; os botões só têm ícone, o nome fica na dica.
+         Quando a janela é estreita demais para os botões, eles dão lugar a um botão só, o menu ☰, com tudo dentro
+         (BarraDeCima.AjustarAoEspaco). -->
     <Grid x:Name="barra" Height="32" Background="{StaticResource Laranja}" MouseLeftButtonDown="Barra_MouseLeftButtonDown">
         <!-- Só na versão beta, e só com espaço sobrando (a janela estreita esconde o selo, nunca os botões) -->
         <ContentControl x:Name="seloBeta" Style="{StaticResource SeloBeta}" HorizontalAlignment="Right" Margin="0,0,44,0"
-                Visibility="{x:Static onc:InfoDoApp.VisibilidadeDaBeta}" />
+                Visibility="Collapsed" />
         <Button x:Name="botaoFecharJanela" Style="{StaticResource BotaoFecharDaBarra}" HorizontalAlignment="Right" Margin="0,0,3,0"
                 ToolTip="Fechar o Olho no Chat" AutomationProperties.Name="Fechar" Click="Fechar_Click" />
-        <StackPanel Orientation="Horizontal" Margin="3,0,40,0" VerticalAlignment="Center">
+
+        <!-- O menu ☰: no lugar dos botões quando eles não cabem. Escurecido enquanto o menu (ou um painel aberto por ele)
+             está na tela -->
+        <Button x:Name="botaoMenu" Style="{StaticResource BotaoDaBarraComPainel}" HorizontalAlignment="Left" Margin="4,0,0,0"
+                ToolTip="Menu" AutomationProperties.Name="Menu" Visibility="Collapsed"
+                PreviewMouseLeftButtonDown="BotaoMenu_PreviewMouseLeftButtonDown" Click="BotaoMenu_Click">
+            <TextBlock Style="{StaticResource IconeDaBarra}" Text="&#xE700;" />
+        </Button>
+
+        <StackPanel x:Name="botoes" Orientation="Horizontal" Margin="3,0,40,0" VerticalAlignment="Center">
             <!-- Olho riscado -->
             <Button x:Name="botaoOcultarBordas" Style="{StaticResource BotaoDaBarra}" AutomationProperties.Name="Ocultar bordas"
                     Click="OcultarBordas_Click">
@@ -58,93 +195,12 @@
             </ToggleButton>
             <Rectangle Style="{StaticResource SeparadorDaBarra}" />
 
-            <!-- Chat Multiplataforma (Twitch, YouTube, Kick e TikTok) ou só a Twitch: os logos das quatro plataformas em
-                 bolinhas sobrepostas do tamanho da engrenagem (opção "C", escolhida pelo usuário em 2026-10-23; por ela e
-                 pelo botão de pausar a janela tem largura mínima de 412). Ligado: todos coloridos; só Twitch: o do
-                 YouTube, o da Kick e o do TikTok ficam apagados, em branco e laranja. O anel da cor da barra separa as
-                 bolinhas. -->
+            <!-- Chat Multiplataforma (Twitch, YouTube, Kick e TikTok) ou só a Twitch: os logos das quatro plataformas, do
+                 tamanho da engrenagem (LogosDasPlataformas) -->
             <ToggleButton x:Name="botaoMultiplataforma" Style="{StaticResource BotaoDaBarraLigaDesliga}" Width="76"
                           AutomationProperties.Name="Chat Multiplataforma" Checked="Multiplataforma_Mudou" Unchecked="Multiplataforma_Mudou">
-                <ToggleButton.Resources>
-                    <!-- Apagado em só Twitch -->
-                    <Style x:Key="LogoQueAcende" TargetType="Grid">
-                        <Setter Property="Opacity" Value="0.45" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                <Setter Property="Opacity" Value="1" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                    <!-- O fundo do logo: branco em só Twitch, a cor da plataforma (Tag) ligado -->
-                    <Style x:Key="FundoDoLogo" TargetType="Border">
-                        <Setter Property="Background" Value="White" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                <Setter Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                    <!-- As sombras azul e vermelha da nota do TikTok: só ligado -->
-                    <Style x:Key="SombraDoLogo" TargetType="Path">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                    <!-- O desenho do logo: laranja em só Twitch, a cor dele (Tag) ligado -->
-                    <Style x:Key="DesenhoDoLogo" TargetType="Path">
-                        <Setter Property="Fill" Value="{StaticResource Laranja}" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
-                                <Setter Property="Fill" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ToggleButton.Resources>
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="23" Height="23" CornerRadius="11.5" Background="{StaticResource Laranja}" Panel.ZIndex="4">
-                        <Grid Width="20" Height="20">
-                            <Border CornerRadius="10" Background="#9146FF" />
-                            <Viewbox Width="9.5" Height="11" Margin="0,1,0,0">
-                                <Canvas Width="2400" Height="2800">
-                                    <Path Fill="White" Data="M500,0 L0,500 V2300 H600 V2800 L1100,2300 H1500 L2400,1400 V0 Z" />
-                                    <Path Fill="#9146FF" Data="M1700,550 H1900 V1150 H1700 Z M1150,550 H1350 V1150 H1150 Z" />
-                                </Canvas>
-                            </Viewbox>
-                        </Grid>
-                    </Border>
-                    <Border Width="23" Height="23" CornerRadius="11.5" Background="{StaticResource Laranja}" Panel.ZIndex="3" Margin="-7,0,0,0">
-                        <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
-                            <Border CornerRadius="10" Tag="#FF0000" Style="{StaticResource FundoDoLogo}" />
-                            <Path Data="M8,6 V14 L14.6,10 Z" Tag="White" Style="{StaticResource DesenhoDoLogo}" />
-                        </Grid>
-                    </Border>
-                    <Border Width="23" Height="23" CornerRadius="11.5" Background="{StaticResource Laranja}" Panel.ZIndex="2" Margin="-7,0,0,0">
-                        <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
-                            <Border CornerRadius="10" Tag="#0B0B0B" Style="{StaticResource FundoDoLogo}" />
-                            <Viewbox Width="10" Height="10">
-                                <Canvas Width="9" Height="9">
-                                    <Path Canvas.Left="-2.5" Canvas.Top="-2.5" Tag="#53FC18" Style="{StaticResource DesenhoDoLogo}"
-                                          Data="M2.5,2.5 H5.5 V5.1 H6.8 V3.8 H8.1 V2.5 H11.5 V5.5 H10.2 V6.7 H8.9 V7.3 H10.2 V8.5 H11.5 V11.5 H8.1 V10.2 H6.8 V8.9 H5.5 V11.5 H2.5 Z" />
-                                </Canvas>
-                            </Viewbox>
-                        </Grid>
-                    </Border>
-                    <Border Width="23" Height="23" CornerRadius="11.5" Background="{StaticResource Laranja}" Panel.ZIndex="1" Margin="-7,0,0,0">
-                        <Grid Width="20" Height="20" Style="{StaticResource LogoQueAcende}">
-                            <Border CornerRadius="10" Tag="Black" Style="{StaticResource FundoDoLogo}" />
-                            <Viewbox Width="11.5" Height="11.5">
-                                <Canvas Width="24" Height="24">
-                                    <Path Data="{StaticResource NotaDoTikTok}" Fill="#25F4EE" Canvas.Left="-1.3" Canvas.Top="-1.3" Style="{StaticResource SombraDoLogo}" />
-                                    <Path Data="{StaticResource NotaDoTikTok}" Fill="#FE2C55" Canvas.Left="1.3" Canvas.Top="1.3" Style="{StaticResource SombraDoLogo}" />
-                                    <Path Data="{StaticResource NotaDoTikTok}" Tag="White" Style="{StaticResource DesenhoDoLogo}" />
-                                </Canvas>
-                            </Viewbox>
-                        </Grid>
-                    </Border>
-                </StackPanel>
+                <ContentControl Template="{StaticResource LogosDasPlataformas}" Background="{StaticResource Laranja}" Focusable="False"
+                                Tag="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
             </ToggleButton>
 
             <!-- Abre e fecha a caixa "Escrever no chat…": aceso enquanto ela está aberta -->
@@ -161,9 +217,113 @@
             </Button>
         </StackPanel>
 
+        <!-- O que o menu ☰ mostra: os mesmos botões da barra, na mesma ordem, um por linha, com o nome escrito. O estado e
+             as dicas vêm dos próprios botões (que continuam existindo, escondidos); o clique faz o mesmo que o botão.
+             "Tamanho do texto" e "Fundo do chat" abrem o painel deles embaixo do ☰, e a rodinha na linha já muda o valor. -->
+        <Popup x:Name="menuDaBarra" PlacementTarget="{Binding ElementName=botaoMenu}" Placement="Bottom"
+               VerticalOffset="4" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Width="252" Padding="4" LayoutTransform="{DynamicResource EscalaDaInterface}" Background="{StaticResource FundoDaPagina}" BorderBrush="#4DFFFFFF" BorderThickness="1"
+                    CornerRadius="8" TextElement.Foreground="{StaticResource Texto}" TextElement.FontSize="13"
+                    PreviewKeyDown="Menu_PreviewKeyDown">
+                <StackPanel>
+                    <Button x:Name="itemOcultarBordas" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Ocultar bordas"
+                            ToolTip="{Binding ToolTip, ElementName=botaoOcultarBordas}" Click="ItemOcultarBordas_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xED1A;" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Ocultar bordas" />
+                        </DockPanel>
+                    </Button>
+                    <Button x:Name="itemPausar" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Pausar o chat"
+                            ToolTip="{Binding ToolTip, ElementName=botaoPausar}" Visibility="{Binding Visibility, ElementName=botaoPausar}"
+                            Click="ItemPausar_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="{Binding Text, ElementName=iconePausar}" />
+                            <TextBlock x:Name="nomeDoItemPausar" Style="{StaticResource NomeNoMenu}" Text="Pausar o chat" />
+                        </DockPanel>
+                    </Button>
+
+                    <Rectangle Style="{StaticResource SeparadorDoMenu}" />
+
+                    <Button x:Name="itemTamanhoDoTexto" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Tamanho do texto"
+                            ToolTip="A rodinha do mouse aqui também ajusta." Click="ItemDePainel_Click"
+                            PreviewMouseWheel="ItemDePainel_PreviewMouseWheel">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xE8D2;" />
+                            <TextBlock x:Name="valorDoItemTamanhoDoTexto" Style="{StaticResource ValorNoMenu}" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Tamanho do texto" />
+                        </DockPanel>
+                    </Button>
+                    <Button x:Name="itemFundo" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Fundo"
+                            ToolTip="A rodinha do mouse aqui também ajusta." Click="ItemDePainel_Click"
+                            PreviewMouseWheel="ItemDePainel_PreviewMouseWheel">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Left" Width="30">
+                                <ContentControl Template="{StaticResource IconeDoFundo}" HorizontalAlignment="Left" Focusable="False">
+                                    <ContentControl.LayoutTransform>
+                                        <ScaleTransform ScaleX="0.85" ScaleY="0.85" />
+                                    </ContentControl.LayoutTransform>
+                                </ContentControl>
+                            </Grid>
+                            <TextBlock x:Name="valorDoItemFundo" Style="{StaticResource ValorNoMenu}" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Fundo do chat" />
+                        </DockPanel>
+                    </Button>
+
+                    <Rectangle Style="{StaticResource SeparadorDoMenu}" />
+
+                    <Button x:Name="itemSempreNoTopo" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Sempre no topo"
+                            ToolTip="{Binding ToolTip, ElementName=botaoSempreNoTopo}" Click="ItemSempreNoTopo_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xE840;" />
+                            <TextBlock Style="{StaticResource LigadoNoMenu}"
+                                       Visibility="{Binding IsChecked, ElementName=botaoSempreNoTopo, Converter={StaticResource VisivelSe}}" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Sempre no topo" />
+                        </DockPanel>
+                    </Button>
+                    <!-- Os logos dizem o estado, como na barra: coloridos ligado, apagados só Twitch -->
+                    <Button x:Name="itemMultiplataforma" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Chat Multiplataforma"
+                            ToolTip="{Binding ToolTip, ElementName=botaoMultiplataforma}" Click="ItemMultiplataforma_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xE8F2;" />
+                            <TextBlock Style="{StaticResource LigadoNoMenu}"
+                                       Visibility="{Binding IsChecked, ElementName=botaoMultiplataforma, Converter={StaticResource VisivelSe}}" />
+                            <ContentControl DockPanel.Dock="Right" Template="{StaticResource LogosDasPlataformas}" Margin="8,0,0,0"
+                                            Background="{StaticResource FundoDaPagina}" Focusable="False" VerticalAlignment="Center"
+                                            Tag="{Binding IsChecked, ElementName=botaoMultiplataforma}">
+                                <ContentControl.LayoutTransform>
+                                    <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                                </ContentControl.LayoutTransform>
+                            </ContentControl>
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Multiplataforma" />
+                        </DockPanel>
+                    </Button>
+                    <Button x:Name="itemEscrever" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Escrever"
+                            ToolTip="{Binding ToolTip, ElementName=botaoEscrever}" Visibility="{Binding Visibility, ElementName=botaoEscrever}"
+                            Click="ItemEscrever_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xE8BD;" />
+                            <TextBlock Style="{StaticResource LigadoNoMenu}"
+                                       Visibility="{Binding IsChecked, ElementName=botaoEscrever, Converter={StaticResource VisivelSe}}" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Escrever no chat" />
+                        </DockPanel>
+                    </Button>
+
+                    <Rectangle Style="{StaticResource SeparadorDoMenu}" />
+
+                    <Button x:Name="itemConfiguracoes" Style="{StaticResource ItemDoMenu}" AutomationProperties.Name="Configurações"
+                            Click="ItemConfiguracoes_Click">
+                        <DockPanel>
+                            <TextBlock Style="{StaticResource IconeDoMenu}" Text="&#xE713;" />
+                            <TextBlock Style="{StaticResource NomeNoMenu}" Text="Configurações" />
+                        </DockPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Popup>
+
         <Popup x:Name="painelTamanhoDoTexto" PlacementTarget="{Binding ElementName=botaoTamanhoDoTexto}" Placement="Bottom"
                VerticalOffset="4" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-            <chat:PainelDeAjuste x:Name="ajusteTamanhoDoTexto" Nome="TamanhoDoTexto" Titulo="Tamanho do texto"
+            <chat:PainelDeAjuste x:Name="ajusteTamanhoDoTexto" LayoutTransform="{DynamicResource EscalaDaInterface}" Nome="TamanhoDoTexto" Titulo="Tamanho do texto"
                                  Minimo="0.5" Maximo="2.5" Passo="0.05" PassoDoTeclado="0.1" PassoDaRodinha="0.1"
                                  LegendaMenor="menor" LegendaMaior="maior">
                 <chat:PainelDeAjuste.Icone>
@@ -173,11 +333,11 @@
         </Popup>
 
         <!-- As novidades, uma vez só cada (Novidades): um balão apontando para o botão delas, por cima do chat (a pausa no
-             botão de pausar, o AutoMod na engrenagem). Também o aviso de que o overlay da live não abriu (na engrenagem). Não fecha com um clique fora: só pelo "Entendi" (ou quando a janela
+             botão de pausar, o AutoMod na engrenagem; com a barra no menu ☰, para ele). Também o aviso de que o overlay da live não abriu (na engrenagem). Não fecha com um clique fora: só pelo "Entendi" (ou quando a janela
              o esconde). O título, o texto e os atalhos vêm do código -->
         <Popup x:Name="balaoNovidade" PlacementTarget="{Binding ElementName=botaoPausar}" Placement="Bottom"
                VerticalOffset="2" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
-            <StackPanel Width="290">
+            <StackPanel Width="290" LayoutTransform="{DynamicResource EscalaDaInterface}">
                 <!-- A ponta no meio do botão (34 px de largura): na esquerda para a pausa, na direita para a engrenagem -->
                 <Path x:Name="pontaDaNovidade" Data="M0,9 L9,0 L18,9 Z" Fill="{StaticResource LaranjaClaro}" Margin="8,0,8,-2"
                       HorizontalAlignment="Left" />
@@ -210,7 +370,7 @@
         <Popup x:Name="painelFundo" PlacementTarget="{Binding ElementName=botaoFundo}" Placement="Bottom"
                VerticalOffset="4" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
             <!-- Em porcentagem; gravado de 0 a 255 -->
-            <chat:PainelDeAjuste x:Name="ajusteFundo" Nome="Fundo" Titulo="Fundo do chat"
+            <chat:PainelDeAjuste x:Name="ajusteFundo" LayoutTransform="{DynamicResource EscalaDaInterface}" Nome="Fundo" Titulo="Fundo do chat"
                                  Minimo="0" Maximo="100" Passo="5" PassoDoTeclado="5" PassoDaRodinha="5"
                                  LegendaMenor="transparente" LegendaMaior="escuro">
                 <chat:PainelDeAjuste.Icone>
